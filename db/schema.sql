@@ -24,3 +24,19 @@ CREATE TABLE user_bands (
 	CONSTRAINT fk_users_table FOREIGN KEY (user_id) REFERENCES users(user_id),
 	CONSTRAINT fk_bands_talbe FOREIGN KEY (band_id) REFERENCES bands(band_id)
 );
+
+CREATE OR REPLACE FUNCTION fn_band_leader_count (p_user_id INT)
+RETURNS INT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	leader_count INT;
+BEGIN
+	SELECT count(*)
+	INTO leader_count
+	FROM user_bands
+	WHERE user_id = p_user_id AND role = 'leader';
+
+	RETURN leader_count;
+END;
+$$;
