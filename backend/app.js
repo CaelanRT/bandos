@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const session = require('express-session');
 const connectPgSimple = require('connect-pg-simple');
 
@@ -19,6 +20,8 @@ const PostgresStore = connectPgSimple(session);
 if (isProduction) {
   app.set('trust proxy', 1);
 }
+
+app.use(helmet());
 
 app.use((req, res, next) => {
   if (!isProduction || req.secure) return next();
