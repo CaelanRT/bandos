@@ -28,13 +28,13 @@ User responses contain `id`, `username`, `firstName`, `lastName`, `email`, `plan
 
 The baseline schema is intended for a disposable local database and can be reapplied after recreation. Usernames and emails are case-insensitively unique. Password hashes use bcrypt with 12 rounds by default and a `VARCHAR(255)` column. New users receive the free plan. Deletion sets `is_active` to false.
 
-Sessions use `express-session` with `connect-pg-simple`. Login and registration regenerate the session before assigning the user ID. Helmet supplies security headers. Login is limited to ten attempts per IP per 15-minute window. Production trusts one reverse proxy hop for TLS termination and secure cookies.
+Sessions use `express-session` with `connect-pg-simple` and the PostgreSQL `session` table. Login and registration regenerate the session before assigning the user ID. Login is limited to ten attempts per IP per 15-minute window.
 
 Required configuration is documented in `.env.example`. The existing five database variables remain supported; deployment may enable PostgreSQL TLS with `DB_SSL=true`.
 
 ## Verification
 
-Jest and Supertest endpoint tests mock the PostgreSQL boundary. They cover health status, validation, registration and hashing, login behavior, authentication gates, protected profile fields, account deactivation, session cleanup, response sanitization, and error envelopes.
+Auth endpoints can be verified manually against a local PostgreSQL database.
 
 For a local smoke test: recreate the disposable database from `db/schemas/schema.sql`; start PostgreSQL and the API; verify `/health`; register while saving cookies; reuse the cookie for `/users/me`; update the profile; log out and verify access is rejected; log in again; deactivate with the current password; verify subsequent login is rejected.
 
