@@ -37,8 +37,14 @@ CREATE INDEX session_expire_idx ON "session" (expire);
 CREATE TABLE user_bands (
 	user_bands_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	role role_type NOT NULL,
-	user_id INTEGER,
-	band_id INTEGER,
-	CONSTRAINT fk_users_table FOREIGN KEY (user_id) REFERENCES users(user_id),
-	CONSTRAINT fk_bands_talbe FOREIGN KEY (band_id) REFERENCES bands(band_id)
+	user_id INTEGER NOT NULL,
+	band_id INTEGER NOT NULL,
+	CONSTRAINT user_bands_user_band_unique UNIQUE (user_id, band_id),
+	CONSTRAINT fk_user_bands_user FOREIGN KEY (user_id)
+		REFERENCES users(user_id) ON DELETE RESTRICT,
+	CONSTRAINT fk_user_bands_band FOREIGN KEY (band_id)
+		REFERENCES bands(band_id) ON DELETE RESTRICT
 );
+
+CREATE INDEX user_bands_user_id_idx ON user_bands (user_id);
+CREATE INDEX user_bands_band_id_idx ON user_bands (band_id);
