@@ -19,7 +19,7 @@ function destroySession(req) {
 }
 
 async function register(req, res) {
-  const { username, firstName, lastName, email, password } = req.validatedBody;
+  const { username, firstName, lastName, email, password } = req.body;
   const passwordHash = await bcrypt.hash(password, Number(process.env.BCRYPT_ROUNDS));
   const result = await db.query(
     `INSERT INTO users (username, first_name, last_name, email, password_hash)
@@ -35,7 +35,7 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.validatedBody;
+  const { email, password } = req.body;
   const result = await db.query(
     `SELECT ${userColumns}, password_hash
      FROM users

@@ -22,7 +22,7 @@ async function getMe(req, res) {
 }
 
 async function updateMe(req, res) {
-  const { username, firstName, lastName } = req.validatedBody;
+  const { username, firstName, lastName } = req.body;
   const result = await db.query(
     `UPDATE users
      SET username = COALESCE($1, username),
@@ -38,7 +38,7 @@ async function updateMe(req, res) {
 
 async function deactivateMe(req, res) {
   const user = await findActiveUser(req.session.userId, true);
-  const passwordMatches = await bcrypt.compare(req.validatedBody.password, user.password_hash);
+  const passwordMatches = await bcrypt.compare(req.body.password, user.password_hash);
   if (!passwordMatches) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid password');
 
   await db.query('UPDATE users SET is_active = false WHERE user_id = $1', [user.user_id]);
