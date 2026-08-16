@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const HttpError = require('../utils/http-error');
-const { serializeUser } = require('../utils/user');
 
 const userColumns = `
   user_id, username, first_name, last_name, email, plan, is_active, created_at
@@ -19,7 +18,7 @@ async function findActiveUser(userId, includePassword = false) {
 
 async function getMe(req, res) {
   const user = await findActiveUser(req.session.userId);
-  return res.status(200).json({ data: { user: serializeUser(user) } });
+  return res.status(200).json({ data: { user } });
 }
 
 async function updateMe(req, res) {
@@ -34,7 +33,7 @@ async function updateMe(req, res) {
     [username ?? null, firstName ?? null, lastName ?? null, req.session.userId],
   );
   if (!result.rows[0]) throw new HttpError(401, 'AUTHENTICATION_REQUIRED', 'Authentication required');
-  return res.status(200).json({ data: { user: serializeUser(result.rows[0]) } });
+  return res.status(200).json({ data: { user: result.rows[0] } });
 }
 
 async function deactivateMe(req, res) {

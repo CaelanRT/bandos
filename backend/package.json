@@ -5,8 +5,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",
-    "start": "node app.js",
-    "test": "NODE_ENV=test SESSION_SECRET=test-session-secret-at-least-32-chars CLIENT_ORIGIN=http://localhost:3000 BCRYPT_ROUNDS=4 jest --runInBand"
+    "start": "nodemon app.js"
   },
   "keywords": [],
   "author": "",

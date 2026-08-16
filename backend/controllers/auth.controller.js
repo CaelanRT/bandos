@@ -1,8 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../db');
-const env = require('../config/env');
 const HttpError = require('../utils/http-error');
-const { serializeUser } = require('../utils/user');
 
 const userColumns = `
   user_id, username, first_name, last_name, email, plan, is_active, created_at
@@ -22,7 +20,7 @@ function destroySession(req) {
 
 async function register(req, res) {
   const { username, firstName, lastName, email, password } = req.validatedBody;
-  const passwordHash = await bcrypt.hash(password, env.bcryptRounds);
+  const passwordHash = await bcrypt.hash(password, Number(process.env.BCRYPT_ROUNDS));
   const result = await db.query(
     `INSERT INTO users (username, first_name, last_name, email, password_hash)
      VALUES ($1, $2, $3, $4, $5)
@@ -33,7 +31,7 @@ async function register(req, res) {
   await regenerateSession(req);
   req.session.userId = result.rows[0].user_id;
 
-  return res.status(201).json({ data: { user: serializeUser(result.rows[0]) } });
+  return res.status(201).json({ message: `user: ${result.rows[0].user_id} logged in` });
 }
 
 async function login(req, res) {
@@ -55,7 +53,7 @@ async function login(req, res) {
   await regenerateSession(req);
   req.session.userId = user.user_id;
 
-  return res.status(200).json({ data: { user: serializeUser(user) } });
+  return res.status(200).json({ message: `user: ${user.user_id} logged in` });
 }
 
 async function logout(req, res) {
