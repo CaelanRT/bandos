@@ -10,6 +10,7 @@ const { pool } = require('./db');
 const healthRouter = require('./routes/health.routes');
 const authRouter = require('./routes/auth.routes');
 const userRouter = require('./routes/user.routes');
+const bandRouter = require('./routes/band.routes');
 const { notFound, errorHandler } = require('./middleware/errors');
 
 const app = express();
@@ -58,6 +59,7 @@ app.use(session({
 app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/bands', bandRouter);
 app.use(notFound);
 app.use(errorHandler);
 
