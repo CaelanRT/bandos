@@ -102,4 +102,34 @@ async function listBands(req, res) {
   });
 }
 
-module.exports = { createBand, listBands };
+async function getBand(req, res) {
+  const result = await db.query(
+    `SELECT
+       u.user_id,
+       u.username,
+       u.first_name,
+       u.last_name,
+       ub.role
+     FROM user_bands AS ub
+     INNER JOIN users AS u ON u.user_id = ub.user_id
+     WHERE ub.band_id = $1
+       AND u.is_active = true
+     ORDER BY
+       CASE WHEN ub.role = 'leader' THEN 0 ELSE 1 END,
+       LOWER(u.username) ASC,
+       u.user_id ASC`,
+    [req.band.bandId],
+  );
+
+  return res.status(200).json({
+    data: {
+      band: {
+        ...req.band,
+        currentUserRole: req.bandRole,
+        members: result.rows.map(mapMember),
+      },
+    },
+  });
+}
+
+module.exports = { createBand, listBands, getBand };
