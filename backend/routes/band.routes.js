@@ -5,11 +5,13 @@ const {
   getBand,
   updateBand,
   deleteBand,
+  addBandMember,
 } = require('../controllers/band.controller');
 const authenticate = require('../middleware/authenticate');
 const {
   validateCreateBand,
   validateUpdateBand,
+  validateAddBandMember,
   validateBandId,
 } = require('../middleware/validate-band');
 const {
@@ -37,6 +39,14 @@ router.delete(
   loadBandMembership,
   requireBandLeader,
   deleteBand,
+);
+router.post(
+  '/:bandId/members',
+  validateBandId,
+  validateAddBandMember,
+  loadBandMembership,
+  requireBandLeader,
+  addBandMember,
 );
 
 module.exports = router;
