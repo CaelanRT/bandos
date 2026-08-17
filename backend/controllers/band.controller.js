@@ -184,10 +184,57 @@ async function deleteBand(req, res) {
   });
 }
 
+async function addBandMember(req, res) {
+  const userResult = await db.query(
+    `SELECT user_id, username, first_name, last_name
+     FROM users
+     WHERE LOWER(username) = LOWER($1)
+       AND is_active = true
+     LIMIT 1`,
+    [req.body.username],
+  );
+  const user = userResult.rows[0];
+
+  if (!user) {
+    throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO user_bands (user_id, band_id, role)
+       VALUES ($1, $2, 'member')`,
+      [user.user_id, req.band.bandId],
+    );
+  } catch (error) {
+    if (
+      error.code === '23505'
+      && error.constraint === 'user_bands_user_band_unique'
+    ) {
+      throw new HttpError(
+        409,
+        'USER_ALREADY_IN_BAND',
+        'User is already a member of this band',
+      );
+    }
+
+    throw error;
+  }
+
+  return res.status(201).json({
+    data: {
+      member: mapMember({
+        ...user,
+        role: 'member',
+      }),
+    },
+  });
+}
+
 module.exports = {
   createBand,
   listBands,
   getBand,
   updateBand,
   deleteBand,
+  addBandMember,
 };
