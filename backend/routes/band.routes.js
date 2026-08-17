@@ -4,6 +4,7 @@ const {
   listBands,
   getBand,
   updateBand,
+  deleteBand,
 } = require('../controllers/band.controller');
 const authenticate = require('../middleware/authenticate');
 const {
@@ -29,6 +30,13 @@ router.patch(
   loadBandMembership,
   requireBandLeader,
   updateBand,
+);
+router.delete(
+  '/:bandId',
+  validateBandId,
+  loadBandMembership,
+  requireBandLeader,
+  deleteBand,
 );
 
 module.exports = router;

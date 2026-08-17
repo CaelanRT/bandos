@@ -163,9 +163,31 @@ async function updateBand(req, res) {
   });
 }
 
+async function deleteBand(req, res) {
+  const result = await db.query(
+    `UPDATE bands
+     SET is_active = false
+     WHERE band_id = $1
+       AND is_active = true
+     RETURNING band_id`,
+    [req.band.bandId],
+  );
+
+  if (!result.rows[0]) {
+    throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
+  }
+
+  return res.status(200).json({
+    data: {
+      message: 'Band deleted',
+    },
+  });
+}
+
 module.exports = {
   createBand,
   listBands,
   getBand,
   updateBand,
+  deleteBand,
 };
