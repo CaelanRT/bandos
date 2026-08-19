@@ -18,12 +18,19 @@ const {
   loadBandMembership,
   requireBandLeader,
 } = require('../middleware/band-access');
+const eventRouter = require('./event.routes');
 
 const router = express.Router();
 
 router.use(authenticate);
 router.post('/', validateCreateBand, createBand);
 router.get('/', listBands);
+router.use(
+  '/:bandId/events',
+  validateBandId,
+  loadBandMembership,
+  eventRouter,
+);
 router.get('/:bandId', validateBandId, loadBandMembership, getBand);
 router.patch(
   '/:bandId',
