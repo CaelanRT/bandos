@@ -5,8 +5,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",
-    "start": "node app.js",
-    "test:event-validation": "node --test tests/event-schedule.test.js"
+    "start": "node app.js"
   },
   "keywords": [],
   "author": "",
