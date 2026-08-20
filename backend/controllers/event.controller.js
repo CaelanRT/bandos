@@ -213,6 +213,25 @@ async function updateEvent(req, res) {
       throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
     }
 
+    const lifecycleResult = await client.query(
+      `SELECT
+         (($1::date + $2::time) AT TIME ZONE $3) <= clock_timestamp()
+           AS has_started`,
+      [
+        serializeDate(lockedEvent.event_date),
+        normalizeDatabaseTime(lockedEvent.start_time),
+        lockedEvent.timezone,
+      ],
+    );
+
+    if (lifecycleResult.rows[0].has_started) {
+      throw new HttpError(
+        409,
+        'EVENT_ALREADY_STARTED',
+        'Events cannot be edited after they have started',
+      );
+    }
+
     const mergedEvent = {
       ...editableEventFields(lockedEvent),
       ...req.body,
