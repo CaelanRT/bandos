@@ -4,6 +4,7 @@ const {
   listEvents,
   getEvent,
   updateEvent,
+  deleteEvent,
 } = require('../controllers/event.controller');
 const { requireBandLeader } = require('../middleware/band-access');
 const {
@@ -28,6 +29,7 @@ router.patch(
   validateUpdateEvent,
   updateEvent,
 );
+router.delete('/:eventId', requireBandLeader, deleteEvent);
 
 module.exports = router;
 
