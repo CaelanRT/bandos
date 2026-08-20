@@ -302,11 +302,34 @@ async function updateEvent(req, res) {
   }
 }
 
+async function deleteEvent(req, res) {
+  const result = await db.query(
+    `UPDATE events
+     SET is_active = false
+     WHERE event_id = $1
+       AND band_id = $2
+       AND is_active = true
+     RETURNING event_id`,
+    [req.event.event_id, req.band.bandId],
+  );
+
+  if (!result.rows[0]) {
+    throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
+  }
+
+  return res.status(200).json({
+    data: {
+      message: 'Event deleted',
+    },
+  });
+}
+
 module.exports = {
   createEvent,
   listEvents,
   getEvent,
   updateEvent,
+  deleteEvent,
   mapEvent,
 };
 
