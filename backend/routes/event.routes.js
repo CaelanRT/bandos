@@ -3,10 +3,12 @@ const {
   createEvent,
   listEvents,
   getEvent,
+  updateEvent,
 } = require('../controllers/event.controller');
 const { requireBandLeader } = require('../middleware/band-access');
 const {
   validateCreateEvent,
+  validateUpdateEvent,
   validateEventId,
 } = require('../middleware/validate-event');
 const { loadEvent } = require('../middleware/event-access');
@@ -20,6 +22,12 @@ router.get('/', listEvents);
 // this event lookup before their method-specific authorization and handlers.
 router.use('/:eventId', validateEventId, loadEvent);
 router.get('/:eventId', getEvent);
+router.patch(
+  '/:eventId',
+  requireBandLeader,
+  validateUpdateEvent,
+  updateEvent,
+);
 
 module.exports = router;
 
