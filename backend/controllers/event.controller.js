@@ -92,4 +92,63 @@ async function createEvent(req, res) {
   });
 }
 
-module.exports = { createEvent, mapEvent };
+async function listEvents(req, res) {
+  const result = await db.query(
+    `SELECT
+       event_id,
+       band_id,
+       created_by_user_id,
+       name,
+       type,
+       event_date,
+       start_time,
+       end_time,
+       timezone,
+       location,
+       description,
+       is_active,
+       created_at,
+       updated_at
+     FROM events
+     WHERE band_id = $1
+       AND is_active = true
+     ORDER BY
+       CASE
+         WHEN (event_date + start_time) AT TIME ZONE timezone > CURRENT_TIMESTAMP
+           THEN 0
+         ELSE 1
+       END ASC,
+       CASE
+         WHEN (event_date + start_time) AT TIME ZONE timezone > CURRENT_TIMESTAMP
+           THEN (event_date + start_time) AT TIME ZONE timezone
+       END ASC,
+       CASE
+         WHEN (event_date + start_time) AT TIME ZONE timezone <= CURRENT_TIMESTAMP
+           THEN (event_date + start_time) AT TIME ZONE timezone
+       END DESC,
+       event_id ASC`,
+    [req.band.bandId],
+  );
+
+  return res.status(200).json({
+    data: {
+      events: result.rows.map(mapEvent),
+    },
+  });
+}
+
+function getEvent(req, res) {
+  return res.status(200).json({
+    data: {
+      event: mapEvent(req.event),
+    },
+  });
+}
+
+module.exports = {
+  createEvent,
+  listEvents,
+  getEvent,
+  mapEvent,
+};
+
