@@ -2,7 +2,7 @@
 
 set -u
 
-BASE_URL="${BASE_URL:-http://localhost:3001/api/v1}"
+BASE_URL="${BASE_URL:-http://localhost:3000/api/v1}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RUN_ID="$(date -u +%Y%m%d%H%M%S)_$$"
