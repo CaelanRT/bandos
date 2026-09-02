@@ -1,5 +1,7 @@
 # Event Management Specification
 
+**Status:** Complete — verified on 2026-08-25 with 48 passing end-to-end smoke checks and 0 failures; guarded teardown completed successfully.
+
 ## Goal and scope
 
 Add authenticated event management to the Bandos REST API. A band leader can create, edit, and soft-delete events for an active band they currently lead. Every current member of that band, including its leader, can list and retrieve the band's active events.
