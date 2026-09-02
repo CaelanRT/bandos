@@ -1,16 +1,55 @@
-# React + Vite
+# Bandos frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The Bandos web client is a React 19 application built with Vite. This repository currently contains the minimal frontend foundation; user-facing features are added in later phases.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- A current Node.js release compatible with Vite 8 (Node.js 20.19+ or 22.12+)
+- npm
+- A running Bandos backend for browser use
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Install the locked dependencies:
 
-## Expanding the Oxlint configuration
+   ```sh
+   npm ci
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+2. Create the local environment file:
+
+   ```sh
+   cp .env.example .env
+   ```
+
+3. Set `VITE_API_ORIGIN` in `.env` to the backend origin. Use an origin such as `http://localhost:3000`; do not include `/api/v1`, credentials, or secrets. Bandos appends `/api/v1` itself.
+
+4. Start the development server:
+
+   ```sh
+   npm run dev
+   ```
+
+The application stops at startup with an actionable error when `VITE_API_ORIGIN` is absent. Unit tests inject configuration and do not require a local `.env` file.
+
+## Scripts
+
+- `npm run dev` starts the Vite development server.
+- `npm run build` creates the production bundle in `dist/`.
+- `npm run preview` serves the production bundle locally for verification.
+- `npm run lint` checks the source with Oxlint.
+- `npm test` runs the Vitest suite once and exits with its result, making it suitable for local use and CI.
+
+Run the complete automated verification with:
+
+```sh
+npm run lint
+npm test
+npm run build
+```
+
+## Browser and hosting support
+
+Bandos supports the current major evergreen releases of Chrome, Edge, Firefox, and Safari, including current Chrome on Android and Safari on iOS.
+
+Vite provides history fallback during development and preview. A production host must serve `index.html` for unknown document paths so that direct visits and refreshes of client-side routes work. Configure that SPA fallback in the selected hosting platform.
