@@ -53,3 +53,9 @@ npm run build
 Bandos supports the current major evergreen releases of Chrome, Edge, Firefox, and Safari, including current Chrome on Android and Safari on iOS.
 
 Vite provides history fallback during development and preview. A production host must serve `index.html` for unknown document paths so that direct visits and refreshes of client-side routes work. Configure that SPA fallback in the selected hosting platform.
+
+## Validation convention
+
+Shared validators in `src/utils/validation.js` are pure functions that return a displayable message when a value fails and `undefined` when it passes. `validateFields` composes those rules into a field-error map such as { email: 'Enter a valid email.' }; an empty object means validation passed.
+
+Validators only determine whether submitted values are valid. Forms own touched state, submission timing, pending behavior, and error presentation. Backend validation remains authoritative, and feature-level adapters will map applicable backend details into the same field-error shape when those forms are implemented.
