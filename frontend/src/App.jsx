@@ -1,9 +1,7 @@
+import { AppProviders } from './app/AppProviders.jsx'
+
 function App() {
-  return (
-    <main>
-      <h1>Bandos</h1>
-    </main>
-  )
+  return <AppProviders />
 }
 
 export default App

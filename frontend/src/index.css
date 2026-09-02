@@ -1,4 +1,4 @@
-/* Keep the foundation usable at narrow widths without introducing a design system. */
+/* Only behavior required for access, focus, and narrow viewport safety lives here. */
 *,
 *::before,
 *::after {
@@ -10,6 +10,27 @@ body {
   overflow-wrap: break-word;
 }
 
+.skip-link {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  padding: 0.5rem;
+  background: Canvas;
+  color: CanvasText;
+  transform: translateY(-100%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+header,
 main {
+  max-width: 100%;
   padding: 1rem;
 }
