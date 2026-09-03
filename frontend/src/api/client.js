@@ -13,6 +13,23 @@ function buildRequestUrl(baseUrl, path) {
   return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
+export function parseRetryAfter(value, now = Date.now()) {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+  let deadline
+
+  if (/^\d+$/.test(trimmed)) {
+    deadline = now + Number(trimmed) * 1000
+  } else {
+    deadline = Date.parse(trimmed)
+  }
+
+  return Number.isFinite(deadline) && deadline > now ? deadline : undefined
+}
+
 function isFieldDetail(detail) {
   return (
     detail !== null &&
@@ -22,7 +39,7 @@ function isFieldDetail(detail) {
   )
 }
 
-function parseBackendError(payload, status) {
+function parseBackendError(payload, status, retryAt) {
   const error = payload?.error
   const hasValidDetails =
     error?.details === undefined ||
@@ -42,6 +59,7 @@ function parseBackendError(payload, status) {
     status,
     code: error.code,
     details: error.details,
+    retryAt,
   })
 }
 
@@ -126,7 +144,11 @@ export function createApiClient({
       const payload = await readJson(response)
 
       if (!response.ok) {
-        throw parseBackendError(payload, response.status)
+        throw parseBackendError(
+          payload,
+          response.status,
+          parseRetryAfter(response.headers.get('Retry-After')),
+        )
       }
 
       return parseSuccess(payload, response.status)

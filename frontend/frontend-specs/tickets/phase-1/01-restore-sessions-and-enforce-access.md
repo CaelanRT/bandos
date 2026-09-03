@@ -1,5 +1,7 @@
 # Restore authenticated sessions and enforce route access
 
+> **Status:** Complete (2026-09-03)
+
 ## User/system outcome
 
 Returning users enter the correct authenticated state without seeing the wrong screen, signed-out users are directed to authentication, and temporary backend failures do not masquerade as Logout.

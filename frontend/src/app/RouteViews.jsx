@@ -1,4 +1,5 @@
 import { AppShell } from './AppShell.jsx'
+import { LoginForm } from '../features/auth/LoginForm.jsx'
 
 export function Home() {
   return (
@@ -12,6 +13,7 @@ export function Login() {
   return (
     <AppShell>
       <h1>Login</h1>
+      <LoginForm />
     </AppShell>
   )
 }
