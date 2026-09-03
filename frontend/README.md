@@ -72,3 +72,11 @@ Authenticated TanStack Query keys must begin with `private`, for example
 `['private', 'bands']`. Public configuration uses a distinct prefix such as
 `['public', 'configuration']`. This convention allows session transitions to
 remove all private server data without discarding safe public configuration.
+
+## Login flow
+
+The Login form validates credentials after blur and on submission, normalizes
+only the email address, and sends the password unchanged. Authentication is not
+complete until the follow-up `GET /users/me` supplies normalized identity.
+Transient identity failures use the full-page Retry state and retry only the
+identity request; validated protected destinations remain in router state.

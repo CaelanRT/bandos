@@ -23,7 +23,7 @@ export function SignedOutOnlyRoute({ children }) {
   const session = useSession()
 
   if (session.status === 'authenticated') {
-    return <Navigate to="/" replace />
+    return <Navigate to={session.destination || '/'} replace />
   }
 
   return children

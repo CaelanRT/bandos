@@ -23,22 +23,43 @@ function FullPageStatus({ retry, retryPending }) {
 
 export function SessionBoundary({ children }) {
   const started = useRef(false)
+  const destinationRef = useRef('/')
   const [session, setSession] = useState({ status: 'checking', user: null })
   const [retryPending, setRetryPending] = useState(false)
 
-  const restore = useCallback(async (isRetry = false) => {
+  const restore = useCallback(async ({ isRetry = false, destination, afterAuthentication = false } = {}) => {
     if (isRetry) {
       setRetryPending(true)
     }
 
+    if (afterAuthentication && destination !== undefined) {
+      destinationRef.current = destination
+    }
+
     try {
       const user = await getCurrentUser()
-      setSession({ status: 'authenticated', user })
+      setSession({
+        status: 'authenticated',
+        user,
+        destination: afterAuthentication ? destinationRef.current : null,
+        completionError: false,
+      })
     } catch (error) {
       if (error?.code === 'AUTHENTICATION_REQUIRED') {
-        setSession({ status: 'signedOut', user: null })
+        setSession({
+          status: 'signedOut',
+          user: null,
+          destination: null,
+          completionError: afterAuthentication,
+        })
       } else {
-        setSession({ status: 'failure', user: null })
+        setSession({
+          status: 'failure',
+          user: null,
+          destination: destinationRef.current,
+          completionError: false,
+          afterAuthentication,
+        })
       }
     } finally {
       if (isRetry) {
@@ -47,10 +68,14 @@ export function SessionBoundary({ children }) {
     }
   }, [])
 
+  const completeAuthentication = useCallback((destination) => (
+    restore({ destination, afterAuthentication: true })
+  ), [restore])
+
   useEffect(() => {
     if (!started.current) {
       started.current = true
-      restore()
+      restore({})
     }
   }, [restore])
 
@@ -61,14 +86,20 @@ export function SessionBoundary({ children }) {
   if (session.status === 'failure') {
     return (
       <FullPageStatus
-        retry={() => restore(true)}
+        retry={() => restore({
+          isRetry: true,
+          afterAuthentication: Boolean(session.afterAuthentication),
+        })}
         retryPending={retryPending}
       />
     )
   }
 
   return (
-    <SessionContext.Provider value={session}>
+    <SessionContext.Provider value={{
+      ...session,
+      completeAuthentication,
+    }}>
       {children}
     </SessionContext.Provider>
   )
