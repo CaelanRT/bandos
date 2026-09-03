@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError, NETWORK_ERROR } from '../api/errors.js'
-import { queryClient, shouldRetryQuery } from '../app/queryClient.js'
+import {
+  clearPrivateQueries,
+  createBandosQueryClient,
+  queryClient,
+  shouldRetryQuery,
+} from '../app/queryClient.js'
 
 describe('query retry policy', () => {
   it('retries a potentially transient failure only once', () => {
@@ -58,5 +63,20 @@ describe('query client defaults', () => {
 
   it('never retries mutations automatically', () => {
     expect(defaults.mutations.retry).toBe(false)
+  })
+})
+
+describe('private query clearing', () => {
+  it('removes private data while retaining public configuration', () => {
+    const client = createBandosQueryClient()
+    client.setQueryData(['private', 'bands'], [{ bandId: 7 }])
+    client.setQueryData(['public', 'configuration'], { plans: ['free'] })
+
+    clearPrivateQueries(client)
+
+    expect(client.getQueryData(['private', 'bands'])).toBeUndefined()
+    expect(client.getQueryData(['public', 'configuration'])).toEqual({
+      plans: ['free'],
+    })
   })
 })

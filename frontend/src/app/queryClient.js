@@ -31,15 +31,25 @@ export function shouldRetryQuery(failureCount, error) {
   return true
 }
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 0,
-      refetchOnWindowFocus: false,
-      retry: shouldRetryQuery,
+export function createBandosQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 0,
+        refetchOnWindowFocus: false,
+        retry: shouldRetryQuery,
+      },
+      mutations: {
+        retry: false,
+      },
     },
-    mutations: {
-      retry: false,
-    },
-  },
-})
+  })
+}
+
+export function clearPrivateQueries(client) {
+  client.removeQueries({
+    predicate: (query) => query.queryKey[0] === 'private',
+  })
+}
+
+export const queryClient = createBandosQueryClient()

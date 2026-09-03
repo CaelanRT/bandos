@@ -8,6 +8,22 @@ export function Home() {
   )
 }
 
+export function Login() {
+  return (
+    <AppShell>
+      <h1>Login</h1>
+    </AppShell>
+  )
+}
+
+export function Register() {
+  return (
+    <AppShell>
+      <h1>Register</h1>
+    </AppShell>
+  )
+}
+
 export function NotFound() {
   return (
     <AppShell>
