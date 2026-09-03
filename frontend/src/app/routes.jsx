@@ -1,9 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { Home, NotFound } from './RouteViews.jsx'
+import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
+import { Home, Login, NotFound, Register } from './RouteViews.jsx'
 
 const unfinishedRoutePaths = [
-  '/login',
-  '/register',
   '/bands/:bandId',
   '/bands/:bandId/members',
   '/bands/:bandId/events/new',
@@ -15,11 +14,35 @@ const unfinishedRoutePaths = [
 export const routes = [
   {
     path: '/',
-    element: <Home />,
+    element: (
+      <ProtectedRoute>
+        <Home />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/login',
+    element: (
+      <SignedOutOnlyRoute>
+        <Login />
+      </SignedOutOnlyRoute>
+    ),
+  },
+  {
+    path: '/register',
+    element: (
+      <SignedOutOnlyRoute>
+        <Register />
+      </SignedOutOnlyRoute>
+    ),
   },
   ...unfinishedRoutePaths.map((path) => ({
     path,
-    element: <Navigate to="/" replace />,
+    element: (
+      <ProtectedRoute>
+        <Navigate to="/" replace />
+      </ProtectedRoute>
+    ),
   })),
   {
     path: '*',

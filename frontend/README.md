@@ -59,3 +59,16 @@ Vite provides history fallback during development and preview. A production host
 Shared validators in `src/utils/validation.js` are pure functions that return a displayable message when a value fails and `undefined` when it passes. `validateFields` composes those rules into a field-error map such as { email: 'Enter a valid email.' }; an empty object means validation passed.
 
 Validators only determine whether submitted values are valid. Forms own touched state, submission timing, pending behavior, and error presentation. Backend validation remains authoritative, and feature-level adapters will map applicable backend details into the same field-error shape when those forms are implemented.
+
+## Session and query-data conventions
+
+The application restores its server-owned cookie session with `GET /users/me`
+before rendering route content. A missing session enables `/login` and
+`/register`; other failures retain an unknown session state and provide an
+explicit Retry action. Protected deep links are carried only in React Router
+state after validation as recognized internal application destinations.
+
+Authenticated TanStack Query keys must begin with `private`, for example
+`['private', 'bands']`. Public configuration uses a distinct prefix such as
+`['public', 'configuration']`. This convention allows session transitions to
+remove all private server data without discarding safe public configuration.
