@@ -1,7 +1,8 @@
 # Phase 0 — Frontend Foundations
 
-> **Status:** Ready for ticketing
+> **Status:** Complete (2026-09-03)
 > **Phase outcome:** A stable technical skeleton supports user-facing slices.
+> **Verification:** Lint, 57 Vitest tests, and the production build pass. Browser checks confirmed the root, unknown-route handling, and mobile layout.
 > **Discovery source:** Phase 0 Grill Me session, 2026-09-02
 > **Governing plan:** [`00-frontend-implementation-plan.md`](00-frontend-implementation-plan.md)
 > **Backend contract:** [`../../backend/backend-specs/00-api-contract.md`](../../backend/backend-specs/00-api-contract.md)

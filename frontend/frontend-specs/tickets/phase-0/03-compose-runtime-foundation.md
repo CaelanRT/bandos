@@ -1,5 +1,7 @@
 # Render the application through stable providers and routes
 
+> **Status:** Complete (2026-09-03)
+
 ## User/system outcome
 
 The application renders through its real router and server-state provider, supports durable route entry, and gives later features a semantic shell without restructuring the root.

@@ -1,5 +1,7 @@
 # Phase 0 Ticket Sequence
 
+> **Status:** Complete (2026-09-03)
+
 These tickets implement [`../../01-phase-0-foundations.md`](../../01-phase-0-foundations.md) in dependency order.
 
 1. [`01-establish-project-foundation.md`](01-establish-project-foundation.md) — Establish a repeatable frontend development foundation.

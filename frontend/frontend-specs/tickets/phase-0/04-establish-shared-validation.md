@@ -1,5 +1,7 @@
 # Establish a reusable frontend validation contract
 
+> **Status:** Complete (2026-09-03)
+
 ## User/system outcome
 
 Later forms can share predictable, pure validation behavior and field-error state without coupling validation rules to components.

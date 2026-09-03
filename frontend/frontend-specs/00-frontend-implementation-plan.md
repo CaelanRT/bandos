@@ -255,6 +255,8 @@ Each phase is an epic composed of outcome-based tickets. Tests and documentation
 
 ### Phase 0 — Foundations
 
+**Status:** Complete (2026-09-03)
+
 **Outcome:** A stable technical skeleton supports user-facing slices.
 
 Deliverables:

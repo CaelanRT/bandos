@@ -1,5 +1,7 @@
 # Establish a repeatable frontend development foundation
 
+> **Status:** Complete (2026-09-03)
+
 ## User/system outcome
 
 Frontend contributors can install, configure, run, lint, test, and build the application through a documented, minimal toolchain.
