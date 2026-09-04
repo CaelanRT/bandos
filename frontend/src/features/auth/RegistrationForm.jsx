@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { PasswordVisibility } from './PasswordVisibility.jsx'
-import { login } from '../../api/auth.js'
+import { register } from '../../api/auth.js'
 import { resolveDestination } from '../../app/destination.js'
 import { useSession } from '../../app/sessionContext.js'
 import {
-  normalizeLogin,
-  validateLogin,
-  validateLoginField,
-} from './loginValidation.js'
+  normalizeRegistration,
+  validateRegistration,
+  validateRegistrationField,
+} from './registrationValidation.js'
 
-const INITIAL_VALUES = { email: '', password: '' }
-const FIELD_ORDER = ['email', 'password']
+const INITIAL_VALUES = { firstName: '', lastName: '', username: '', email: '', password: '' }
+const FIELDS = [
+  { name: 'firstName', label: 'First name', autoComplete: 'given-name' },
+  { name: 'lastName', label: 'Last name', autoComplete: 'family-name' },
+  { name: 'username', label: 'Username', autoComplete: 'username', hint: '3–50 characters' },
+  { name: 'email', label: 'Email', autoComplete: 'email', type: 'email' },
+  { name: 'password', label: 'Password', autoComplete: 'new-password', hint: '8–72 characters' },
+]
+const FIELD_ORDER = FIELDS.map(({ name }) => name)
 
-export function LoginForm() {
+export function RegistrationForm() {
   const location = useLocation()
   const session = useSession()
   const destination = resolveDestination(location.state?.destination)
@@ -25,8 +32,8 @@ export function LoginForm() {
   const [formError, setFormError] = useState(null)
   const [focusField, setFocusField] = useState(null)
   const [retryAt, setRetryAt] = useState(null)
-  const emailRef = useRef(null)
-  const passwordRef = useRef(null)
+  const fieldRefs = useRef({})
+  const submitting = useRef(false)
   const formErrorRef = useRef(null)
 
   function updateField(field, value) {
@@ -35,7 +42,7 @@ export function LoginForm() {
     if (touched[field]) {
       setErrors((current) => ({
         ...current,
-        [field]: validateLoginField(field, nextValues),
+        [field]: validateRegistrationField(field, nextValues),
       }))
     }
   }
@@ -44,7 +51,7 @@ export function LoginForm() {
     setTouched((current) => ({ ...current, [field]: true }))
     setErrors((current) => ({
       ...current,
-      [field]: validateLoginField(field, values),
+      [field]: validateRegistrationField(field, values),
     }))
   }
 
@@ -53,8 +60,7 @@ export function LoginForm() {
   }, [formError, session.completionError])
 
   useEffect(() => {
-    if (focusField === 'email') emailRef.current?.focus()
-    if (focusField === 'password') passwordRef.current?.focus()
+    fieldRefs.current[focusField]?.focus()
   }, [focusField])
 
   useEffect(() => {
@@ -68,7 +74,7 @@ export function LoginForm() {
 
   async function submit(event) {
     event.preventDefault()
-    if (pending) return
+    if (submitting.current) return
 
     if (retryAt && Date.now() < retryAt) {
       formErrorRef.current?.focus()
@@ -76,22 +82,22 @@ export function LoginForm() {
     }
     if (retryAt) setRetryAt(null)
 
-    const nextErrors = validateLogin(values)
-    setTouched({ email: true, password: true })
+    const nextErrors = validateRegistration(values)
+    setTouched(Object.fromEntries(FIELD_ORDER.map((field) => [field, true])))
     setErrors(nextErrors)
     setFormError(null)
     setFocusField(null)
 
     const firstInvalid = FIELD_ORDER.find((field) => nextErrors[field])
     if (firstInvalid) {
-      if (firstInvalid === 'email') emailRef.current?.focus()
-      if (firstInvalid === 'password') passwordRef.current?.focus()
+      fieldRefs.current[firstInvalid]?.focus()
       return
     }
 
+    submitting.current = true
     setPending(true)
     try {
-      await login(normalizeLogin(values))
+      await register(normalizeRegistration(values))
       await session.completeAuthentication(destination)
     } catch (error) {
       if (error?.code === 'TOO_MANY_ATTEMPTS') {
@@ -108,17 +114,20 @@ export function LoginForm() {
         setErrors((current) => ({ ...current, ...fieldErrors }))
         if (remaining.length > 0) {
           setFormError(remaining.join(' '))
+        } else if (Object.keys(fieldErrors).length === 0) {
+          setFormError('We couldn’t create your account. Check your details and try again.')
         } else {
           setFocusField(FIELD_ORDER.find((field) => fieldErrors[field]))
         }
       } else {
         setFormError(
-          error?.code === 'INVALID_CREDENTIALS'
-            ? 'Invalid email or password'
-            : 'We couldn’t log you in. Try again.',
+          error?.code === 'ACCOUNT_CONFLICT'
+            ? 'That username or email is already in use.'
+            : 'We couldn’t create your account. Try again.',
         )
       }
     } finally {
+      submitting.current = false
       setPending(false)
     }
   }
@@ -129,66 +138,57 @@ export function LoginForm() {
     <form onSubmit={submit} noValidate>
       {(formError || completionError) && (
         <div ref={formErrorRef} role="alert" tabIndex="-1">
-          {formError || 'We couldn’t complete sign-in. Please try again.'}
+          {formError || 'We couldn’t complete sign-in after registration. Please log in.'}
         </div>
       )}
 
-      <div>
-        <label htmlFor="login-email">Email</label>
-        <input
-          ref={emailRef}
-          id="login-email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          disabled={pending}
-          value={values.email}
-          aria-invalid={Boolean(errors.email)}
-          aria-describedby={errors.email ? 'login-email-error' : undefined}
-          onBlur={() => blurField('email')}
-          onChange={(event) => updateField('email', event.target.value)}
-        />
-        {errors.email && <p id="login-email-error">{errors.email}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="login-password">Password</label>
-        <input
-          ref={passwordRef}
-          id="login-password"
-          name="password"
-          type={passwordVisible ? 'text' : 'password'}
-          autoComplete="current-password"
-          disabled={pending}
-          value={values.password}
-          aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'login-password-error' : undefined}
-          onBlur={() => blurField('password')}
-          onChange={(event) => updateField('password', event.target.value)}
-        />
-        <PasswordVisibility
-          controls="login-password"
-          visible={passwordVisible}
-          disabled={pending}
-          onToggle={() => setPasswordVisible((visible) => !visible)}
-        />
-        {errors.password && <p id="login-password-error">{errors.password}</p>}
-      </div>
+      {FIELDS.map(({ name, label, autoComplete, hint, type = 'text' }) => {
+        const id = `register-${name}`
+        const describedBy = [hint && `${id}-hint`, errors[name] && `${id}-error`].filter(Boolean).join(' ')
+        return (
+          <div key={name}>
+            <label htmlFor={id}>{label}</label>
+            <input
+              ref={(element) => { fieldRefs.current[name] = element }}
+              id={id}
+              name={name}
+              type={name === 'password' ? (passwordVisible ? 'text' : 'password') : type}
+              autoComplete={autoComplete}
+              disabled={pending}
+              value={values[name]}
+              aria-invalid={Boolean(errors[name])}
+              aria-describedby={describedBy || undefined}
+              onBlur={() => blurField(name)}
+              onChange={(event) => updateField(name, event.target.value)}
+            />
+            {name === 'password' && (
+              <PasswordVisibility
+                controls={id}
+                visible={passwordVisible}
+                disabled={pending}
+                onToggle={() => setPasswordVisible((visible) => !visible)}
+              />
+            )}
+            {hint && <p id={`${id}-hint`}>{hint}</p>}
+            {errors[name] && <p id={`${id}-error`}>{errors[name]}</p>}
+          </div>
+        )
+      })}
 
       <button type="submit" disabled={pending}>
-        {pending ? 'Logging in…' : 'Log in'}
+        {pending ? 'Creating account…' : 'Create account'}
       </button>
-      {pending && <span role="status">Logging in…</span>}
+      {pending && <span role="status">Creating account…</span>}
 
       <p>
-        Need an account?{' '}
+        Already have an account?{' '}
         <Link
-          to="/register"
+          to="/login"
           state={{ destination }}
           aria-disabled={pending ? 'true' : undefined}
           onClick={(event) => pending && event.preventDefault()}
         >
-          Register
+          Log in
         </Link>
         .
       </p>
