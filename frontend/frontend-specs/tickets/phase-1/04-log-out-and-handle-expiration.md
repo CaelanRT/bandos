@@ -1,6 +1,6 @@
 # End sessions safely and recover when they expire
 
-> **Status:** Ready for review
+> **Status:** Completed
 
 ## User/system outcome
 
