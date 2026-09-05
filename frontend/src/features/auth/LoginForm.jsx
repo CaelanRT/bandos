@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { LoginNotice } from './LoginNotice.jsx'
 import { PasswordVisibility } from './PasswordVisibility.jsx'
 import { login } from '../../api/auth.js'
 import { resolveDestination } from '../../app/destination.js'
@@ -127,6 +128,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} noValidate>
+      <LoginNotice />
       {(formError || completionError) && (
         <div ref={formErrorRef} role="alert" tabIndex="-1">
           {formError || 'We couldn’t complete sign-in. Please try again.'}

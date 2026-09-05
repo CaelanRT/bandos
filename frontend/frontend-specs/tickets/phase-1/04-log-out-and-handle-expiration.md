@@ -1,5 +1,7 @@
 # End sessions safely and recover when they expire
 
+> **Status:** Ready for review
+
 ## User/system outcome
 
 An authenticated user can deliberately log out, and a user whose session expires is returned to authentication without stale private data or a lost safe destination.
