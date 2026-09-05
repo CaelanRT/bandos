@@ -1,5 +1,7 @@
 # Allow a new user to register and enter Bandos
 
+> **Status:** Ready for review
+
 ## User/system outcome
 
 A new user can create an account with clear validation, avoid unsupported onboarding promises, and enter the authenticated application or their original protected destination.

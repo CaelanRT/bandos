@@ -1,4 +1,5 @@
 import { AppShell } from './AppShell.jsx'
+import { RegistrationForm } from '../features/auth/RegistrationForm.jsx'
 import { LoginForm } from '../features/auth/LoginForm.jsx'
 
 export function Home() {
@@ -22,6 +23,7 @@ export function Register() {
   return (
     <AppShell>
       <h1>Register</h1>
+      <RegistrationForm />
     </AppShell>
   )
 }

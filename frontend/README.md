@@ -80,3 +80,23 @@ only the email address, and sends the password unchanged. Authentication is not
 complete until the follow-up `GET /users/me` supplies normalized identity.
 Transient identity failures use the full-page Retry state and retry only the
 identity request; validated protected destinations remain in router state.
+
+## Registration flow
+
+The Registration form collects first name, last name, username, email, and
+password. Validation runs after blur and on submission, using the backend’s
+length limits. Non-password fields are trimmed, email is lowercased, and the
+password is sent unchanged. Login and Registration share the password visibility
+control and preserve validated destinations when switching forms.
+
+Account creation submits once with no automatic retry. Conflicts use a general
+username-or-email message; rate limits keep fields editable and honor a valid
+server retry deadline without a countdown. A successful registration retrieves
+identity through `GET /users/me`. Connection recovery retries only that identity
+request, never account creation; an absent session directs the user to log in.
+
+Automated registration tests cover validation, accessible hints and controls,
+pending state, request normalization, backend failures, retry timing, destination
+restoration, history navigation, and identity-only recovery. Real-browser checks
+for autofill/password managers, narrow layouts, and refresh during recovery remain
+manual verification tasks.
