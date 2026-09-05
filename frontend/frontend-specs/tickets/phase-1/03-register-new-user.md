@@ -1,6 +1,6 @@
 # Allow a new user to register and enter Bandos
 
-> **Status:** Ready for review
+> **Status:** Completed
 
 ## User/system outcome
 

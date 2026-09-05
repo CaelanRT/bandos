@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { SessionRoutes } from './SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
 import { Home, Login, NotFound, Register } from './RouteViews.jsx'
 
@@ -11,7 +12,7 @@ const unfinishedRoutePaths = [
   '/account',
 ]
 
-export const routes = [
+const pageRoutes = [
   {
     path: '/',
     element: (
@@ -49,5 +50,7 @@ export const routes = [
     element: <NotFound />,
   },
 ]
+
+export const routes = [{ element: <SessionRoutes />, children: pageRoutes }]
 
 export const router = createBrowserRouter(routes)

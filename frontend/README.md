@@ -100,3 +100,38 @@ pending state, request normalization, backend failures, retry timing, destinatio
 restoration, history navigation, and identity-only recovery. Real-browser checks
 for autofill/password managers, narrow layouts, and refresh during recovery remain
 manual verification tasks.
+
+## Logout and expiration
+
+The authenticated shell exposes Log out. It sends a single bodyless
+`POST /auth/logout`; failures retain identity and private query data and offer
+Retry. Success clears private queries and identity before replacing the current
+route with Login, without a return destination.
+
+Authenticated feature requests must use `useSession().authenticatedRequest(path,
+options)` as their API boundary (including inside query and mutation functions).
+It accepts the same arguments as `apiRequest`, forwards signals, and reports
+`401 AUTHENTICATION_REQUIRED` through the shared session transition. For example:
+
+```jsx
+const { authenticatedRequest } = useSession()
+const bands = useQuery({
+  queryKey: ['private', 'bands'],
+  queryFn: ({ signal }) => authenticatedRequest('/bands', { signal }),
+})
+```
+
+This transition removes private queries, drops the authenticated page and its
+unsaved state, and replacement-navigates to Login with a validated current URL.
+Concurrent reports converge on one transition. Responses from a prior session
+cannot expire a new session or return stale successful data. The interrupted
+operation is never replayed automatically. Public/authentication requests keep
+using their existing adapters; invalid credentials and failed Logout do not
+trigger expiration.
+
+Logout and expiration notices are consumed from router state after presentation,
+so refresh or returning from Registration does not replay them. Automated tests
+cover request shapes, pending/failure/retry states, private-cache clearing, stale
+and concurrent responses, history, refresh-equivalent remounts, and restoration
+through both Login and Registration. Real-browser mobile layout, password-manager,
+and browser refresh checks remain manual verification tasks.
