@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, NavLink, useLocation, useParams } from 'react-router-dom'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 import { useSession } from '../../app/sessionContext.js'
-import { parseBandId, sortBands } from './api.js'
+import { memberFullName, parseBandId, sortBands, sortMembers } from './api.js'
 import { useBand, useBands } from './queries.js'
 
 function BandLinks({ bands }) {
@@ -78,13 +78,26 @@ export function BandsHome() {
   </BandShell>
 }
 
-export function BandWorkspace() {
+function BandMembers({ members }) {
+  return <section aria-labelledby="members-heading">
+    <h2 id="members-heading">Members</h2>
+    {members.length === 0 ? <p>No active members to display.</p> :
+      <ul aria-label="Band members" className="member-list">
+        {sortMembers(members).map((member) => <li key={member.userId}>
+          <p><strong>{memberFullName(member)}</strong>{member.role === 'leader' && <> · <span>Leader</span></>}</p>
+          <p>@{member.username}</p>
+        </li>)}
+      </ul>}
+  </section>
+}
+
+export function BandWorkspace({ section = 'Schedule' }) {
   const { bandId: parameter } = useParams()
   const bandId = parseBandId(parameter)
   const bands = useBands()
   const detail = useBand(bandId)
   const band = detail.data
-  return <BandShell bands={bands} context={band ? `${band.name} · Schedule` : 'Band workspace'}>
+  return <BandShell bands={bands} context={band ? `${band.name} · ${section}` : 'Band workspace'}>
     {bandId === null ? <><h1>Invalid band address</h1><Link to="/">Go home</Link></> :
       band === null ? <><h1>This band is no longer available</h1><Link to="/">Go home</Link></> : <>
         {detail.isPending && <p role="status">Loading band…</p>}
@@ -92,8 +105,14 @@ export function BandWorkspace() {
         {band && <>
           <h1>{band.name}</h1>
           <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p>
-          <h2>Schedule</h2>
-          <p>Schedules are not available yet.</p>
+          <nav aria-label="Band workspace">
+            <NavLink to={`/bands/${band.bandId}`} end>Schedule</NavLink>
+            <NavLink to={`/bands/${band.bandId}/members`}>Members</NavLink>
+          </nav>
+          {section === 'Members' ? <BandMembers members={band.members} /> : <>
+            <h2>Schedule</h2>
+            <p>Schedules are not available yet.</p>
+          </>}
         </>}
       </>}
   </BandShell>

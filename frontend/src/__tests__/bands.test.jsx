@@ -72,7 +72,7 @@ it.each(['leader', 'member'])('uses detail authority for a direct %s workspace a
   await screen.findByRole('heading', { name: 'First' })
   expect(screen.getByText(role === 'leader' ? 'Leader' : 'Member')).toBeInTheDocument()
   expect(screen.getByText('Schedules are not available yet.')).toBeInTheDocument()
-  await userEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'Second' }))
+  await userEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Second' }))
   await screen.findByRole('heading', { name: 'Second' })
   expect(router.state.location.pathname).toBe('/bands/3')
   await act(() => router.navigate(-1))
@@ -87,12 +87,12 @@ it('supports Menu opening, Escape focus return, and destination focus after navi
   const menu = await screen.findByRole('button', { name: 'Menu' })
   await userEvent.click(menu)
   expect(menu).toHaveAttribute('aria-expanded', 'true')
-  await waitFor(() => expect(within(screen.getByRole('navigation')).getByRole('link', { name: 'Home' })).toHaveFocus())
+  await waitFor(() => expect(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Home' })).toHaveFocus())
   await userEvent.keyboard('{Escape}')
   expect(menu).toHaveFocus()
   expect(menu).toHaveAttribute('aria-expanded', 'false')
   await userEvent.click(menu)
-  await userEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'First' }))
+  await userEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'First' }))
   await screen.findByRole('heading', { name: 'First' })
   expect(screen.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false')
   expect(screen.getByRole('main')).toHaveFocus()
@@ -161,9 +161,9 @@ it('rejects malformed list shapes instead of showing zero bands', async () => {
   expect(screen.queryByText(/Share your username/)).not.toBeInTheDocument()
 })
 
-it('clears revoked context and band resources and prevents an older list from restoring the band', async () => {
+it.each(['', '/members'])('clears revoked context and band resources without restoring the band on %s', async (section) => {
   list = [band(2, 'Secret', 'leader')]; details['/bands/2'] = list[0]
-  const { client } = mount('/bands/2')
+  const { client } = mount(`/bands/2${section}`)
   await screen.findByRole('heading', { name: 'Secret' })
   client.setQueryData([...bandKeys.detail(2), 'events'], ['private event'])
   const oldList = deferred()
@@ -196,7 +196,7 @@ it('does not show an old band response after switching destinations', async () =
   expect(screen.queryByRole('heading', { name: 'Old' })).not.toBeInTheDocument()
 })
 
-it('expires during band reads, discards late private results, and restores the direct URL after Login', async () => {
+it.each(['', '/members'])('expires during reads, discards late private results, and restores %s after Login', async (section) => {
   const pending = deferred(); const original = fetchMock.getMockImplementation()
   let expire = true
   fetchMock.mockImplementation((url, options) => {
@@ -205,7 +205,7 @@ it('expires during band reads, discards late private results, and restores the d
     if (expire && path.endsWith('/bands/2')) return Promise.resolve(failure('AUTHENTICATION_REQUIRED', 401))
     return original(url, options)
   })
-  const { client, router } = mount('/bands/2?view=day#today')
+  const { client, router } = mount(`/bands/2${section}?view=day#today`)
   await screen.findByRole('heading', { name: 'Login' })
   await act(async () => pending.resolve(json({ bands: [band(2, 'Old private')] })))
   expect(client.getQueryCache().findAll({ queryKey: ['private'] })).toHaveLength(0)
@@ -214,6 +214,121 @@ it('expires during band reads, discards late private results, and restores the d
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } })
   await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
   await screen.findByRole('heading', { name: 'Restored' })
-  expect(router.state.location.pathname + router.state.location.search + router.state.location.hash).toBe('/bands/2?view=day#today')
+  expect(router.state.location.pathname + router.state.location.search + router.state.location.hash).toBe(`/bands/2${section}?view=day#today`)
   expect(screen.queryByText('Old private')).not.toBeInTheDocument()
+})
+
+const member = (userId, firstName, lastName, username, role = 'member') =>
+  ({ userId, firstName, lastName, username, role })
+
+it.each(['leader', 'member'])('shows the same sorted member structure for a %s without mutating cached membership', async (role) => {
+  const members = [
+    member(8, 'Zoe', 'Young', 'aaa'),
+    member(7, 'Alex', 'Smith', 'Beta'),
+    member(5, 'alex', 'smith', 'ALPHA'),
+    member(4, 'Alex', 'Smith', 'alpha'),
+    member(3, 'Zoe', 'Leader', 'zlead', 'leader'),
+    member(2, 'Amy', 'Leader', 'alead', 'leader'),
+    member(9, 'Bea', 'Jones', 'zzz'),
+  ]
+  list = [band(2, 'First', role === 'leader' ? 'member' : 'leader')]
+  details['/bands/2'] = { ...band(2, 'First', role), members }
+  const { client } = mount('/bands/2/members')
+  const rows = within(await screen.findByRole('list', { name: 'Band members' })).getAllByRole('listitem')
+  expect(rows.map((row) => row.querySelector('strong').textContent)).toEqual([
+    'Amy Leader', 'Zoe Leader', 'Alex Smith', 'alex smith', 'Alex Smith', 'Bea Jones', 'Zoe Young',
+  ])
+  expect(rows.map((row) => row.querySelector('p:last-child').textContent)).toEqual([
+    '@alead', '@zlead', '@alpha', '@ALPHA', '@Beta', '@zzz', '@aaa',
+  ])
+  rows.forEach((row, index) => expect(within(row).queryByText('Leader') !== null).toBe(index < 2))
+  expect(client.getQueryData(bandKeys.detail(2)).members.map((item) => item.userId)).toEqual([8, 7, 5, 4, 3, 2, 9])
+  expect(screen.queryByRole('button', { name: /Add|Remove|Invite/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Settings|Add member/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute('aria-current', 'page')
+  expect(count('/bands/2/members')).toBe(0)
+})
+
+it('navigates to Members by keyboard, refreshes on re-entry, and switches bands to Schedule', async () => {
+  list = [band(2, 'First', 'leader'), band(3, 'Second')]
+  details['/bands/2'] = { ...list[0], members: [member(1, 'Old', 'Name', 'old')] }
+  details['/bands/3'] = list[1]
+  const { router } = mount('/bands/2')
+  const link = await screen.findByRole('link', { name: 'Members' })
+  link.focus()
+  await userEvent.keyboard('{Enter}')
+  await screen.findByText('@old')
+  expect(screen.getByRole('main')).toHaveFocus()
+  await userEvent.click(screen.getByRole('link', { name: 'Schedule' }))
+  expect(screen.queryByRole('list', { name: 'Band members' })).not.toBeInTheDocument()
+  await userEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Second' }))
+  await screen.findByRole('heading', { name: 'Second' })
+  details['/bands/2'] = { ...list[0], members: [member(2, 'Fresh', 'Name', 'fresh')] }
+  await act(() => router.navigate('/bands/2/members'))
+  await screen.findByText('@fresh')
+  expect(screen.queryByText('@old')).not.toBeInTheDocument()
+  await userEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Second' }))
+  await screen.findByRole('heading', { name: 'Schedule' })
+  expect(router.state.location.pathname).toBe('/bands/3')
+})
+
+it('keeps the shell usable during Members loading and shows a controlled empty membership', async () => {
+  const pending = deferred(); const original = fetchMock.getMockImplementation()
+  fetchMock.mockImplementation((url, options) => new URL(url).pathname.endsWith('/bands/2') ? pending.promise : original(url, options))
+  mount('/bands/2/members')
+  await screen.findByText('Loading band…')
+  expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
+  expect(screen.queryByText('No active members to display.')).not.toBeInTheDocument()
+  await act(async () => pending.resolve(json({ band: band(2, 'Empty', 'leader') })))
+  await screen.findByText('No active members to display.')
+  expect(screen.queryByRole('list', { name: 'Band members' })).not.toBeInTheDocument()
+  expect(screen.queryByText('@alex')).not.toBeInTheDocument()
+})
+
+it('recovers an initial Members failure and retains members on failed tab refresh before Retry', async () => {
+  details['/bands/2'] = failure('VALIDATION_ERROR', 400)
+  mount('/bands/2/members')
+  await screen.findByText('We couldn’t load this band.')
+  expect(count('/bands/2')).toBe(1)
+  expect(screen.queryByText('No active members to display.')).not.toBeInTheDocument()
+  details['/bands/2'] = { ...band(2, 'First'), members: [member(1, 'Original', 'Member', 'original')] }
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  await screen.findByText('@original')
+  details['/bands/2'] = failure('INTERNAL_ERROR', 503)
+  await tabReturn()
+  await screen.findByText('We couldn’t update this band.')
+  expect(screen.getByText('@original')).toBeInTheDocument()
+  expect(count('/bands/2')).toBe(4)
+  details['/bands/2'] = { ...band(2, 'First'), members: [member(2, 'Updated', 'Member', 'updated')] }
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  await screen.findByText('@updated')
+  expect(screen.queryByText('@original')).not.toBeInTheDocument()
+  details['/bands/2'] = { ...band(2, 'First'), members: [] }
+  await tabReturn()
+  await screen.findByText('No active members to display.')
+  expect(screen.queryByText('@updated')).not.toBeInTheDocument()
+  expect(count('/users/me')).toBe(1)
+})
+
+it('handles a missing band on direct Members entry without exposing workspace links', async () => {
+  details['/bands/2'] = failure('BAND_NOT_FOUND', 404)
+  mount('/bands/2/members')
+  await screen.findByRole('heading', { name: 'This band is no longer available' })
+  expect(screen.queryByRole('navigation', { name: 'Band workspace' })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('link', { name: 'Go home' }))
+  await screen.findByText('You don’t belong to any bands yet.')
+})
+
+it('rejects malformed Members addresses without a targeted request', async () => {
+  mount('/bands/01/members')
+  await screen.findByRole('heading', { name: 'Invalid band address' })
+  expect(count('/bands/01')).toBe(0)
+})
+
+it('rejects malformed membership instead of displaying partial or fabricated rows', async () => {
+  details['/bands/2'] = { ...band(2, 'First'), members: [member(1, 'Valid', 'Name', 'valid'), { userId: 2 }] }
+  mount('/bands/2/members')
+  await screen.findByText('We couldn’t load this band.')
+  expect(screen.queryByRole('list', { name: 'Band members' })).not.toBeInTheDocument()
+  expect(screen.queryByText('No active members to display.')).not.toBeInTheDocument()
 })
