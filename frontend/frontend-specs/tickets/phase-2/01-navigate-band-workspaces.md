@@ -1,7 +1,7 @@
 # Navigate bands through a responsive shared workspace
 
-> **Status:** Ready for review
-> **Draft PR:** [#24 — Implement Phase 2 band workspace navigation](https://github.com/CaelanRT/bandos/pull/24)
+> **Status:** Complete (2026-09-09)
+> **Merged PR:** [#24 — Implement Phase 2 band workspace navigation](https://github.com/CaelanRT/bandos/pull/24)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -58,7 +58,7 @@ Future creation/member/settings tickets add working controls incrementally. Late
 
 ## Implementation and verification — 2026-09-09
 
-Implemented in draft PR #24 using local worktree `/tmp/bandos-phase2-01` and branch `feat/phase-2-band-workspaces`.
+Implemented and merged in [PR #24](https://github.com/CaelanRT/bandos/pull/24) on 2026-09-09. The implementation used local worktree `/tmp/bandos-phase2-01` and branch `feat/phase-2-band-workspaces`, now removed after merge.
 
 - Validated list/detail adapters, shared private keys, deterministic sorting, Home guidance, responsive Menu, and role-authoritative Schedule workspace.
 - Band-only mount/tab-return refresh, bounded retries, initial/background failure recovery, invalid IDs, revoked access, and cancellation of stale reads. Unavailable detail stores a null result with no band identity or permissions; associated resource data is removed.

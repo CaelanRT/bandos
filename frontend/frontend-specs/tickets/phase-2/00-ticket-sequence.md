@@ -1,9 +1,9 @@
 # Phase 2 Ticket Sequence
 
-> **Status:** Ready for implementation
+> **Status:** In progress — ticket 01 complete; ticket 02 next
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
-Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is implemented and ready for review in [draft PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is next in sequence after that prerequisite is accepted.
+Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is complete and merged in [PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is next and its implementation dependency is satisfied.
 
 | Ticket | Outcome | Blocked by |
 | --- | --- | --- |
