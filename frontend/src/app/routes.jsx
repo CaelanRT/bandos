@@ -1,10 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { SessionRoutes } from './SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
-import { Home, Login, NotFound, Register } from './RouteViews.jsx'
+import { Login, NotFound, Register } from './RouteViews.jsx'
+
+import { BandsHome, BandWorkspace } from '../features/bands/BandViews.jsx'
 
 const unfinishedRoutePaths = [
-  '/bands/:bandId',
   '/bands/:bandId/members',
   '/bands/:bandId/events/new',
   '/bands/:bandId/events/:eventId',
@@ -17,7 +18,7 @@ const pageRoutes = [
     path: '/',
     element: (
       <ProtectedRoute>
-        <Home />
+        <BandsHome />
       </ProtectedRoute>
     ),
   },
@@ -37,6 +38,7 @@ const pageRoutes = [
       </SignedOutOnlyRoute>
     ),
   },
+  { path: '/bands/:bandId', element: <ProtectedRoute><BandWorkspace /></ProtectedRoute> },
   ...unfinishedRoutePaths.map((path) => ({
     path,
     element: (

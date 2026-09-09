@@ -39,3 +39,62 @@ main {
   max-width: 100%;
   padding: 1rem;
 }
+
+.band-shell {
+  overflow-wrap: anywhere;
+}
+
+.workspace-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.workspace-header p {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.band-shell a,
+.band-shell button {
+  display: inline-block;
+  padding: 0.625rem;
+  min-height: 2.75rem;
+}
+
+.band-index {
+  display: none;
+  padding: 1rem;
+}
+
+.band-index.is-open {
+  display: block;
+}
+
+.band-shell ul {
+  padding-inline-start: 1.25rem;
+}
+
+.band-shell main {
+  min-width: 0;
+}
+
+@media (min-width: 48rem) {
+  .band-shell {
+    display: grid;
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  }
+
+  .workspace-header {
+    grid-column: 1 / -1;
+  }
+
+  .band-index {
+    display: block;
+  }
+
+  .band-shell .menu-toggle {
+    display: none;
+  }
+}

@@ -1,0 +1,42 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSession } from '../../app/sessionContext.js'
+import { getBand, getBands } from './api.js'
+
+export const bandKeys = {
+  list: ['private', 'bands'],
+  detail: (bandId) => ['private', 'band', bandId],
+}
+// Future band resources append their resource name to this same prefix.
+export const isBandQuery = (query, bandId) => query.queryKey[0] === 'private' &&
+  query.queryKey[1] === 'band' && query.queryKey[2] === bandId
+
+const freshness = { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true }
+
+export function useBands() {
+  const { authenticatedRequest } = useSession()
+  return useQuery({ ...freshness, queryKey: bandKeys.list,
+    queryFn: ({ signal }) => getBands(authenticatedRequest, signal) })
+}
+
+export function useBand(bandId) {
+  const { authenticatedRequest } = useSession()
+  const client = useQueryClient()
+  return useQuery({ ...freshness, queryKey: bandKeys.detail(bandId), enabled: bandId !== null,
+    queryFn: async ({ signal }) => {
+      try {
+        return await getBand(authenticatedRequest, bandId, signal)
+      } catch (error) {
+        if (signal.aborted || error.code !== 'BAND_NOT_FOUND') throw error
+        // Cancel older list/resource reads before removing access. A null detail is
+        // an unavailable result, replacing any cached identity and permissions.
+        await client.cancelQueries({ queryKey: bandKeys.list })
+        await client.cancelQueries({ predicate: (query) => isBandQuery(query, bandId) && query.queryKey.length > 3 })
+        if (signal.aborted) throw error
+        client.removeQueries({ predicate: (query) => isBandQuery(query, bandId) && query.queryKey.length > 3 })
+        client.setQueryData(bandKeys.list, (bands) => bands?.filter((band) => band.bandId !== bandId))
+        void client.invalidateQueries({ queryKey: bandKeys.list })
+        return null
+      }
+    },
+  })
+}
