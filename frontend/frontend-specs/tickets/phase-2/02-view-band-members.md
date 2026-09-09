@@ -1,6 +1,7 @@
 # Inspect active members in a shared band workspace
 
-> **Status:** Ready for review (2026-09-09)
+> **Status:** Complete (2026-09-09)
+> **Merged PR:** [#25 — Implement Phase 2 shared band Members workspace](https://github.com/CaelanRT/bandos/pull/25)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -54,7 +55,7 @@ Ticket 04 adds leader controls to this existing shared view; it must not create 
 
 ## Implementation and verification — 2026-09-09
 
-Implemented in local worktree `/tmp/bandos-phase-2-members` on branch `feat/phase-2-view-band-members`.
+Implemented and merged in [PR #25](https://github.com/CaelanRT/bandos/pull/25) on 2026-09-09. The implementation used local worktree `/tmp/bandos-phase-2-members` and branch `feat/phase-2-view-band-members`, now removed after merge.
 
 - Added authenticated direct Members entry and working Schedule/Members workspace links for both roles; global band selection continues to open Schedule.
 - Reused validated full-band detail data and the shared workspace/query/session boundary for loading, empty membership, initial/background failures, Retry, tab-return freshness, unavailable-band cleanup, and Login restoration.
@@ -63,4 +64,4 @@ Implemented in local worktree `/tmp/bandos-phase-2-members` on branch `feat/phas
 - Lint, production build, whitespace checks, and the UI mechanical detector pass. Tests and build use `VITE_API_ORIGIN=http://localhost:3000`; the fresh worktree's initial test run lacked that required configuration and was rerun successfully with it set.
 - Browser layout, real-browser keyboard interaction, 320px/desktop long-name rendering, and live-backend leader/member checks remain **unverified**. No browser was installed; the temporary Chromium download could not complete within the bounded setup attempt. DOM tests do not establish visual/browser validation. These checks remain visible for review and phase-wide verification.
 
-This ticket is ready for review, not marked merged or phase-complete. Member addition, creation, and Settings remain in their later tickets.
+This ticket is complete following review and merge. Phase 2 remains in progress, with the browser verification limitations above retained for phase-wide verification. Ticket 03 (band creation) is next; member addition and Settings remain in their later tickets.
