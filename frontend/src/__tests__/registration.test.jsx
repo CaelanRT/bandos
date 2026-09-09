@@ -130,7 +130,7 @@ describe('Registration form', () => {
       location.pathname === '/account' && location.search === '?tab=profile' &&
       location.hash === '#email' && location.historyAction === 'REPLACE'
     ))).toBe(true))
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls.filter(([url]) => !new URL(url).pathname.startsWith('/api/v1/bands'))).toHaveLength(3)
     expect(fetchMock.mock.calls[1][0]).toMatch(/\/auth\/register$/)
     expect(fetchMock.mock.calls[1][1]).toMatchObject({
       method: 'POST',

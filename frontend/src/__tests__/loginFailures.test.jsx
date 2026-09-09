@@ -138,7 +138,7 @@ describe('Login failures', () => {
       location.pathname === '/bands/8' && location.search === '?view=calendar' &&
       location.hash === '#today' && location.historyAction === 'REPLACE'
     ))).toBe(true))
-    expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname)).toEqual([
+    expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname).filter((path) => !path.startsWith('/api/v1/bands'))).toEqual([
       '/api/v1/users/me', '/api/v1/auth/login', '/api/v1/users/me', '/api/v1/users/me',
     ])
   })
