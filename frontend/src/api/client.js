@@ -116,7 +116,7 @@ export function createApiClient({
   }
 
   return {
-    async request(path, { method = 'GET', headers, body, signal } = {}) {
+    async request(path, { method = 'GET', headers, body, signal, expectedStatus } = {}) {
       const requestHeaders = new Headers(headers)
       const requestOptions = {
         method,
@@ -149,6 +149,10 @@ export function createApiClient({
           response.status,
           parseRetryAfter(response.headers.get('Retry-After')),
         )
+      }
+
+      if (expectedStatus !== undefined && response.status !== expectedStatus) {
+        throw invalidApiResponse(response.status)
       }
 
       return parseSuccess(payload, response.status)
