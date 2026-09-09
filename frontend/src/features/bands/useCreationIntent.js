@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-// Read once per Members mount, then remove the history marker. Ticket 04 can
-// initialize its form from the return value; refresh/later visits return false.
+// Read once per Members mount, then remove the history marker. The add form
+// initializes from this value; refresh/later visits return false.
 export function useCreationIntent() {
   const location = useLocation()
   const navigate = useNavigate()

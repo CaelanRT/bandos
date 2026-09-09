@@ -1,6 +1,6 @@
 # Add existing users sequentially without leaving Members
 
-> **Status:** Ready for implementation, subject to dependencies below
+> **Status:** For review (2026-09-09)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -55,3 +55,18 @@ Use a journey test adding at least two users sequentially, asserting request bod
 ## Decisions and follow-ups
 
 Only one username request runs at a time. No manual global Refresh action is introduced by error recovery.
+
+
+## Implementation and verification — 2026-09-09
+
+- Added the leader-only username form and once-only creation handoff. Confirmed additions merge by user ID, retain sorted presentation, announce success, and clear/focus the open form for the next person.
+- Added exact trimmed username validation, existing-account guidance, associated field errors, pending prevention, and shared Cancel/navigation/unload protection. Clicking the current Members navigation item preserves the current form; confirmed pending writes resume requested navigation.
+- Added permission refresh with immediate control suppression, unavailable-band cache cleanup, expiration handling, and conservative uncertain-outcome reconciliation. Case-insensitive membership matches report current membership without attributing it to the write. Failed/outstanding checks remain required even after closing and reopening the form.
+- Confirmed additions cancel older detail reads before merging and revalidating; failed revalidation preserves confirmed data and success. Late responses after logout cannot repopulate private state.
+- Added 28 integration cases, including keyboard-driven sequential additions, exact bodies, sorting/deduplication, field/server errors, dirty navigation, permission/access/session failures, stale-read races, and uncertain writes/rechecks. Updated the earlier tickets' assertions to recognize the now-implemented addition controls.
+
+Automated validation: `npm run lint`, `npm test` (267 tests across 18 files), and `npm run build` passed. The UI detector reported no findings for the changed components.
+
+Browser verification remains unverified: no browser runner or installed browser was available in this environment. Check keyboard-only use, native dialog focus and Back/Forward/unload behavior, and 320px/desktop layout against the running backend during review. Mocked integration tests do not establish native browser or live-backend behavior.
+
+Ticket 04 is implemented and awaiting review, not accepted or complete. Tickets 05–06 and the full Phase 2 browser journey remain outstanding.

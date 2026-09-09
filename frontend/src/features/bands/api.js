@@ -35,12 +35,7 @@ export async function getBand(request, bandId, signal) {
 function fullBand(value) {
   const band = summary(value)
   if (!Array.isArray(value.members)) throw invalidApiResponse(200)
-  const members = value.members.map((member) => {
-    if (!member || !validId(member.userId) || !text(member.username) ||
-        !text(member.firstName) || !text(member.lastName) || !role(member.role)) throw invalidApiResponse(200)
-    return { userId: member.userId, username: member.username, firstName: member.firstName,
-      lastName: member.lastName, role: member.role }
-  })
+  const members = value.members.map(parseMember)
   if (new Set(members.map((member) => member.userId)).size !== members.length) throw invalidApiResponse(200)
   return { ...band, members }
 }
@@ -67,4 +62,20 @@ export async function createBand(request, name, userId, signal) {
   if (band.currentUserRole !== 'leader' || !band.members.some((member) =>
     member.userId === userId && member.role === 'leader')) throw invalidApiResponse(201)
   return band
+}
+
+function parseMember(member) {
+  if (!member || !validId(member.userId) || !text(member.username) ||
+      !text(member.firstName) || !text(member.lastName) || !role(member.role)) throw invalidApiResponse(200)
+  return { userId: member.userId, username: member.username, firstName: member.firstName,
+    lastName: member.lastName, role: member.role }
+}
+
+export async function addBandMember(request, bandId, username, signal) {
+  const data = await request(`/bands/${bandId}/members`, {
+    method: 'POST', body: { username }, signal, expectedStatus: 201,
+  })
+  const member = parseMember(data?.member)
+  if (member.username.toLowerCase() !== username.toLowerCase()) throw invalidApiResponse(201)
+  return member
 }
