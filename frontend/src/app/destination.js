@@ -1,6 +1,7 @@
 const PROTECTED_PATHS = [
   /^\/$/,
   /^\/account\/?$/,
+  /^\/bands\/new\/?$/,
   /^\/bands\/[^/]+\/?$/,
   /^\/bands\/[^/]+\/members\/?$/,
   /^\/bands\/[^/]+\/events\/new\/?$/,
@@ -49,4 +50,13 @@ export function destinationFromLocation(location) {
   return resolveDestination(
     `${location.pathname}${location.search}${location.hash}`,
   )
+}
+
+// Creation origins are separate from authentication destinations and must return
+// to an implemented browsing surface, never back to the creation form itself.
+export function resolveCreationOrigin(candidate) {
+  const destination = resolveDestination(candidate)
+  const path = decodeURIComponent(new URL(destination, 'https://bandos.local').pathname)
+  return /^\/$/.test(path) || /^\/bands\/[1-9]\d*(?:\/members)?\/?$/.test(path) &&
+    Number.isSafeInteger(Number(path.split('/')[2])) ? destination : '/'
 }

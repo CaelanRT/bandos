@@ -1,9 +1,9 @@
 # Phase 2 Ticket Sequence
 
-> **Status:** In progress — tickets 01–02 complete; ticket 03 next
+> **Status:** In progress — tickets 01–02 complete; ticket 03 implemented, with review follow-ups outstanding
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
-Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is complete and merged in [PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is complete and merged in [PR #25](https://github.com/CaelanRT/bandos/pull/25). Ticket 03 is next and its implementation dependency is satisfied.
+Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is complete and merged in [PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is complete and merged in [PR #25](https://github.com/CaelanRT/bandos/pull/25). Ticket 03 is implemented on `feat/phase-2-create-band`; its worktree review records one open functional finding and pending real-browser checks before review completion and merge. Ticket 04 is next in the recommended sequence after 03 lands.
 
 | Ticket | Outcome | Blocked by |
 | --- | --- | --- |

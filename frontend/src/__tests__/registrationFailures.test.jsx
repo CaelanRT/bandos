@@ -142,7 +142,10 @@ describe('Registration failures', () => {
       location.pathname === '/bands/8' && location.search === '?view=calendar' &&
       location.hash === '#today' && location.historyAction === 'REPLACE'
     ))).toBe(true))
-    expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname)).toEqual([
+    // Destination reads can begin as soon as identity restoration completes.
+    // Assert the authentication sequence independently of those band queries.
+    expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname)
+      .filter((path) => !path.startsWith('/api/v1/bands'))).toEqual([
       '/api/v1/users/me', '/api/v1/auth/register', '/api/v1/users/me', '/api/v1/users/me',
     ])
   })

@@ -135,3 +135,22 @@ cover request shapes, pending/failure/retry states, private-cache clearing, stal
 and concurrent responses, history, refresh-equivalent remounts, and restoration
 through both Login and Registration. Real-browser mobile layout, password-manager,
 and browser refresh checks remain manual verification tasks.
+
+## Band creation
+
+Authenticated users can open `/bands/new` from Home or the shared navigation.
+The name form trims and validates 1–50 JavaScript string characters and submits
+one `POST /bands`. Cancel returns to a separately validated browsing origin.
+Changed input uses a shared native dialog for SPA navigation and best-effort
+`beforeunload` protection. Pending writes hold navigation until their result;
+session expiration bypasses the guard and clears the draft.
+
+A validated `201` response supplies creator Leader membership, updates list and
+detail caches after cancelling older reads, and replaces creation with Members.
+`useCreationIntent` consumes the `openAddMember` router-state marker once; ticket
+04 can initialize its add-member form from that hook's return value.
+
+Uncertain writes preserve the name and check the latest band list. Matching names
+never establish success. A failed check requires Check again; a successful check
+allows inspection and a deliberate Create again, with a duplicate-band caution.
+Writes are never retried automatically.

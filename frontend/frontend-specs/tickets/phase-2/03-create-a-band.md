@@ -1,6 +1,6 @@
 # Create a band and enter its Members workspace
 
-> **Status:** Ready for implementation, subject to dependencies below
+> **Status:** Implemented on `feat/phase-2-create-band`; draft review has one open functional finding and pending browser verification
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -55,3 +55,34 @@ Integration tests cover validation, exact body, duplicates/pending, both entry p
 ## Decisions and follow-ups
 
 Before ticket 04, creation lands on the real member list without a fake add control. Once 04 lands, the marker opens its form once.
+
+
+## Implementation and verification — 2026-09-09
+
+- Added both creation entry points and an authenticated static `/bands/new` route, exact trimmed name validation, server field/form errors, rate-limit handling, and a separately validated Cancel origin.
+- Shared unsaved-navigation hook/dialog covers links, Cancel, Back/Forward, and best-effort unload. Pending writes prevent premature Discard; session expiration and confirmed creation bypass the guard.
+- Confirmed creation validates the full response and creator Leader membership, cancels older reads, updates list/detail caches, and replacement-navigates to Members. `useCreationIntent` consumes the one-time marker and supplies a reusable initial value for ticket 04.
+- Uncertain writes check the latest list without guessing by name. Failed checks block resubmission; successful checks offer inspection and deliberate Create again with duplicate-band caution.
+- Added 28 integration cases covering validation, pending duplicates, origins/history, focus, cache races, confirmation/marker consumption, expiration, server errors, rate limits, and uncertain writes/rechecks. Updated prior band expectations for the implemented static route and entry points, and removed a timing assumption from the registration identity-recovery assertion so destination reads do not make it flaky.
+
+Member addition and Settings remain separate tickets. This implementation is awaiting review and merge; Phase 2 is not complete.
+
+## Worktree review — 2026-09-09
+
+Reviewed the existing implementation against `origin/main` (`0fb060d`) and the Phase 2 specification. Before packaging, all ticket changes were uncommitted; there were no branch-only commits.
+
+### Verified
+
+- `npm run lint` passed.
+- `npm test` passed: 239 tests across 17 files, including 28 creation cases.
+- `npm run build` passed.
+- Standards review found no hard documented violations.
+
+### Remaining before ticket completion
+
+- **Functional finding:** The global Create a band link remains active on `/bands/new`. Clicking it again overwrites `creationOrigin` with `/bands/new`, so Cancel falls back home instead of the original band workspace. With changed input, choosing Discard changes for this same-page navigation retains the mounted form and its input. Make the current-page item non-navigating or otherwise preserve the original origin and correct discard behavior; add a regression case.
+- **Browser verification:** Check keyboard/dialog focus, Back/Forward, refresh/tab-close best-effort protection, and 320px/desktop layouts against the running backend. These were not performed in this review; no browser runner was available. Mocked integration tests do not establish native browser behavior.
+- **Nonblocking test cleanup:** Dialog prototype methods in `createBand.test.jsx` are assigned directly and are not restored by `vi.restoreAllMocks()`. Prefer spies or explicit descriptor restoration.
+- Resolve the functional finding, complete browser verification, and review/merge the draft PR before marking this ticket complete.
+
+Ticket 04's add-member form and tickets 05–06's Settings operations remain outside this ticket.

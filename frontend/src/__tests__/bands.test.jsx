@@ -53,7 +53,7 @@ it('distinguishes loading from zero bands and keeps Logout available', async () 
   await act(async () => pending.resolve(json({ bands: [] })))
   expect(await screen.findByText(/Share your username, @alex/)).toBeInTheDocument()
   expect(screen.getByText('You don’t belong to any bands yet.')).toBeInTheDocument()
-  expect(screen.queryByRole('link', { name: /Create|Members|Settings|Account/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Members|Settings|Account/ })).not.toBeInTheDocument()
 })
 
 it('sorts names case-insensitively with ID ties and distinct duplicate destinations', async () => {
@@ -61,7 +61,7 @@ it('sorts names case-insensitively with ID ties and distinct duplicate destinati
   mount()
   await screen.findByText(/Share your username/)
   const links = within(screen.getByRole('main')).getAllByRole('link')
-  expect(links.map((link) => link.getAttribute('href'))).toEqual(['/bands/2', '/bands/3', '/bands/9', '/bands/7'])
+  expect(links.map((link) => link.getAttribute('href'))).toEqual(['/bands/new', '/bands/2', '/bands/3', '/bands/9', '/bands/7'])
   expect(list.map((item) => item.bandId)).toEqual([7, 9, 2, 3])
 })
 
@@ -136,7 +136,7 @@ it('bounds transient retries and retains useful data on failed background refres
   await screen.findByRole('heading', { name: 'Recovered' })
 })
 
-it.each(['0', '01', '-1', '1.2', '9007199254740992', 'new'])('does not request malformed band ID %s', async (id) => {
+it.each(['0', '01', '-1', '1.2', '9007199254740992'])('does not request malformed band ID %s', async (id) => {
   mount(`/bands/${id}`)
   await screen.findByRole('heading', { name: 'Invalid band address' })
   expect(count(`/bands/${id}`)).toBe(0)

@@ -3,9 +3,11 @@ import { Link, NavLink, useLocation, useParams } from 'react-router-dom'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 import { useSession } from '../../app/sessionContext.js'
 import { memberFullName, parseBandId, sortBands, sortMembers } from './api.js'
+import { useCreationIntent } from './useCreationIntent.js'
+import { destinationFromLocation } from '../../app/destination.js'
 import { useBand, useBands } from './queries.js'
 
-function BandLinks({ bands }) {
+export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
     <li key={band.bandId}><Link to={`/bands/${band.bandId}`}>{band.name}</Link></li>
   ))}</ul>
@@ -21,7 +23,7 @@ function ReadFailure({ query, subject }) {
   </div>
 }
 
-function BandShell({ children, bands, context }) {
+export function BandShell({ children, bands, context }) {
   const location = useLocation()
   const [openAt, setOpenAt] = useState(null)
   if (openAt !== null && openAt !== location.key) setOpenAt(null)
@@ -55,6 +57,7 @@ function BandShell({ children, bands, context }) {
     </header>
     <nav ref={index} id="band-index" className={`band-index${open ? ' is-open' : ''}`} aria-label="Primary">
       <Link to="/">Home</Link>
+      <CreateBandLink />
       <h2>Your bands</h2>
       {bands.isPending && <p role="status">Loading bands…</p>}
       <ReadFailure query={bands} subject="your bands" />
@@ -70,6 +73,7 @@ export function BandsHome() {
   return <BandShell bands={bands} context="Home">
     <h1>Bandos</h1>
     <h2>Your bands</h2>
+    <CreateBandLink />
     {bands.isPending && <p role="status">Loading bands…</p>}
     <ReadFailure query={bands} subject="your bands" />
     {bands.data?.length > 0 && <BandLinks bands={bands.data} />}
@@ -79,6 +83,8 @@ export function BandsHome() {
 }
 
 function BandMembers({ members }) {
+  // Ticket 04 can use this initial intent to open its add-member form once.
+  useCreationIntent()
   return <section aria-labelledby="members-heading">
     <h2 id="members-heading">Members</h2>
     {members.length === 0 ? <p>No active members to display.</p> :
@@ -116,4 +122,9 @@ export function BandWorkspace({ section = 'Schedule' }) {
         </>}
       </>}
   </BandShell>
+}
+
+function CreateBandLink() {
+  const location = useLocation()
+  return <Link to="/bands/new" state={{ creationOrigin: destinationFromLocation(location) }}>Create a band</Link>
 }

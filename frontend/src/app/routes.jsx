@@ -3,6 +3,7 @@ import { SessionRoutes } from './SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
 import { Login, NotFound, Register } from './RouteViews.jsx'
 
+import { CreateBand } from '../features/bands/CreateBand.jsx'
 import { BandsHome, BandWorkspace } from '../features/bands/BandViews.jsx'
 
 const unfinishedRoutePaths = [
@@ -37,6 +38,7 @@ const pageRoutes = [
       </SignedOutOnlyRoute>
     ),
   },
+  { path: '/bands/new', element: <ProtectedRoute><CreateBand /></ProtectedRoute> },
   { path: '/bands/:bandId', element: <ProtectedRoute><BandWorkspace /></ProtectedRoute> },
   { path: '/bands/:bandId/members', element: <ProtectedRoute><BandWorkspace section="Members" /></ProtectedRoute> },
   ...unfinishedRoutePaths.map((path) => ({
