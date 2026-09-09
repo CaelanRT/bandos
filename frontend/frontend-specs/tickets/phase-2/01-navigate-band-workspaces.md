@@ -1,6 +1,7 @@
 # Navigate bands through a responsive shared workspace
 
-> **Status:** Ready for implementation, subject to dependencies below
+> **Status:** Ready for review
+> **Draft PR:** [#24 — Implement Phase 2 band workspace navigation](https://github.com/CaelanRT/bandos/pull/24)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -54,3 +55,15 @@ None within Phase 2. Requires implemented Phases 0–1 and existing band read en
 ## Decisions and follow-ups
 
 Future creation/member/settings tickets add working controls incrementally. Later dirty-form tickets must wrap these navigation paths. Full phase verification includes switching out of Settings.
+
+## Implementation and verification — 2026-09-09
+
+Implemented in draft PR #24 using local worktree `/tmp/bandos-phase2-01` and branch `feat/phase-2-band-workspaces`.
+
+- Validated list/detail adapters, shared private keys, deterministic sorting, Home guidance, responsive Menu, and role-authoritative Schedule workspace.
+- Band-only mount/tab-return refresh, bounded retries, initial/background failure recovery, invalid IDs, revoked access, and cancellation of stale reads. Unavailable detail stores a null result with no band identity or permissions; associated resource data is removed.
+- 202 tests pass across the full suite, including 23 new band integration cases. The final menu history adjustment also passes all 23 band cases. Tests cover both roles, duplicate names, direct routes/Login restoration, menu focus/Escape, Back/Forward, refresh, payload validation, access loss, stale responses, and expiration.
+- Lint, production build (`VITE_API_ORIGIN=http://localhost:3000`), and whitespace checks pass. UI mechanical detector reports no findings.
+- Browser layout, real keyboard interaction, 320px/desktop long-name rendering, and live-backend leader/member checks remain **unverified**. No browser was installed; a temporary Chromium download was attempted but stopped because of slow transfer. Automated DOM coverage does not establish visual/browser validation. The phase-wide live-account journey remains outstanding.
+
+Members links are intentionally deferred to ticket 02, consistent with this ticket's prohibition on dead dependent controls. Tickets 02–06 are not implemented by this change.

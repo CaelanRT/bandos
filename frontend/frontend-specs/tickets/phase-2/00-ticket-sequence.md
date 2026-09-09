@@ -3,7 +3,7 @@
 > **Status:** Ready for implementation
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
-Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 can start now on the implemented Phase 0–1 baseline.
+Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is implemented and ready for review in [draft PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is next in sequence after that prerequisite is accepted.
 
 | Ticket | Outcome | Blocked by |
 | --- | --- | --- |
