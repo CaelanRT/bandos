@@ -1,6 +1,7 @@
 # Create a band and enter its Members workspace
 
-> **Status:** Implemented on `feat/phase-2-create-band`; draft review has one open functional finding and pending browser verification
+> **Status:** Complete (2026-09-09)
+> **Merged PR:** [#26 — Phase 2: Create a band and enter its Members workspace](https://github.com/CaelanRT/bandos/pull/26)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -65,7 +66,7 @@ Before ticket 04, creation lands on the real member list without a fake add cont
 - Uncertain writes check the latest list without guessing by name. Failed checks block resubmission; successful checks offer inspection and deliberate Create again with duplicate-band caution.
 - Added 28 integration cases covering validation, pending duplicates, origins/history, focus, cache races, confirmation/marker consumption, expiration, server errors, rate limits, and uncertain writes/rechecks. Updated prior band expectations for the implemented static route and entry points, and removed a timing assumption from the registration identity-recovery assertion so destination reads do not make it flaky.
 
-Member addition and Settings remain separate tickets. This implementation is awaiting review and merge; Phase 2 is not complete.
+Implemented and merged in [PR #26](https://github.com/CaelanRT/bandos/pull/26) on 2026-09-09. Member addition and Settings remain separate tickets; Phase 2 is not complete.
 
 ## Worktree review — 2026-09-09
 
@@ -78,11 +79,11 @@ Reviewed the existing implementation against `origin/main` (`0fb060d`) and the P
 - `npm run build` passed.
 - Standards review found no hard documented violations.
 
-### Remaining before ticket completion
+### Follow-ups retained after merge
 
 - **Functional finding:** The global Create a band link remains active on `/bands/new`. Clicking it again overwrites `creationOrigin` with `/bands/new`, so Cancel falls back home instead of the original band workspace. With changed input, choosing Discard changes for this same-page navigation retains the mounted form and its input. Make the current-page item non-navigating or otherwise preserve the original origin and correct discard behavior; add a regression case.
 - **Browser verification:** Check keyboard/dialog focus, Back/Forward, refresh/tab-close best-effort protection, and 320px/desktop layouts against the running backend. These were not performed in this review; no browser runner was available. Mocked integration tests do not establish native browser behavior.
 - **Nonblocking test cleanup:** Dialog prototype methods in `createBand.test.jsx` are assigned directly and are not restored by `vi.restoreAllMocks()`. Prefer spies or explicit descriptor restoration.
-- Resolve the functional finding, complete browser verification, and review/merge the draft PR before marking this ticket complete.
+- The ticket is marked complete following user acceptance and merge of PR #26. The functional finding, browser verification limitations, and nonblocking test cleanup above remain recorded as follow-ups; merge does not establish that they were resolved or verified.
 
-Ticket 04's add-member form and tickets 05–06's Settings operations remain outside this ticket.
+Ticket 04's add-member form is next in the recommended sequence. Tickets 05–06's Settings operations remain outside this ticket. Phase 2 remains in progress.
