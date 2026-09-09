@@ -43,3 +43,14 @@ const names = new Intl.Collator('en', { sensitivity: 'base' })
 export function sortBands(bands) {
   return [...bands].sort((a, b) => names.compare(a.name, b.name) || a.bandId - b.bandId)
 }
+
+export function memberFullName(member) {
+  return `${member.firstName} ${member.lastName}`
+}
+
+export function sortMembers(members) {
+  return [...members].sort((a, b) =>
+    Number(b.role === 'leader') - Number(a.role === 'leader') ||
+    names.compare(memberFullName(a), memberFullName(b)) ||
+    names.compare(a.username, b.username) || a.userId - b.userId)
+}

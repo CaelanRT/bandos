@@ -1,6 +1,6 @@
 # Inspect active members in a shared band workspace
 
-> **Status:** Ready for implementation, subject to dependencies below
+> **Status:** Ready for review (2026-09-09)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -51,3 +51,16 @@ Test both roles, sorting with ties and differing username/name order, empty/erro
 ## Decisions and follow-ups
 
 Ticket 04 adds leader controls to this existing shared view; it must not create a separate leader workspace.
+
+## Implementation and verification — 2026-09-09
+
+Implemented in local worktree `/tmp/bandos-phase-2-members` on branch `feat/phase-2-view-band-members`.
+
+- Added authenticated direct Members entry and working Schedule/Members workspace links for both roles; global band selection continues to open Schedule.
+- Reused validated full-band detail data and the shared workspace/query/session boundary for loading, empty membership, initial/background failures, Retry, tab-return freshness, unavailable-band cleanup, and Login restoration.
+- Rendered server-returned members with full names, @usernames, and accurate Leader labels. Presentation sorts a copy by role, case-insensitive full name, username, and user ID; cached membership order stays unchanged.
+- Full suite: **212 tests pass**, including 33 band integration cases. New coverage exercises both roles, sorting ties and name/username order differences, keyboard navigation, direct routes, re-entry freshness, empty/malformed membership, refresh recovery, missing access, and expiration/restoration on Members.
+- Lint, production build, whitespace checks, and the UI mechanical detector pass. Tests and build use `VITE_API_ORIGIN=http://localhost:3000`; the fresh worktree's initial test run lacked that required configuration and was rerun successfully with it set.
+- Browser layout, real-browser keyboard interaction, 320px/desktop long-name rendering, and live-backend leader/member checks remain **unverified**. No browser was installed; the temporary Chromium download could not complete within the bounded setup attempt. DOM tests do not establish visual/browser validation. These checks remain visible for review and phase-wide verification.
+
+This ticket is ready for review, not marked merged or phase-complete. Member addition, creation, and Settings remain in their later tickets.

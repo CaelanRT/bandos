@@ -98,3 +98,11 @@ main {
     display: none;
   }
 }
+
+.member-list li + li {
+  margin-block-start: 1rem;
+}
+
+.member-list p {
+  margin-block: 0.25rem;
+}
