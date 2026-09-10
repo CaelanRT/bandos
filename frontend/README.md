@@ -154,3 +154,18 @@ Uncertain writes preserve the name and check the latest band list. Matching name
 never establish success. A failed check requires Check again; a successful check
 allows inspection and a deliberate Create again, with a duplicate-band caution.
 Writes are never retried automatically.
+
+## Band Settings
+
+Leaders can rename a band at `/bands/:bandId/settings`. Detail membership gates
+both the link and direct route; members return to Schedule with a permission
+notice. Save trims and validates the name, updates workspace/navigation caches,
+and stays on Settings. Cancel, band switching, and history use the shared dirty
+form dialog. Background reads preserve edited names.
+
+Uncertain saves check the server before enabling another write. Matching names
+reset the baseline without claiming the request succeeded; conflicts retain the
+draft for deliberate retry. Denied leadership stays suppressed in the detail
+cache until an explicit permission check refreshes both detail and list. Expired
+sessions and unavailable bands clear private context without trapping navigation.
+Deletion is deferred to Phase 2 ticket 06.

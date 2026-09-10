@@ -79,3 +79,12 @@ export async function addBandMember(request, bandId, username, signal) {
   if (member.username.toLowerCase() !== username.toLowerCase()) throw invalidApiResponse(201)
   return member
 }
+
+export async function renameBand(request, bandId, name, signal) {
+  const data = await request(`/bands/${bandId}`, {
+    method: 'PATCH', body: { name }, signal, expectedStatus: 200,
+  })
+  const band = fullBand(data?.band)
+  if (band.bandId !== bandId || band.name !== name) throw invalidApiResponse(200)
+  return band
+}

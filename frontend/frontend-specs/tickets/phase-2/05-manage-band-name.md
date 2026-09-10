@@ -1,6 +1,6 @@
 # Allow leaders to rename a band through protected Settings
 
-> **Status:** Ready for implementation, subject to dependencies below
+> **Status:** In progress — implementation and independent review passed; publishing blocked by automatic approval review
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -54,3 +54,21 @@ Test both roles on links and direct URLs, loading-role gating, restore after Log
 ## Decisions and follow-ups
 
 Ticket 06 adds a separate destructive section. Phase-level checks must verify switching out of Settings for both destination roles.
+
+
+## Implementation and verification — 2026-09-10
+
+- Added leader-only Settings navigation/direct routing with safe Login destination restoration. Members replacement-redirect to Schedule with a permission notice.
+- Added prefilled Rename with trimmed 1–50 character validation, Save/Cancel, field and form errors, pending protection, and shared dirty navigation. Successful saves stay on Settings, update workspace/navigation names and sorting, and reset the baseline.
+- Background refresh preserves drafts. Uncertain writes check the current name before another submission; matching names reset the baseline without attributing success, while conflicts preserve the draft for deliberate retry.
+- Denied management stays suppressed through failed permission checks, background refresh, and route revisits. Permission Retry refreshes list/detail together. Unavailable bands and expired sessions clear context without trapping navigation; late reads/writes cannot undo confirmed names or repopulate a previous session.
+
+Automated validation: `npm test` (292 tests across 19 files, including 24 new Settings integration cases), `npm run lint`, `npm run build`, and `git diff --check` passed. The UI detector reported no findings.
+
+Chromium checks with mocked HTTP passed at 320px and 1280px: long-name wrapping/no horizontal overflow, keyboard and native dialog focus, Escape/Keep/Discard, mobile Menu focus, band switching to Schedule, Back navigation, member direct-route protection, confirmed Save, and uncertain conflict handling. Screenshots and the temporary runner were retained in `/tmp/bandos-settings-review` and `/tmp/bandos-settings-browser.mjs` for this session's review.
+
+Live-backend leader/member checks and native refresh/unload/Forward checks remain outstanding. Mocked browser checks do not verify the live backend or other browser engines. Final styling, deletion (ticket 06), and the complete Phase 2 journey remain out of scope.
+
+Independent ticket review: **PASS**, all six acceptance criteria passed with no findings. UI finish review: **ship**, no material findings within ticket scope. Documentation review confirmed the existing UI system is preserved.
+
+Draft PR creation and For Review status are pending explicit publishing approval: automatic approval review rejected the push, including after verifying origin is the authenticated owner’s public repository. No branch or source changes have been published.

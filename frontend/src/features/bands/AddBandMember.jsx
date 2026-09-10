@@ -17,7 +17,7 @@ export function AddBandMember({ band }) {
   const location = useLocation()
   const client = useQueryClient()
   const { authenticatedRequest } = useSession()
-  const leader = band.currentUserRole === 'leader'
+  const leader = band.currentUserRole === 'leader' && !band.managementDenied
   const [open, setOpen] = useState(initialOpen && leader)
   const [username, setUsername] = useState('')
   const [touched, setTouched] = useState(false)

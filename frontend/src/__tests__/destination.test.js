@@ -7,6 +7,7 @@ describe('authentication destination restoration', () => {
     '/account',
     '/bands/12',
     '/bands/12/members?view=active#member-9',
+    '/bands/12/settings?from=home#name',
     '/bands/12/events/new?from=datebook',
     '/bands/12/events/34/edit#details',
   ])('accepts the recognized internal destination %s', (destination) => {

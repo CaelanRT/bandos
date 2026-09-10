@@ -4,6 +4,7 @@ const PROTECTED_PATHS = [
   /^\/bands\/new\/?$/,
   /^\/bands\/[^/]+\/?$/,
   /^\/bands\/[^/]+\/members\/?$/,
+  /^\/bands\/[^/]+\/settings\/?$/,
   /^\/bands\/[^/]+\/events\/new\/?$/,
   /^\/bands\/[^/]+\/events\/[^/]+\/?$/,
   /^\/bands\/[^/]+\/events\/[^/]+\/edit\/?$/,
@@ -57,6 +58,6 @@ export function destinationFromLocation(location) {
 export function resolveCreationOrigin(candidate) {
   const destination = resolveDestination(candidate)
   const path = decodeURIComponent(new URL(destination, 'https://bandos.local').pathname)
-  return /^\/$/.test(path) || /^\/bands\/[1-9]\d*(?:\/members)?\/?$/.test(path) &&
+  return /^\/$/.test(path) || /^\/bands\/[1-9]\d*(?:\/(?:members|settings))?\/?$/.test(path) &&
     Number.isSafeInteger(Number(path.split('/')[2])) ? destination : '/'
 }
