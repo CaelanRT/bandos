@@ -1,6 +1,7 @@
 # Add existing users sequentially without leaving Members
 
-> **Status:** For review (2026-09-09)
+> **Status:** Complete (2026-09-10)
+> **Merged PR:** [#27 — Phase 2: Add existing band members sequentially](https://github.com/CaelanRT/bandos/pull/27)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -69,4 +70,4 @@ Automated validation: `npm run lint`, `npm test` (267 tests across 18 files), an
 
 Browser verification remains unverified: no browser runner or installed browser was available in this environment. Check keyboard-only use, native dialog focus and Back/Forward/unload behavior, and 320px/desktop layout against the running backend during review. Mocked integration tests do not establish native browser or live-backend behavior.
 
-Ticket 04 is implemented and awaiting review, not accepted or complete. Tickets 05–06 and the full Phase 2 browser journey remain outstanding.
+Ticket 04 is complete following user acceptance and merge of [PR #27](https://github.com/CaelanRT/bandos/pull/27) on 2026-09-10. The browser verification limitations above remain recorded as follow-ups; merge does not establish that those checks were performed. Tickets 05–06 and the full Phase 2 browser journey remain outstanding.

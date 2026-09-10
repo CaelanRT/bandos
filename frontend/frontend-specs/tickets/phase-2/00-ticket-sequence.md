@@ -1,9 +1,9 @@
 # Phase 2 Ticket Sequence
 
-> **Status:** In progress — tickets 01–03 complete; ticket 04 for review; ticket 05 next
+> **Status:** In progress — tickets 01–04 complete; ticket 05 next
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
-Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is complete and merged in [PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is complete and merged in [PR #25](https://github.com/CaelanRT/bandos/pull/25). Ticket 03 is complete following user acceptance and merge in [PR #26](https://github.com/CaelanRT/bandos/pull/26); its ticket retains the functional review finding and unverified browser checks as follow-ups. Ticket 04 is implemented and for review, with browser verification still outstanding. Ticket 05 is next for implementation in the recommended sequence.
+Implement these outcome-based slices in the recommended order below. Each includes its own behavior, failure/access recovery, tests, and applicable browser checks. Ticket 01 is complete and merged in [PR #24](https://github.com/CaelanRT/bandos/pull/24). Ticket 02 is complete and merged in [PR #25](https://github.com/CaelanRT/bandos/pull/25). Ticket 03 is complete following user acceptance and merge in [PR #26](https://github.com/CaelanRT/bandos/pull/26); its ticket retains the functional review finding and unverified browser checks as follow-ups. Ticket 04 is complete following user acceptance and merge in [PR #27](https://github.com/CaelanRT/bandos/pull/27); its ticket retains unverified browser checks as follow-ups. Ticket 05 is next for implementation in the recommended sequence.
 
 | Ticket | Outcome | Blocked by |
 | --- | --- | --- |
