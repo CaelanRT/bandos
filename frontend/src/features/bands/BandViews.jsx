@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useParams } from 'react-router-dom'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 import { useSession } from '../../app/sessionContext.js'
 import { memberFullName, parseBandId, sortBands, sortMembers } from './api.js'
-import { useCreationIntent } from './useCreationIntent.js'
+import { AddBandMember } from './AddBandMember.jsx'
 import { destinationFromLocation } from '../../app/destination.js'
 import { useBand, useBands } from './queries.js'
 
@@ -82,11 +82,11 @@ export function BandsHome() {
   </BandShell>
 }
 
-function BandMembers({ members }) {
-  // Ticket 04 can use this initial intent to open its add-member form once.
-  useCreationIntent()
+function BandMembers({ band }) {
+  const { members } = band
   return <section aria-labelledby="members-heading">
     <h2 id="members-heading">Members</h2>
+    <AddBandMember band={band} />
     {members.length === 0 ? <p>No active members to display.</p> :
       <ul aria-label="Band members" className="member-list">
         {sortMembers(members).map((member) => <li key={member.userId}>
@@ -113,9 +113,10 @@ export function BandWorkspace({ section = 'Schedule' }) {
           <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p>
           <nav aria-label="Band workspace">
             <NavLink to={`/bands/${band.bandId}`} end>Schedule</NavLink>
-            <NavLink to={`/bands/${band.bandId}/members`}>Members</NavLink>
+            <NavLink to={`/bands/${band.bandId}/members`}
+              onClick={(event) => { if (section === 'Members') event.preventDefault() }}>Members</NavLink>
           </nav>
-          {section === 'Members' ? <BandMembers members={band.members} /> : <>
+          {section === 'Members' ? <BandMembers key={band.bandId} band={band} /> : <>
             <h2>Schedule</h2>
             <p>Schedules are not available yet.</p>
           </>}

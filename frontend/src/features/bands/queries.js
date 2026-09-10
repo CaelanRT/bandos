@@ -21,7 +21,11 @@ export function useBands() {
 export function useBand(bandId) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
-  return useQuery({ ...freshness, queryKey: bandKeys.detail(bandId), enabled: bandId !== null,
+  return useQuery(bandOptions(client, authenticatedRequest, bandId))
+}
+
+function bandOptions(client, authenticatedRequest, bandId) {
+  return { ...freshness, queryKey: bandKeys.detail(bandId), enabled: bandId !== null,
     queryFn: async ({ signal }) => {
       try {
         return await getBand(authenticatedRequest, bandId, signal)
@@ -38,7 +42,7 @@ export function useBand(bandId) {
         return null
       }
     },
-  })
+  }
 }
 
 // Mutation coordination stays outside the form. Cancellation guards reads that
@@ -64,4 +68,32 @@ export async function checkBands(client, request, signal) {
   if (signal.aborted) throw new DOMException('Form closed.', 'AbortError')
   return client.fetchQuery({ queryKey: bandKeys.list, staleTime: 0,
     queryFn: ({ signal: querySignal }) => getBands(request, querySignal) })
+}
+
+export async function cacheAddedMember(client, bandId, member, signal) {
+  await client.cancelQueries({ queryKey: bandKeys.detail(bandId) })
+  if (signal.aborted) return false
+  client.setQueryData(bandKeys.detail(bandId), (band) => band ? {
+    ...band, members: [...band.members.filter((item) => item.userId !== member.userId), member],
+  } : band)
+  void client.invalidateQueries({ queryKey: bandKeys.detail(bandId) })
+  return true
+}
+
+export async function checkBand(client, request, bandId, signal) {
+  await client.cancelQueries({ queryKey: bandKeys.detail(bandId) })
+  if (signal.aborted) throw new DOMException('Form closed.', 'AbortError')
+  return client.fetchQuery(bandOptions(client, request, bandId))
+}
+
+export async function removeBandAccess(client, bandId, signal) {
+  await Promise.all([
+    client.cancelQueries({ queryKey: bandKeys.list }),
+    client.cancelQueries({ predicate: (query) => isBandQuery(query, bandId) }),
+  ])
+  if (signal.aborted) return
+  client.removeQueries({ predicate: (query) => isBandQuery(query, bandId) && query.queryKey.length > 3 })
+  client.setQueryData(bandKeys.detail(bandId), null)
+  client.setQueryData(bandKeys.list, (bands) => bands?.filter((band) => band.bandId !== bandId))
+  void client.invalidateQueries({ queryKey: bandKeys.list })
 }
