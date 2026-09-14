@@ -1,7 +1,8 @@
 # Phase 2 verification record
 
-Date: 2026-09-14. Ticket 06 implementation; Phase 2 remains in progress pending
-human review and the outstanding full live-backend journey.
+Updated: 2026-09-14. All six implementation tickets are accepted and merged;
+PR #29 completes ticket 06. Phase 2 remains in progress pending the remaining
+verification and recorded functional follow-up.
 
 ## Automated verification
 
@@ -30,19 +31,70 @@ Headless Chromium at 320px and 1280px, running Vite with mocked HTTP, passed:
 - No browser page errors. Screenshots captured at `/tmp/bandos-delete-320.png`
   and `/tmp/bandos-delete-1280.png` (ephemeral local evidence).
 
-## Outstanding verification
+## User-confirmed live checks — 2026-09-14
 
-The full live-backend leader/member journey has not run. Automatic approval review
-rejected provisioning three persistent test accounts and a test band, membership
-writes and deletion on the configured network service without explicit approval.
-No live test mutations ran. Approval or provisioned test accounts are needed.
+The user confirms against the running application:
 
-Still verify create → two sequential additions → member tab-return discovery →
-member inspection → switching bands → rename → delete against the running backend,
-with separate roles; also live dirty Keep/Discard and browser history/refresh,
-menu keyboard/focus, expiration, and unavailable-resource recovery. Automated tests
-cover these behavior areas but do not establish the complete live journey.
+- Account creation, Login, and Logout work.
+- Band creation, rename, deletion, and member addition work.
+- Regular members cannot see Settings, change details, or delete bands; leaders
+  can perform those management actions.
 
-Native mobile browsers, Firefox/Safari, and the prior tickets’ remaining browser
-follow-ups remain unverified here. Earlier ticket records retain their findings.
-Do not mark Phase 2 complete solely on these mocked checks.
+These confirmations establish the reported flows, not every timing, history,
+keyboard, or error case below. No repeat of the basic flows is requested.
+The agent's earlier live script was blocked by automatic approval review because
+it would provision persistent accounts/bands; no agent live test mutations ran.
+The user's checks now supply live evidence for the flows listed above.
+
+## Remaining phase closure checks
+
+1. **Creation follow-up:** Ticket 03 records a functional finding still present in
+   the current global creation link. From a band, open Create a band, click the
+   global Create a band link again, then Cancel: it should return to the original
+   band. Repeating the link with a changed name must not retain a discarded draft
+   or lose the return destination. Resolve this finding through a separate code
+   change or explicitly revise the requirement; do not silently close it.
+2. **Sequential additions and creation handoff:** Creation opens Members with the
+   add form focused once. Add two users without reopening it; input clears and
+   keeps focus, rows appear once, leaders sort first. Revisit Members and confirm
+   the creation marker does not reopen the form. Unknown/duplicate/self-add errors
+   preserve input and permit correction.
+3. **Cross-session freshness:** Keep a member session open while a leader adds
+   them, renames the band, and later deletes it. Returning to the member tab should
+   update membership/name/access without manual refresh. An edited rename draft
+   must survive background refresh.
+4. **Navigation and history:** With at least two bands and different roles, global
+   selection always opens Schedule, including from Settings. Names reorder after
+   rename; duplicate names remain distinct by destination. A member directly
+   visiting a Settings URL returns to Schedule with a permission notice. Check
+   direct URL refresh, Back/Forward, creation Cancel origin, and authenticated
+   destination restoration after Login.
+5. **Unsaved forms and deletion:** For creation, rename, and entered member input,
+   Cancel/switch/Back offer Keep editing and Discard changes with the correct
+   destination. Refresh/tab close provides browser-controlled best-effort warning.
+   Delete Cancel/Escape preserves the band; confirmed deletion discards an edited
+   rename without another prompt, returns home, and announces once. After deletion,
+   Back, refresh, and old URLs cannot restore either role's band access.
+6. **Keyboard and narrow screens:** At desktop and 320px, operate menu, forms and
+   dialogs with keyboard only; check focus after closing/navigating, wrapped long
+   names, and no horizontal overflow. Include sequential addition and dirty form
+   dialogs, which were not all covered by the ticket 06 Chromium smoke check.
+7. **Failure/session recovery:** Simulate an expired session while a band form is
+   open/requesting: recover to Login without trapping the user or replaying a write.
+   Use network throttling/failure simulation to check pending duplicate prevention,
+   truthful uncertain-result messaging, Check again after a failed read, and a
+   deliberate retry only. Test stale leader permission recovery if a controlled
+   backend/test fixture can revoke leadership; no role-changing UI is in scope.
+
+The automated suite already covers error codes and cache races; those do not need
+exhaustive manual repetition. The remaining live checks verify integration and
+native browser behavior, not a replacement for that suite. Native mobile browsers
+and Firefox/Safari remain unverified here; record the browser/device used for live
+checks and any accepted coverage limitations.
+
+The last full automated verification was 305 passing tests, clean lint, and a
+production build for the merged implementation. Completion edits change only
+workflow/verification metadata; no application tests were rerun for this teardown.
+After any follow-up code fix, rerun the relevant tests and full phase checks before
+marking Phase 2 complete. Earlier ticket records retain historical findings; this
+record is the current consolidated verification status.

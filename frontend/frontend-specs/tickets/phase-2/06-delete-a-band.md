@@ -1,7 +1,7 @@
 # Delete a band with confirmation and consistent access recovery
 
-> **Status:** For Review (2026-09-14)
-> **Draft PR:** [#29 — Phase 2: Delete bands with confirmation and access recovery](https://github.com/CaelanRT/bandos/pull/29)
+> **Status:** Complete (2026-09-14)
+> **Merged PR:** [#29 — Phase 2: Delete bands with confirmation and access recovery](https://github.com/CaelanRT/bandos/pull/29)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -59,9 +59,10 @@ Future events/datebook must use compatible band-scoped cache removal. Do not mar
 
 ## Implementation verification
 
-Implemented in Draft PR #29. Full verification: 305 tests, lint without warnings,
+Implemented and merged in PR #29 on 2026-09-14. Full verification: 305 tests, lint without warnings,
 production build and diff checks passed. Native Chromium checks at 320px/1280px
 passed with mocked HTTP. Independent `review-ticket` review returned **PASS WITH
-NON-BLOCKING COMMENTS**, with no blocking findings. The full live-backend journey
-remains outstanding; see the [phase verification record](../../phase-2-verification.md).
-Phase 2 remains incomplete pending acceptance and outstanding verification.
+NON-BLOCKING COMMENTS**, with no blocking findings. User acceptance confirms live band deletion and role restrictions. Remaining
+phase verification and follow-ups are recorded; see the [phase verification record](../../phase-2-verification.md).
+Ticket 06 is complete following user acceptance and merge. Phase 2 remains
+incomplete pending the remaining verification and recorded creation follow-up.
