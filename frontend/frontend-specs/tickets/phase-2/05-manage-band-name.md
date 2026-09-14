@@ -1,7 +1,7 @@
 # Allow leaders to rename a band through protected Settings
 
-> **Status:** For Review (2026-09-14)
-> **Draft PR:** [#28 — Phase 2: Add protected band Settings and renaming](https://github.com/CaelanRT/bandos/pull/28)
+> **Status:** Complete (2026-09-14)
+> **Merged PR:** [#28 — Phase 2: Add protected band Settings and renaming](https://github.com/CaelanRT/bandos/pull/28)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -72,4 +72,4 @@ Live-backend leader/member checks and native refresh/unload/Forward checks remai
 
 Independent ticket review: **PASS**, all six acceptance criteria passed with no findings. UI finish review: **ship**, no material findings within ticket scope. Documentation review confirmed the existing UI system is preserved.
 
-Published for review on 2026-09-14 in [Draft PR #28](https://github.com/CaelanRT/bandos/pull/28). The ticket remains For Review pending user acceptance and merge; the verification follow-ups above remain outstanding.
+Ticket 05 is complete following user acceptance and merge of [PR #28](https://github.com/CaelanRT/bandos/pull/28) on 2026-09-14. The verification follow-ups above remain outstanding; merge does not establish that the live-backend or remaining native-browser checks were performed. Ticket 06 and the complete Phase 2 journey remain outstanding.
