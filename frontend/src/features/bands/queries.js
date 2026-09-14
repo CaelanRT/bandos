@@ -28,7 +28,10 @@ function bandOptions(client, authenticatedRequest, bandId) {
   return { ...freshness, queryKey: bandKeys.detail(bandId), enabled: bandId !== null,
     queryFn: async ({ signal }) => {
       try {
-        return await getBand(authenticatedRequest, bandId, signal)
+        const band = await getBand(authenticatedRequest, bandId, signal)
+        // A denied mutation stays denied until the explicit permission check succeeds.
+        return client.getQueryData(bandKeys.detail(bandId))?.managementDenied
+          ? { ...band, managementDenied: true } : band
       } catch (error) {
         if (signal.aborted || error.code !== 'BAND_NOT_FOUND') throw error
         // Cancel older list/resource reads before removing access. A null detail is
@@ -47,18 +50,18 @@ function bandOptions(client, authenticatedRequest, bandId) {
 
 // Mutation coordination stays outside the form. Cancellation guards reads that
 // started before the confirmed write; the signal also guards session/unmount races.
-export async function cacheCreatedBand(client, band, signal) {
+export async function cacheSavedBand(client, band, signal) {
   await Promise.all([
     client.cancelQueries({ queryKey: bandKeys.list }),
     client.cancelQueries({ queryKey: bandKeys.detail(band.bandId) }),
   ])
   if (signal.aborted) return false
-  const { members: _members, ...summary } = band
+  const { members: _members, managementDenied: _denied, ...summary } = band
   client.setQueryData(bandKeys.detail(band.bandId), band)
   client.setQueryData(bandKeys.list, (bands = []) => [
     ...bands.filter((item) => item.bandId !== band.bandId), summary,
   ])
-  // Read failures must never change a confirmed creation into a failed write.
+  // Read failures must never change a confirmed save into a failed write.
   void client.invalidateQueries({ queryKey: bandKeys.list })
   return true
 }

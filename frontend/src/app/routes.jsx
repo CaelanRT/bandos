@@ -41,6 +41,7 @@ const pageRoutes = [
   { path: '/bands/new', element: <ProtectedRoute><CreateBand /></ProtectedRoute> },
   { path: '/bands/:bandId', element: <ProtectedRoute><BandWorkspace /></ProtectedRoute> },
   { path: '/bands/:bandId/members', element: <ProtectedRoute><BandWorkspace section="Members" /></ProtectedRoute> },
+  { path: '/bands/:bandId/settings', element: <ProtectedRoute><BandWorkspace section="Settings" /></ProtectedRoute> },
   ...unfinishedRoutePaths.map((path) => ({
     path,
     element: (

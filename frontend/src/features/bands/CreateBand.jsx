@@ -7,7 +7,7 @@ import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
 import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
 import { composeValidators, maxLength, required } from '../../utils/validation.js'
 import { createBand } from './api.js'
-import { cacheCreatedBand, checkBands, useBands } from './queries.js'
+import { cacheSavedBand, checkBands, useBands } from './queries.js'
 import { BandLinks, BandShell } from './BandViews.jsx'
 
 const validateName = composeValidators(required('Enter a band name.'), maxLength(50))
@@ -71,7 +71,7 @@ export function CreateBand() {
     try {
       const band = await createBand(authenticatedRequest, name.trim(), user.userId, signal)
       if (signal.aborted) return
-      if (await cacheCreatedBand(client, band, signal)) {
+      if (await cacheSavedBand(client, band, signal)) {
         allowNavigation()
         navigate(`/bands/${band.bandId}/members`, { replace: true, state: { openAddMember: true } })
       }

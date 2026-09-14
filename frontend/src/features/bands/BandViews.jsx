@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useLocation, useParams } from 'react-router-dom'
+import { Link, Navigate, NavLink, useLocation, useParams } from 'react-router-dom'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 import { useSession } from '../../app/sessionContext.js'
 import { memberFullName, parseBandId, sortBands, sortMembers } from './api.js'
+import { BandSettings } from './BandSettings.jsx'
 import { AddBandMember } from './AddBandMember.jsx'
 import { destinationFromLocation } from '../../app/destination.js'
 import { useBand, useBands } from './queries.js'
@@ -103,20 +104,29 @@ export function BandWorkspace({ section = 'Schedule' }) {
   const bands = useBands()
   const detail = useBand(bandId)
   const band = detail.data
+  const location = useLocation()
   return <BandShell bands={bands} context={band ? `${band.name} · ${section}` : 'Band workspace'}>
     {bandId === null ? <><h1>Invalid band address</h1><Link to="/">Go home</Link></> :
       band === null ? <><h1>This band is no longer available</h1><Link to="/">Go home</Link></> : <>
         {detail.isPending && <p role="status">Loading band…</p>}
         <ReadFailure query={detail} subject="this band" />
         {band && <>
+          {section === 'Settings' && band.currentUserRole === 'member' &&
+            <Navigate to={`/bands/${band.bandId}`} replace state={{ bandPermissionNotice: true }} />}
+          {section === 'Schedule' && location.state?.bandPermissionNotice &&
+            <p role="status">Only band leaders can access Settings.</p>}
           <h1>{band.name}</h1>
           <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p>
           <nav aria-label="Band workspace">
             <NavLink to={`/bands/${band.bandId}`} end>Schedule</NavLink>
             <NavLink to={`/bands/${band.bandId}/members`}
               onClick={(event) => { if (section === 'Members') event.preventDefault() }}>Members</NavLink>
+            {band.currentUserRole === 'leader' && !band.managementDenied &&
+              <NavLink to={`/bands/${band.bandId}/settings`}
+                onClick={(event) => { if (section === 'Settings') event.preventDefault() }}>Settings</NavLink>}
           </nav>
-          {section === 'Members' ? <BandMembers key={band.bandId} band={band} /> : <>
+          {section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
+            section === 'Members' ? <BandMembers key={band.bandId} band={band} /> : <>
             <h2>Schedule</h2>
             <p>Schedules are not available yet.</p>
           </>}
