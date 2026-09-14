@@ -1,6 +1,7 @@
 # Delete a band with confirmation and consistent access recovery
 
-> **Status:** Ready for implementation, subject to dependencies below
+> **Status:** For Review (2026-09-14)
+> **Draft PR:** [#29 — Phase 2: Delete bands with confirmation and access recovery](https://github.com/CaelanRT/bandos/pull/29)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -55,3 +56,12 @@ Test dialog focus/Cancel, pending, success/one-time notice, cache cleanup and la
 ## Decisions and follow-ups
 
 Future events/datebook must use compatible band-scoped cache removal. Do not mark Phase 2 complete until sequential additions and all other phase acceptance checks are verified.
+
+## Implementation verification
+
+Implemented in Draft PR #29. Full verification: 305 tests, lint without warnings,
+production build and diff checks passed. Native Chromium checks at 320px/1280px
+passed with mocked HTTP. Independent `review-ticket` review returned **PASS WITH
+NON-BLOCKING COMMENTS**, with no blocking findings. The full live-backend journey
+remains outstanding; see the [phase verification record](../../phase-2-verification.md).
+Phase 2 remains incomplete pending acceptance and outstanding verification.
