@@ -88,3 +88,8 @@ export async function renameBand(request, bandId, name, signal) {
   if (band.bandId !== bandId || band.name !== name) throw invalidApiResponse(200)
   return band
 }
+
+export async function deleteBand(request, bandId, signal) {
+  const data = await request(`/bands/${bandId}`, { method: 'DELETE', signal, expectedStatus: 200 })
+  if (!text(data?.message)) throw invalidApiResponse(200)
+}

@@ -168,4 +168,14 @@ reset the baseline without claiming the request succeeded; conflicts retain the
 draft for deliberate retry. Denied leadership stays suppressed in the detail
 cache until an explicit permission check refreshes both detail and list. Expired
 sessions and unavailable bands clear private context without trapping navigation.
-Deletion is deferred to Phase 2 ticket 06.
+Leaders can delete from a separate Settings section. A native confirmation dialog
+names the band, initially focuses Cancel, and protects pending deletion. Confirmed
+success cancels older band reads, clears band-scoped private resources, and returns
+home with a consumed one-time notice. The confirmation also discards an unsaved
+rename. Uncertain responses recheck detail/list before another deliberate
+confirmation; unavailable bands never imply that this request deleted them.
+
+Band-scoped resource keys must extend `['private', 'band', bandId]` so access
+removal also cancels and clears future event/datebook resources. See the
+[Phase 2 verification record](frontend-specs/phase-2-verification.md) for automated,
+browser, and outstanding live-backend checks.

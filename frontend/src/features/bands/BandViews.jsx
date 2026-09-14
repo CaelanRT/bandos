@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, NavLink, useLocation, useParams } from 'react-router-dom'
+import { Link, Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 import { useSession } from '../../app/sessionContext.js'
 import { memberFullName, parseBandId, sortBands, sortMembers } from './api.js'
@@ -72,6 +72,7 @@ export function BandsHome() {
   const bands = useBands()
   const { user } = useSession()
   return <BandShell bands={bands} context="Home">
+    <DeletionNotice />
     <h1>Bandos</h1>
     <h2>Your bands</h2>
     <CreateBandLink />
@@ -138,4 +139,16 @@ export function BandWorkspace({ section = 'Schedule' }) {
 function CreateBandLink() {
   const location = useLocation()
   return <Link to="/bands/new" state={{ creationOrigin: destinationFromLocation(location) }}>Create a band</Link>
+}
+
+function DeletionNotice() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [deleted] = useState(() => location.state?.bandDeleted === true)
+  useEffect(() => {
+    if (!location.state?.bandDeleted) return
+    const { bandDeleted: _consumed, ...state } = location.state
+    navigate(location.pathname + location.search + location.hash, { replace: true, state })
+  }, [location, navigate])
+  return deleted ? <p role="status">Band deleted.</p> : null
 }

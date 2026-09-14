@@ -5,6 +5,7 @@ import { useSession } from '../../app/sessionContext.js'
 import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
 import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
 import { composeValidators, maxLength, required } from '../../utils/validation.js'
+import { DeleteBand } from './DeleteBand.jsx'
 import { renameBand } from './api.js'
 import { bandKeys, cacheSavedBand, checkBand, checkBands, removeBandAccess } from './queries.js'
 
@@ -21,6 +22,7 @@ export function BandSettings({ band }) {
   const [formError, setFormError] = useState(null)
   const [message, setMessage] = useState(null)
   const [pending, setPending] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [reconciliation, setReconciliation] = useState(null)
   const [permissionChecking, setPermissionChecking] = useState(false)
   const [retryAt, setRetryAt] = useState(null)
@@ -33,7 +35,7 @@ export function BandSettings({ band }) {
   const currentBlocker = useRef(null)
   const denied = Boolean(band.managementDenied)
   const dirty = name !== baseline
-  const { blocker } = useUnsavedNavigation(!denied && dirty)
+  const { blocker, allowNavigation } = useUnsavedNavigation(!denied && (dirty || deleting))
   useEffect(() => { currentBlocker.current = blocker }, [blocker])
   useEffect(() => {
     const controller = new AbortController()
@@ -88,7 +90,7 @@ export function BandSettings({ band }) {
   }
   async function submit(event) {
     event.preventDefault()
-    if (denied || submitting.current || !dirty || ['checking', 'failed'].includes(reconciliation)) return
+    if (denied || deleting || submitting.current || !dirty || ['checking', 'failed'].includes(reconciliation)) return
     if (retryAt && Date.now() < retryAt) { notice.current?.focus(); return }
     const normalized = name.trim()
     const error = validateName(normalized)
@@ -130,7 +132,7 @@ export function BandSettings({ band }) {
     }
   }
   const checking = reconciliation === 'checking'
-  const locked = pending || checking || reconciliation === 'failed'
+  const locked = pending || deleting || checking || reconciliation === 'failed'
   return <section aria-labelledby="settings-heading">
     <h2 id="settings-heading">Settings</h2>
     {denied ? <div role="alert">
@@ -156,10 +158,16 @@ export function BandSettings({ band }) {
       {reconciliation === 'conflict' && <p role="status">The current server name is “{band.name}”. Your draft is preserved; save again to retry.</p>}
       <div className="form-actions">
         <button type="submit" disabled={!dirty || locked}>{pending ? 'Saving…' : 'Save'}</button>
-        <button type="button" disabled={pending} onClick={() => navigate(`/bands/${band.bandId}`)}>Cancel</button>
+        <button type="button" disabled={pending || deleting} onClick={() => navigate(`/bands/${band.bandId}`)}>Cancel</button>
       </div>
       {pending && <p role="status">Saving band name…</p>}
     </form>}
-    <UnsavedNavigationDialog blocker={blocker} pending={pending} />
+    {!denied && <DeleteBand band={band} disabled={pending || checking || reconciliation === 'failed'}
+      setPending={setDeleting} allowNavigation={allowNavigation} onDenied={async () => {
+        client.setQueryData(bandKeys.detail(band.bandId), (latest) => latest ? { ...latest, managementDenied: true } : latest)
+        setName(band.name); setBaseline(band.name); setFieldError(null); setFormError(null)
+        await refreshPermission()
+      }} />}
+    <UnsavedNavigationDialog blocker={blocker} pending={pending || deleting} />
   </section>
 }
