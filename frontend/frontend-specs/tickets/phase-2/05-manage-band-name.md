@@ -1,6 +1,7 @@
 # Allow leaders to rename a band through protected Settings
 
-> **Status:** In progress — implementation and independent review passed; publishing blocked by automatic approval review
+> **Status:** For Review (2026-09-14)
+> **Draft PR:** [#28 — Phase 2: Add protected band Settings and renaming](https://github.com/CaelanRT/bandos/pull/28)
 > **Specification:** [Phase 2 — Bands and membership](../../03-phase-2-bands-and-membership.md)
 
 ## User/system outcome
@@ -71,4 +72,4 @@ Live-backend leader/member checks and native refresh/unload/Forward checks remai
 
 Independent ticket review: **PASS**, all six acceptance criteria passed with no findings. UI finish review: **ship**, no material findings within ticket scope. Documentation review confirmed the existing UI system is preserved.
 
-Draft PR creation and For Review status are pending explicit publishing approval: automatic approval review rejected the push, including after verifying origin is the authenticated owner’s public repository. No branch or source changes have been published.
+Published for review on 2026-09-14 in [Draft PR #28](https://github.com/CaelanRT/bandos/pull/28). The ticket remains For Review pending user acceptance and merge; the verification follow-ups above remain outstanding.
