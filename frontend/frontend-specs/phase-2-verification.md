@@ -1,8 +1,7 @@
 # Phase 2 verification record
 
 Updated: 2026-09-14. All six implementation tickets are accepted and merged;
-PR #29 completes ticket 06. Phase 2 remains in progress pending the remaining
-verification and recorded functional follow-up.
+PR #29 completes ticket 06. Phase 2 remains in progress pending the remaining verification.
 
 ## Automated verification
 
@@ -48,17 +47,15 @@ The user's checks now supply live evidence for the flows listed above.
 
 ## Remaining phase closure checks
 
-1. **Creation follow-up:** Ticket 03 records a functional finding still present in
-   the current global creation link. From a band, open Create a band, click the
-   global Create a band link again, then Cancel: it should return to the original
-   band. Repeating the link with a changed name must not retain a discarded draft
-   or lose the return destination. Resolve this finding through a separate code
-   change or explicitly revise the requirement; do not silently close it.
-2. **Sequential additions and creation handoff:** Creation opens Members with the
+1. **Creation follow-up — passed:** Merged PR #30 makes the global Create a band
+   item non-navigating on both `/bands/new` and `/bands/new/`, preserving the
+   original Cancel origin and preventing the same-page dirty-discard regression.
+   Regression coverage verifies both route forms.
+2. **Sequential additions and creation handoff — passed:** Creation opens Members with the
    add form focused once. Add two users without reopening it; input clears and
    keeps focus, rows appear once, leaders sort first. Revisit Members and confirm
    the creation marker does not reopen the form. Unknown/duplicate/self-add errors
-   preserve input and permit correction.
+   preserve input and permit correction. These checks were completed successfully.
 3. **Cross-session freshness:** Keep a member session open while a leader adds
    them, renames the band, and later deletes it. Returning to the member tab should
    update membership/name/access without manual refresh. An edited rename draft
