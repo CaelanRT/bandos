@@ -56,22 +56,22 @@ The user's checks now supply live evidence for the flows listed above.
    keeps focus, rows appear once, leaders sort first. Revisit Members and confirm
    the creation marker does not reopen the form. Unknown/duplicate/self-add errors
    preserve input and permit correction. These checks were completed successfully.
-3. **Cross-session freshness:** Keep a member session open while a leader adds
+3. **Cross-session freshness — passed:** Keep a member session open while a leader adds
    them, renames the band, and later deletes it. Returning to the member tab should
    update membership/name/access without manual refresh. An edited rename draft
-   must survive background refresh.
-4. **Navigation and history:** With at least two bands and different roles, global
+   must survive background refresh. These checks were completed successfully.
+4. **Navigation and history — passed:** With at least two bands and different roles, global
    selection always opens Schedule, including from Settings. Names reorder after
    rename; duplicate names remain distinct by destination. A member directly
    visiting a Settings URL returns to Schedule with a permission notice. Check
    direct URL refresh, Back/Forward, creation Cancel origin, and authenticated
-   destination restoration after Login.
-5. **Unsaved forms and deletion:** For creation, rename, and entered member input,
+   destination restoration after Login. These checks were completed successfully.
+5. **Unsaved forms and deletion — passed:** For creation, rename, and entered member input,
    Cancel/switch/Back offer Keep editing and Discard changes with the correct
    destination. Refresh/tab close provides browser-controlled best-effort warning.
    Delete Cancel/Escape preserves the band; confirmed deletion discards an edited
    rename without another prompt, returns home, and announces once. After deletion,
-   Back, refresh, and old URLs cannot restore either role's band access.
+   Back, refresh, and old URLs cannot restore either role's band access. These checks were completed successfully.
 6. **Keyboard and narrow screens:** At desktop and 320px, operate menu, forms and
    dialogs with keyboard only; check focus after closing/navigating, wrapped long
    names, and no horizontal overflow. Include sequential addition and dirty form
