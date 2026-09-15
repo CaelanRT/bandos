@@ -67,6 +67,18 @@ it.each([{ existing: [] }, { existing: [band(2, 'Existing')] }])('exposes creati
   expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/bands/new'))).toBe(false)
 })
 
+it.each(['/bands/new', '/bands/new/'])('keeps Create a band non-navigating on %s and preserves the Cancel origin', async (pathname) => {
+  list = [band(2, 'Existing')]
+  const { router } = mount([{ pathname, state: { creationOrigin: '/bands/2' } }])
+  await screen.findByLabelText('Band name')
+  const navigation = within(screen.getByRole('navigation', { name: 'Primary' }))
+  expect(navigation.getByText('Create a band')).toHaveAttribute('aria-current', 'page')
+  expect(navigation.queryByRole('link', { name: 'Create a band' })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  await screen.findByRole('heading', { name: 'Existing' })
+  expect(router.state.location.pathname).toBe('/bands/2')
+})
+
 it('validates on blur/edit and submit using trimmed JS length; accepts 50 characters', async () => {
   mount()
   const input = await screen.findByLabelText('Band name')

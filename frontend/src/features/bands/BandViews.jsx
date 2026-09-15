@@ -138,6 +138,7 @@ export function BandWorkspace({ section = 'Schedule' }) {
 
 function CreateBandLink() {
   const location = useLocation()
+  if (/^\/bands\/new\/?$/.test(location.pathname)) return <span aria-current="page">Create a band</span>
   return <Link to="/bands/new" state={{ creationOrigin: destinationFromLocation(location) }}>Create a band</Link>
 }
 
