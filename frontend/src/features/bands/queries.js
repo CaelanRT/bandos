@@ -6,6 +6,10 @@ export const bandKeys = {
   list: ['private', 'bands'],
   detail: (bandId) => ['private', 'band', bandId],
 }
+export const eventKeys = {
+  list: (bandId) => ['private', 'band', bandId, 'events'],
+  detail: (bandId, eventId) => ['private', 'band', bandId, 'event', eventId],
+}
 // Future band resources append their resource name to this same prefix.
 export const isBandQuery = (query, bandId) => query.queryKey[0] === 'private' &&
   query.queryKey[1] === 'band' && query.queryKey[2] === bandId
