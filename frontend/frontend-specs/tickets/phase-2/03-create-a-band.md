@@ -81,9 +81,9 @@ Reviewed the existing implementation against `origin/main` (`0fb060d`) and the P
 
 ### Follow-ups retained after merge
 
-- **Functional finding:** The global Create a band link remains active on `/bands/new`. Clicking it again overwrites `creationOrigin` with `/bands/new`, so Cancel falls back home instead of the original band workspace. With changed input, choosing Discard changes for this same-page navigation retains the mounted form and its input. Make the current-page item non-navigating or otherwise preserve the original origin and correct discard behavior; add a regression case.
+- **Functional finding (resolved in Draft PR #30):** The global Create a band item is non-navigating on `/bands/new` and `/bands/new/`, preserving the original Cancel origin and preventing the same-page dirty-discard regression. Regression coverage verifies both route forms.
 - **Browser verification:** Check keyboard/dialog focus, Back/Forward, refresh/tab-close best-effort protection, and 320px/desktop layouts against the running backend. These were not performed in this review; no browser runner was available. Mocked integration tests do not establish native browser behavior.
 - **Nonblocking test cleanup:** Dialog prototype methods in `createBand.test.jsx` are assigned directly and are not restored by `vi.restoreAllMocks()`. Prefer spies or explicit descriptor restoration.
-- The ticket is marked complete following user acceptance and merge of PR #26. The functional finding, browser verification limitations, and nonblocking test cleanup above remain recorded as follow-ups; merge does not establish that they were resolved or verified.
+- The ticket is marked complete following user acceptance and merge of PR #26. The browser verification limitations and nonblocking test cleanup above remain recorded as follow-ups; merge does not establish that they were resolved or verified.
 
 Ticket 04's add-member form is next in the recommended sequence. Tickets 05–06's Settings operations remain outside this ticket. Phase 2 remains in progress.
