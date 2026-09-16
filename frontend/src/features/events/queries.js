@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../../app/sessionContext.js'
 import { INVALID_API_RESPONSE } from '../../api/errors.js'
-import { eventKeys } from '../bands/queries.js'
-import { getEvent } from './api.js'
+import { eventKeys, removeBandAccess } from '../bands/queries.js'
+import { getEvent, getEvents } from './api.js'
 
 const freshness = { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true }
 
@@ -27,4 +28,21 @@ export function useEvent(bandId, eventId) {
       }
     },
   })
+}
+
+export function useEvents(bandId) {
+  const { authenticatedRequest } = useSession()
+  const client = useQueryClient()
+  const query = useQuery({ ...freshness, queryKey: eventKeys.list(bandId), enabled: bandId !== null,
+    queryFn: ({ signal }) => getEvents(authenticatedRequest, bandId, signal),
+  })
+
+  useEffect(() => {
+    if (bandId === null || query.error?.code !== 'BAND_NOT_FOUND') return undefined
+    const controller = new AbortController()
+    void removeBandAccess(client, bandId, controller.signal)
+    return () => controller.abort()
+  }, [bandId, client, query.error])
+
+  return query
 }

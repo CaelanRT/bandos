@@ -53,3 +53,24 @@ Integration tests cover both roles, grouping/order/ties, headings, row fields/om
 ## Decisions and follow-ups
 
 Past stays expanded and uses no pagination. One top-level Create location is reserved for ticket 04; empty states do not duplicate it.
+
+## Independent review blockers — 2026-09-16
+
+The completed implementation did not pass independent review. Resolve and rerun the independent review before creating a Draft PR or moving this ticket to For Review.
+
+- Refresh schedule presentation at the next browser-local midnight so Today, Tomorrow, and Yesterday headings cannot remain stale while the page stays open. Focus revalidation with unchanged event data must also use current browser-calendar time.
+- Use unique date-group heading IDs when the same stored date appears in both Upcoming and Past sections (for example, include the section classification in the ID).
+- Expand integration coverage to match this ticket’s verification matrix: ordering and backend-order ties; relative headings; initial failure and malformed success payload; inaccessible-band recovery; session expiration; late-read cancellation; focus revalidation; and fake-timer start-boundary movement. Make date/time assertions deterministic with a controlled clock.
+
+
+## Finalize schedule integration testing
+
+The implementation and baseline checks are complete, but the ticket must not move to For Review until the remaining automated integration coverage below passes and an independent review passes. Keep this work in the existing schedule integration test harness; these are mocked-API and fake-clock tests, not manual browser checks.
+
+- Freeze the browser clock and assert rendered Upcoming/Past date-group and row ordering, including same-date and same-start backend-order ties. Assert Today, Tomorrow, and Yesterday headings from the rendered Schedule without converting stored date/time values.
+- With fake timers, mount an already-resolved Schedule just before the next event start; advance across that boundary and assert the row moves from Upcoming to Past without polling or another event-list request. Repeat around browser-local midnight and assert relative headings refresh. Flush the initial render/query work before advancing timers.
+- Advance the controlled clock, trigger focus revalidation with a structurally unchanged event response, and assert the rendered classification or relative heading refreshes.
+- Hold an event-list response with a deferred mock, leave the Schedule or trigger access/session recovery before resolving it, then resolve it. Assert it cannot restore schedule rows, private event cache, or unavailable band context.
+- Keep isolated event-list regressions for BAND_NOT_FOUND and AUTHENTICATION_REQUIRED; do not rely only on concurrent band-detail failures, which can mask an event-query recovery defect.
+
+The separate manual checks remain links, keyboard behavior, long content, 320px/desktop layout, and live boundary behavior. After the automated additions, run npm test, lint, build, and git diff --check, then repeat the required independent ticket review.

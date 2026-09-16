@@ -37,6 +37,10 @@ beforeEach(() => {
     if (path === '/users/me') return json({ user })
     if (path === '/bands') return json({ bands: list })
     if (path === '/auth/logout' || path === '/auth/login') return json({ message: 'OK' })
+    if (path.startsWith('/bands/') && path.endsWith('/events')) {
+      const response = details[path.slice(0, -'/events'.length)]
+      return response instanceof Response ? response.clone() : json({ events: [] })
+    }
     if (path.startsWith('/bands/')) return details[path] instanceof Response ? details[path].clone() : json({ band: details[path] })
     throw new Error(`Unexpected request ${path}`)
   })
@@ -71,7 +75,7 @@ it.each(['leader', 'member'])('uses detail authority for a direct %s workspace a
   const { router } = mount('/bands/2')
   await screen.findByRole('heading', { name: 'First' })
   expect(screen.getByText(role === 'leader' ? 'Leader' : 'Member')).toBeInTheDocument()
-  expect(screen.getByText('Schedules are not available yet.')).toBeInTheDocument()
+  expect(await screen.findByText('No upcoming events.')).toBeInTheDocument()
   await userEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Second' }))
   await screen.findByRole('heading', { name: 'Second' })
   expect(router.state.location.pathname).toBe('/bands/3')
@@ -132,7 +136,7 @@ it('bounds transient retries and retains useful data on failed background refres
   expect(count('/bands/2')).toBe(3)
   expect(screen.getByRole('heading', { name: 'First' })).toBeInTheDocument()
   details['/bands/2'] = band(2, 'Recovered')
-  await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  await userEvent.click(within(screen.getByText('We couldn’t update this band.').closest('[role=alert]')).getByRole('button', { name: 'Retry' }))
   await screen.findByRole('heading', { name: 'Recovered' })
 })
 

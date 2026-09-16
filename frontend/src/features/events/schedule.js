@@ -80,3 +80,7 @@ export function nextStartBoundary(events, now = new Date()) {
   const starts = events.map((event) => resolveLocalDateTime(event.date, event.startTime, event.timezone)).filter((start) => start !== null && start > now)
   return starts.length ? new Date(Math.min(...starts.map((start) => start.getTime()))) : null
 }
+
+export function nextBrowserCalendarBoundary(now = new Date()) {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+}
