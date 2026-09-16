@@ -8,7 +8,6 @@ import { BandsHome, BandWorkspace } from '../features/bands/BandViews.jsx'
 
 const unfinishedRoutePaths = [
   '/bands/:bandId/events/new',
-  '/bands/:bandId/events/:eventId',
   '/bands/:bandId/events/:eventId/edit',
   '/account',
 ]
@@ -42,6 +41,7 @@ const pageRoutes = [
   { path: '/bands/:bandId', element: <ProtectedRoute><BandWorkspace /></ProtectedRoute> },
   { path: '/bands/:bandId/members', element: <ProtectedRoute><BandWorkspace section="Members" /></ProtectedRoute> },
   { path: '/bands/:bandId/settings', element: <ProtectedRoute><BandWorkspace section="Settings" /></ProtectedRoute> },
+  { path: '/bands/:bandId/events/:eventId', element: <ProtectedRoute><BandWorkspace section="Event" /></ProtectedRoute> },
   ...unfinishedRoutePaths.map((path) => ({
     path,
     element: (

@@ -7,6 +7,8 @@ import { BandSettings } from './BandSettings.jsx'
 import { AddBandMember } from './AddBandMember.jsx'
 import { destinationFromLocation } from '../../app/destination.js'
 import { useBand, useBands } from './queries.js'
+import { parseEventId } from '../events/api.js'
+import { EventDetail } from '../events/EventDetail.jsx'
 
 export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
@@ -102,6 +104,8 @@ function BandMembers({ band }) {
 export function BandWorkspace({ section = 'Schedule' }) {
   const { bandId: parameter } = useParams()
   const bandId = parseBandId(parameter)
+  const { eventId: eventParameter } = useParams()
+  const eventId = parseEventId(eventParameter)
   const bands = useBands()
   const detail = useBand(bandId)
   const band = detail.data
@@ -116,8 +120,8 @@ export function BandWorkspace({ section = 'Schedule' }) {
             <Navigate to={`/bands/${band.bandId}`} replace state={{ bandPermissionNotice: true }} />}
           {section === 'Schedule' && location.state?.bandPermissionNotice &&
             <p role="status">Only band leaders can access Settings.</p>}
-          <h1>{band.name}</h1>
-          <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p>
+          {section !== 'Event' && <><h1>{band.name}</h1>
+            <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p></>}
           <nav aria-label="Band workspace">
             <NavLink to={`/bands/${band.bandId}`} end>Schedule</NavLink>
             <NavLink to={`/bands/${band.bandId}/members`}
@@ -126,7 +130,10 @@ export function BandWorkspace({ section = 'Schedule' }) {
               <NavLink to={`/bands/${band.bandId}/settings`}
                 onClick={(event) => { if (section === 'Settings') event.preventDefault() }}>Settings</NavLink>}
           </nav>
-          {section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
+          {section === 'Event' ? eventId === null ? <>
+            <h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link>
+          </> : <EventDetail bandId={band.bandId} eventId={eventId} /> :
+            section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
             section === 'Members' ? <BandMembers key={band.bandId} band={band} /> : <>
             <h2>Schedule</h2>
             <p>Schedules are not available yet.</p>
