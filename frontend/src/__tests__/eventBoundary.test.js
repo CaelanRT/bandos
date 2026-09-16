@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { INVALID_API_RESPONSE } from '../api/errors.js'
 import { getEvent, getEvents, parseEventId } from '../features/events/api.js'
-import { classifyEvent, formatDateHeading, formatLocalTime, groupEvents, isLaterSameDay, isRealDate, isSupportedTimezone, isTime, nextStartBoundary, resolveLocalDateTime } from '../features/events/schedule.js'
+import { classifyEvent, formatDateHeading, formatLocalTime, groupEvents, isLaterSameDay, isRealDate, isSupportedTimezone, isTime, nextBrowserCalendarBoundary, nextStartBoundary, resolveLocalDateTime } from '../features/events/schedule.js'
 
 const event = (overrides = {}) => ({ eventId: 8, bandId: 2, name: 'Practice', type: 'rehearsal', date: '2026-09-19', startTime: '09:05', endTime: '10:05', timezone: 'America/New_York', location: 'Studio', description: null, createdByUserId: 4, isActive: true, createdAt: 'opaque', updatedAt: 'opaque', ...overrides })
 const invalid = (promise) => expect(promise).rejects.toMatchObject({ code: INVALID_API_RESPONSE })
@@ -46,4 +46,15 @@ it('rejects unusable successful schedules and orders date groups while preservin
   const groups = groupEvents(events, now)
   expect(groups.upcoming.map((group) => group.date)).toEqual(['2026-09-02', '2026-09-03'])
   expect(groups.past.map((group) => group.date)).toEqual(['2026-08-30'])
+})
+
+
+it("preserves backend ties and refreshes relative headings at the browser calendar boundary", () => {
+  const now = new Date(2026, 8, 16, 23, 59)
+  const tied = [event({ eventId: 9, date: "2026-09-17", startTime: "09:00", timezone: "UTC" }), event({ eventId: 2, date: "2026-09-17", startTime: "09:00", timezone: "UTC" })]
+  expect(groupEvents(tied, now).upcoming[0].events.map((item) => item.eventId)).toEqual([9, 2])
+  expect(formatDateHeading("2026-09-17", now)).toBe("Tomorrow")
+  const midnight = nextBrowserCalendarBoundary(now)
+  expect(midnight).toEqual(new Date(2026, 8, 17))
+  expect(formatDateHeading("2026-09-17", midnight)).toBe("Today")
 })

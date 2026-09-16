@@ -10,5 +10,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    test: {
+      env: { VITE_API_ORIGIN: 'http://api.test' },
+    },
   }
 })

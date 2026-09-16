@@ -9,6 +9,7 @@ import { destinationFromLocation } from '../../app/destination.js'
 import { useBand, useBands } from './queries.js'
 import { parseEventId } from '../events/api.js'
 import { EventDetail } from '../events/EventDetail.jsx'
+import { BandSchedule } from '../events/BandSchedule.jsx'
 
 export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
@@ -134,10 +135,8 @@ export function BandWorkspace({ section = 'Schedule' }) {
             <h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link>
           </> : <EventDetail bandId={band.bandId} eventId={eventId} /> :
             section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
-            section === 'Members' ? <BandMembers key={band.bandId} band={band} /> : <>
-            <h2>Schedule</h2>
-            <p>Schedules are not available yet.</p>
-          </>}
+            section === 'Members' ? <BandMembers key={band.bandId} band={band} /> :
+              <BandSchedule key={band.bandId} bandId={band.bandId} />}
         </>}
       </>}
   </BandShell>
