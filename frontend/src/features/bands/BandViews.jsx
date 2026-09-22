@@ -11,6 +11,7 @@ import { parseEventId } from '../events/api.js'
 import { EventDetail } from '../events/EventDetail.jsx'
 import { BandSchedule } from '../events/BandSchedule.jsx'
 import { CreateEvent } from '../events/CreateEvent.jsx'
+import { EditEvent } from '../events/EditEvent.jsx'
 
 export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
@@ -122,6 +123,8 @@ export function BandWorkspace({ section = 'Schedule' }) {
             <Navigate to={`/bands/${band.bandId}`} replace state={{ bandPermissionNotice: true }} />}
           {section === 'Create event' && band.currentUserRole === 'member' &&
             <Navigate to={`/bands/${band.bandId}`} replace state={{ eventPermissionNotice: true }} />}
+          {section === 'Edit event' && band.currentUserRole === 'member' && eventId !== null &&
+            <Navigate to={`/bands/${band.bandId}/events/${eventId}`} replace state={{ eventPermissionNotice: true }} />}
           {section === 'Schedule' && location.state?.bandPermissionNotice &&
             <p role="status">Only band leaders can access Settings.</p>}
           {section === 'Schedule' && location.state?.eventPermissionNotice &&
@@ -138,10 +141,12 @@ export function BandWorkspace({ section = 'Schedule' }) {
           </nav>
           {section === 'Event' ? eventId === null ? <>
             <h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link>
-          </> : <EventDetail bandId={band.bandId} eventId={eventId} /> :
+          </> : <EventDetail bandId={band.bandId} eventId={eventId} canEdit={band.currentUserRole === 'leader' && !band.managementDenied} /> :
             section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
             section === 'Members' ? <BandMembers key={band.bandId} band={band} /> :
             section === 'Create event' ? band.currentUserRole === 'leader' && <CreateEvent key={band.bandId} band={band} /> :
+            section === 'Edit event' ? eventId === null ? <><h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link></> :
+              band.currentUserRole === 'leader' && <EditEvent key={`${band.bandId}-${eventId}`} band={band} eventId={eventId} /> :
               <BandSchedule key={band.bandId} bandId={band.bandId} canCreate={band.currentUserRole === 'leader' && !band.managementDenied} />}
         </>}
       </>}

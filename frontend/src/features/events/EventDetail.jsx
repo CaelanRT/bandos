@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { formatLocalTime } from './schedule.js'
+import { formatLocalTime, isEventEditable } from './schedule.js'
 import { useEvent } from './queries.js'
 
 function EventReadFailure({ query }) {
@@ -13,21 +13,24 @@ function EventReadFailure({ query }) {
   </div>
 }
 
-export function EventDetail({ bandId, eventId }) {
+export function EventDetail({ bandId, eventId, canEdit = false }) {
   const detail = useEvent(bandId, eventId)
   const event = detail.data
   const schedule = `/bands/${bandId}`
   const location = useLocation()
   const navigate = useNavigate()
-  const [created] = useState(() => location.state?.eventCreated === true)
+  const [notice] = useState(() => location.state?.eventCreated ? 'Event created.' :
+    location.state?.eventSaved ? 'Event saved.' :
+      location.state?.eventPermissionNotice ? 'Only band leaders can edit events.' :
+        location.state?.eventEditingClosed ? 'This event has already started and can no longer be edited.' : null)
   useEffect(() => {
-    if (!location.state?.eventCreated) return
-    const { eventCreated: _consumed, ...state } = location.state
+    if (!location.state?.eventCreated && !location.state?.eventSaved && !location.state?.eventPermissionNotice && !location.state?.eventEditingClosed) return
+    const { eventCreated: _created, eventSaved: _saved, eventPermissionNotice: _permission, eventEditingClosed: _closed, ...state } = location.state
     navigate(location.pathname + location.search + location.hash, { replace: true, state })
   }, [location, navigate])
   if (event === null) return <><h1>This event is no longer available.</h1><Link to={schedule}>Back to Schedule</Link></>
   return <>
-    {created && <p role="status">Event created.</p>}
+    {notice && <p role="status">{notice}</p>}
     {detail.isPending && <p role="status">Loading event…</p>}
     <EventReadFailure query={detail} />
     {event && <article>
@@ -41,6 +44,7 @@ export function EventDetail({ bandId, eventId }) {
         <dt>Location</dt><dd>{event.location}</dd>
       </dl>
       {event.description !== null && <section aria-labelledby="description-heading"><h2 id="description-heading">Description</h2><p>{event.description}</p></section>}
+      {canEdit && isEventEditable(event) && <Link to={`/bands/${bandId}/events/${eventId}/edit`}>Edit event</Link>}
       <Link to={schedule}>Back to Schedule</Link>
     </article>}
   </>
