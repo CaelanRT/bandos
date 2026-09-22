@@ -1,6 +1,6 @@
 # Edit a future event safely
 
-> **Status:** For Review — Draft PR [#35](https://github.com/CaelanRT/bandos/pull/35)
+> **Status:** Completed — merged in PR [#35](https://github.com/CaelanRT/bandos/pull/35)
 > **Specification:** [Phase 3 — Band schedules and events](../../04-phase-3-band-schedules-and-events.md)
 
 ## User/system outcome
