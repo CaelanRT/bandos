@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { emptyEventValues, normalizeEventValues, validateEventValues } from '../features/events/eventForm.js'
+import { changedEventValues, emptyEventValues, normalizeEventValues, validateEventValues } from '../features/events/eventForm.js'
 
 const future = { name: '  Practice  ', type: 'rehearsal', date: '2030-09-16', startTime: '15:05', endTime: '16:35', timezone: ' UTC ', location: '  Studio  ', description: '  Bring charts.  ' }
 
@@ -8,6 +8,12 @@ it('normalizes the complete event creation body', () => {
     name: 'Practice', type: 'rehearsal', date: '2030-09-16', startTime: '15:05', endTime: '16:35', timezone: 'UTC', location: 'Studio', description: 'Bring charts.',
   })
   expect(normalizeEventValues({ ...future, description: '   ' }).description).toBeNull()
+})
+
+it('builds an edit body from only normalized changed values', () => {
+  expect(changedEventValues({ ...future, name: 'Practice', location: '  Hall  ', description: ' ' }, future)).toEqual({
+    location: 'Hall', description: null,
+  })
 })
 
 it('requires deliberate valid local schedule values', () => {

@@ -44,6 +44,10 @@ export function classifyEvent(event, now = new Date()) {
   return start === null ? null : start > now ? 'upcoming' : 'past'
 }
 
+export function isEventEditable(event, now = new Date()) {
+  return classifyEvent(event, now) === 'upcoming'
+}
+
 export function groupEvents(events, now = new Date()) {
   const groups = { upcoming: new Map(), past: new Map() }
   events.forEach((event) => {

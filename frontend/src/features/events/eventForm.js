@@ -19,6 +19,18 @@ export function normalizeEventValues(values) {
   }
 }
 
+export function eventValues(event) {
+  return Object.fromEntries(eventFieldNames.map((field) => [field, event[field] ?? '']))
+}
+
+export function changedEventValues(values, originalValues) {
+  const current = normalizeEventValues(values)
+  const original = normalizeEventValues(originalValues)
+  return Object.fromEntries(eventFieldNames
+    .filter((field) => current[field] !== original[field])
+    .map((field) => [field, current[field]]))
+}
+
 export function validateEventValues(values, now = new Date()) {
   const body = normalizeEventValues(values)
   const errors = {}
