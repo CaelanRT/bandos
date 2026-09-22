@@ -7,7 +7,6 @@ import { CreateBand } from '../features/bands/CreateBand.jsx'
 import { BandsHome, BandWorkspace } from '../features/bands/BandViews.jsx'
 
 const unfinishedRoutePaths = [
-  '/bands/:bandId/events/new',
   '/bands/:bandId/events/:eventId/edit',
   '/account',
 ]
@@ -42,6 +41,7 @@ const pageRoutes = [
   { path: '/bands/:bandId/members', element: <ProtectedRoute><BandWorkspace section="Members" /></ProtectedRoute> },
   { path: '/bands/:bandId/settings', element: <ProtectedRoute><BandWorkspace section="Settings" /></ProtectedRoute> },
   { path: '/bands/:bandId/events/:eventId', element: <ProtectedRoute><BandWorkspace section="Event" /></ProtectedRoute> },
+  { path: '/bands/:bandId/events/new', element: <ProtectedRoute><BandWorkspace section="Create event" /></ProtectedRoute> },
   ...unfinishedRoutePaths.map((path) => ({
     path,
     element: (
