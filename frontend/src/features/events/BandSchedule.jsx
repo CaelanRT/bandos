@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { focusManager } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalTime, groupEvents, nextBrowserCalendarBoundary, nextStartBoundary } from './schedule.js'
 import { useEvents } from './queries.js'
 
@@ -40,12 +40,21 @@ function EventSection({ title, groups, bandId }) {
 
 export function BandSchedule({ bandId, canCreate = false }) {
   const events = useEvents(bandId)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [deletedNotice, setDeletedNotice] = useState(() => location.state?.eventDeleted === true)
   const [now, setNow] = useState(() => new Date())
   const groups = events.data ? groupEvents(events.data, now) : null
 
   useEffect(() => focusManager.subscribe(() => {
     if (focusManager.isFocused()) setNow(new Date())
   }), [])
+
+  useEffect(() => {
+    if (!location.state?.eventDeleted) return
+    const { eventDeleted: _deleted, ...state } = location.state
+    navigate(location.pathname + location.search + location.hash, { replace: true, state })
+  }, [location, navigate])
 
   useEffect(() => {
     if (!events.data) return undefined
@@ -58,6 +67,7 @@ export function BandSchedule({ bandId, canCreate = false }) {
 
   return <>
     <h2>Schedule</h2>
+    {deletedNotice && <p role="status">Event deleted. <button type="button" onClick={() => setDeletedNotice(false)}>Dismiss</button></p>}
     {canCreate && <Link to={`/bands/${bandId}/events/new`}>Create event</Link>}
     {events.isPending && <p role="status">Loading schedule…</p>}
     <ScheduleReadFailure query={events} />

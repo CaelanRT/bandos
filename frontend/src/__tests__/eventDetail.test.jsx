@@ -51,7 +51,8 @@ it.each(['member', 'leader'])('shows the same complete local event detail for a 
   expect(screen.getByText('Bring charts.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Back to Schedule' })).toHaveAttribute('href', '/bands/2')
   expect(screen.queryByText('createdAt')).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /Edit|Delete/ })).not.toBeInTheDocument()
+  if (currentRole === 'member') expect(screen.queryByRole('button', { name: /Edit|Delete/ })).not.toBeInTheDocument()
+  else expect(screen.getByRole('button', { name: 'Delete event' })).toBeInTheDocument()
 })
 
 it('omits an empty description and does not request malformed event IDs', async () => {

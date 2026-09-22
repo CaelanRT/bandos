@@ -129,6 +129,8 @@ export function BandWorkspace({ section = 'Schedule' }) {
             <p role="status">Only band leaders can access Settings.</p>}
           {section === 'Schedule' && location.state?.eventPermissionNotice &&
             <p role="status">Only band leaders can create events.</p>}
+          {section === 'Schedule' && location.state?.eventManagementPermissionNotice &&
+            <p role="status">Only band leaders can manage events.</p>}
           {section !== 'Event' && <><h1>{band.name}</h1>
             <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p></>}
           <nav aria-label="Band workspace">

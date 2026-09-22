@@ -70,3 +70,15 @@ export async function cacheUpdatedEvent(client, event, signal) {
   void client.invalidateQueries({ queryKey: eventKeys.list(event.bandId) })
   return true
 }
+
+export async function cacheDeletedEvent(client, bandId, eventId, signal) {
+  await Promise.all([
+    client.cancelQueries({ queryKey: eventKeys.list(bandId) }),
+    client.cancelQueries({ queryKey: eventKeys.detail(bandId, eventId) }),
+  ])
+  if (signal.aborted) return false
+  client.setQueryData(eventKeys.detail(bandId, eventId), null)
+  client.setQueryData(eventKeys.list(bandId), (events) => events?.filter((item) => item.eventId !== eventId))
+  void client.invalidateQueries({ queryKey: eventKeys.list(bandId) })
+  return true
+}
