@@ -1,6 +1,6 @@
 # Create a band event
 
-> **Status:** For Review — Draft PR [#34](https://github.com/CaelanRT/bandos/pull/34)
+> **Status:** Completed — merged in [PR #34](https://github.com/CaelanRT/bandos/pull/34)
 > **Specification:** [Phase 3 — Band schedules and events](../../04-phase-3-band-schedules-and-events.md)
 
 ## Objective
