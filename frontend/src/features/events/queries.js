@@ -46,3 +46,14 @@ export function useEvents(bandId) {
 
   return query
 }
+
+export async function cacheCreatedEvent(client, event, signal) {
+  await client.cancelQueries({ queryKey: eventKeys.list(event.bandId) })
+  if (signal.aborted) return false
+  client.setQueryData(eventKeys.detail(event.bandId, event.eventId), event)
+  client.setQueryData(eventKeys.list(event.bandId), (events) => events === undefined ? events : [
+    ...events.filter((item) => item.eventId !== event.eventId), event,
+  ])
+  void client.invalidateQueries({ queryKey: eventKeys.list(event.bandId) })
+  return true
+}

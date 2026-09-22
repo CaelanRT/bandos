@@ -10,6 +10,7 @@ import { useBand, useBands } from './queries.js'
 import { parseEventId } from '../events/api.js'
 import { EventDetail } from '../events/EventDetail.jsx'
 import { BandSchedule } from '../events/BandSchedule.jsx'
+import { CreateEvent } from '../events/CreateEvent.jsx'
 
 export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
@@ -119,8 +120,12 @@ export function BandWorkspace({ section = 'Schedule' }) {
         {band && <>
           {section === 'Settings' && band.currentUserRole === 'member' &&
             <Navigate to={`/bands/${band.bandId}`} replace state={{ bandPermissionNotice: true }} />}
+          {section === 'Create event' && band.currentUserRole === 'member' &&
+            <Navigate to={`/bands/${band.bandId}`} replace state={{ eventPermissionNotice: true }} />}
           {section === 'Schedule' && location.state?.bandPermissionNotice &&
             <p role="status">Only band leaders can access Settings.</p>}
+          {section === 'Schedule' && location.state?.eventPermissionNotice &&
+            <p role="status">Only band leaders can create events.</p>}
           {section !== 'Event' && <><h1>{band.name}</h1>
             <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p></>}
           <nav aria-label="Band workspace">
@@ -136,7 +141,8 @@ export function BandWorkspace({ section = 'Schedule' }) {
           </> : <EventDetail bandId={band.bandId} eventId={eventId} /> :
             section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
             section === 'Members' ? <BandMembers key={band.bandId} band={band} /> :
-              <BandSchedule key={band.bandId} bandId={band.bandId} />}
+            section === 'Create event' ? band.currentUserRole === 'leader' && <CreateEvent key={band.bandId} band={band} /> :
+              <BandSchedule key={band.bandId} bandId={band.bandId} canCreate={band.currentUserRole === 'leader' && !band.managementDenied} />}
         </>}
       </>}
   </BandShell>

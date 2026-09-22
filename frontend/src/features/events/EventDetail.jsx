@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalTime } from './schedule.js'
 import { useEvent } from './queries.js'
 
@@ -16,8 +17,17 @@ export function EventDetail({ bandId, eventId }) {
   const detail = useEvent(bandId, eventId)
   const event = detail.data
   const schedule = `/bands/${bandId}`
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [created] = useState(() => location.state?.eventCreated === true)
+  useEffect(() => {
+    if (!location.state?.eventCreated) return
+    const { eventCreated: _consumed, ...state } = location.state
+    navigate(location.pathname + location.search + location.hash, { replace: true, state })
+  }, [location, navigate])
   if (event === null) return <><h1>This event is no longer available.</h1><Link to={schedule}>Back to Schedule</Link></>
   return <>
+    {created && <p role="status">Event created.</p>}
     {detail.isPending && <p role="status">Loading event…</p>}
     <EventReadFailure query={detail} />
     {event && <article>

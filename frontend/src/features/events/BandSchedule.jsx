@@ -38,7 +38,7 @@ function EventSection({ title, groups, bandId }) {
   </section>
 }
 
-export function BandSchedule({ bandId }) {
+export function BandSchedule({ bandId, canCreate = false }) {
   const events = useEvents(bandId)
   const [now, setNow] = useState(() => new Date())
   const groups = events.data ? groupEvents(events.data, now) : null
@@ -58,6 +58,7 @@ export function BandSchedule({ bandId }) {
 
   return <>
     <h2>Schedule</h2>
+    {canCreate && <Link to={`/bands/${bandId}/events/new`}>Create event</Link>}
     {events.isPending && <p role="status">Loading schedule…</p>}
     <ScheduleReadFailure query={events} />
     {groups && <>

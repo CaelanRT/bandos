@@ -112,8 +112,20 @@ main {
 }
 
 .band-form label,
-.band-form input {
+.band-form input,
+.band-form select,
+.band-form textarea {
   display: block;
+}
+
+.band-form select,
+.band-form textarea {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-block-start: 0.5rem;
+  padding: 0.5rem;
+  font: inherit;
 }
 
 .band-form input {
