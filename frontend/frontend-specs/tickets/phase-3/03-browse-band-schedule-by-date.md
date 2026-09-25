@@ -1,6 +1,6 @@
 # Browse a band schedule by date
 
-> **Status:** Completed
+> **Status:** Completed — merged in [PR #33](https://github.com/CaelanRT/bandos/pull/33)
 > **Specification:** [Phase 3 — Band schedules and events](../../04-phase-3-band-schedules-and-events.md)
 
 ## User/system outcome

@@ -1,6 +1,6 @@
 # Phase 3 — Band schedules and events
 
-> **Status:** Ready for ticketing and later implementation
+> **Status:** Completed (2026-09-25) — see [Phase 3 verification result](tickets/phase-3/07-verification-result.md)
 > **Phase outcome:** Band members use upcoming and past schedules, and leaders manage the supported event lifecycle.
 > **Planning source:** Approved frontend implementation plan, reconciled with the implemented backend and finalized through a focused Grill Me session on 2026-09-15
 > **Governing plan:** [Frontend implementation plan](00-frontend-implementation-plan.md)

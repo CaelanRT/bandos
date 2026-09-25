@@ -95,24 +95,24 @@ The mutation must not be automatically retried.
 
 ## Acceptance criteria
 
-* [ ] A confirmed leader can open the Create event form from the band workspace.
-* [ ] A confirmed member cannot use the creation flow, and direct route access returns them safely to Schedule with permission feedback.
-* [ ] Creation controls are not shown while the user's role is unresolved.
-* [ ] The form initially shows no validation errors.
-* [ ] Required schedule values are deliberately entered or selected rather than automatically defaulted.
-* [ ] The form uses the Phase 3 event-validation rules before submission.
-* [ ] Invalid values cannot be submitted.
-* [ ] Recognized backend field-validation errors are shown against the relevant fields.
-* [ ] The submitted request body matches the required normalized API shape.
-* [ ] Only one creation request can be in flight from a single submission attempt.
-* [ ] Dirty navigation uses the existing shared unsaved-navigation boundary.
-* [ ] A confirmed `201 { event }` clears dirty state.
-* [ ] A confirmed creation updates or invalidates the relevant event queries using existing TanStack Query conventions.
-* [ ] A confirmed creation replacement-navigates to the returned event's durable detail page.
-* [ ] Permission loss, inaccessible-band responses, and authentication expiration use the application's existing recovery behavior.
-* [ ] If creation does not receive a confirmed outcome, the form retains the user's values and does not claim success or failure.
-* [ ] An uncertain creation outcome is not automatically retried.
-* [ ] A deliberate retry after an uncertain outcome warns that the original request may already have succeeded and that a duplicate event could result.
+* [x] A confirmed leader can open the Create event form from the band workspace.
+* [x] A confirmed member cannot use the creation flow, and direct route access returns them safely to Schedule with permission feedback.
+* [x] Creation controls are not shown while the user's role is unresolved.
+* [x] The form initially shows no validation errors.
+* [x] Required schedule values are deliberately entered or selected rather than automatically defaulted.
+* [x] The form uses the Phase 3 event-validation rules before submission.
+* [x] Invalid values cannot be submitted.
+* [x] Recognized backend field-validation errors are shown against the relevant fields.
+* [x] The submitted request body matches the required normalized API shape.
+* [x] Only one creation request can be in flight from a single submission attempt.
+* [x] Dirty navigation uses the existing shared unsaved-navigation boundary.
+* [x] A confirmed `201 { event }` clears dirty state.
+* [x] A confirmed creation updates or invalidates the relevant event queries using existing TanStack Query conventions.
+* [x] A confirmed creation replacement-navigates to the returned event's durable detail page.
+* [x] Permission loss, inaccessible-band responses, and authentication expiration use the application's existing recovery behavior.
+* [x] If creation does not receive a confirmed outcome, the form retains the user's values and does not claim success or failure.
+* [x] An uncertain creation outcome is not automatically retried.
+* [x] A deliberate retry after an uncertain outcome warns that the original request may already have succeeded and that a duplicate event could result.
 
 ## Testing strategy
 
@@ -158,12 +158,12 @@ Verify:
 
 These checks are intentionally non-blocking for creating the Draft Pull Request. They could not be performed in the implementation environment because no supported browser runtime is installed. Complete and record them during human review before marking the PR ready:
 
-* [ ] Native date/time control usability.
-* [ ] Timezone search, keyboard behavior, and readable labels.
-* [ ] Cancel with and without unsaved changes.
-* [ ] Successful Schedule-to-detail creation flow.
-* [ ] Narrow and desktop layouts.
-* [ ] Representative timezone values.
+* [x] Native date/time control usability.
+* [x] Timezone search, keyboard behavior, and readable labels.
+* [x] Cancel with and without unsaved changes.
+* [x] Successful Schedule-to-detail creation flow.
+* [x] Narrow and desktop layouts.
+* [x] Representative timezone values.
 
 ### Explicitly not required
 
@@ -193,14 +193,14 @@ These checks are intentionally non-blocking for creating the Draft Pull Request.
 
 ## Definition of done
 
-* [ ] All acceptance criteria are satisfied.
-* [ ] Required tests from the Testing Strategy are implemented and passing.
-* [ ] Existing relevant tests pass.
-* [ ] Lint passes.
-* [ ] Build passes.
-* [ ] Required whitespace/diff checks pass.
-* [ ] No known regression exists within event creation or directly touched shared behavior.
-* [ ] No out-of-scope recovery, cache-race, or form infrastructure was introduced.
+* [x] All acceptance criteria are satisfied.
+* [x] Required tests from the Testing Strategy are implemented and passing.
+* [x] Existing relevant tests pass.
+* [x] Lint passes.
+* [x] Build passes.
+* [x] Required whitespace/diff checks pass.
+* [x] No known regression exists within event creation or directly touched shared behavior.
+* [x] No out-of-scope recovery, cache-race, or form infrastructure was introduced.
 
 ## Dependencies
 
