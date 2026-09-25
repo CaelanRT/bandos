@@ -1,6 +1,6 @@
 # Inspect durable event details
 
-> **Status:** Completed
+> **Status:** Completed — merged in [PR #32](https://github.com/CaelanRT/bandos/pull/32)
 > **Specification:** [Phase 3 — Band schedules and events](../../04-phase-3-band-schedules-and-events.md)
 
 ## User/system outcome

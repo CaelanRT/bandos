@@ -1,6 +1,6 @@
 # Establish the event data and schedule boundary
 
-> **Status:** Ready for implementation
+> **Status:** Completed — merged in [PR #31](https://github.com/CaelanRT/bandos/pull/31)
 > **Specification:** [Phase 3 — Band schedules and events](../../04-phase-3-band-schedules-and-events.md)
 
 ## User/system outcome
