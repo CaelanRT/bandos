@@ -1,5 +1,8 @@
 # Deactivate the account
 
+> **Status:** For Review
+> **Draft PR:** [#41](https://github.com/CaelanRT/bandos/pull/41)
+
 ## Objective
 
 A musician can make an informed, password-confirmed deactivation decision and leave the app in a clean signed-out state.
