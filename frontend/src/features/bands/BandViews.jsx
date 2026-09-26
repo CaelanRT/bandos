@@ -65,6 +65,7 @@ export function BandShell({ children, bands, context }) {
     <nav ref={index} id="band-index" className={`band-index${open ? ' is-open' : ''}`} aria-label="Primary">
       <Link to="/">Home</Link>
       <CreateBandLink />
+      <NavLink to="/account">Account</NavLink>
       <h2>Your bands</h2>
       {bands.isPending && <p role="status">Loading bands…</p>}
       <ReadFailure query={bands} subject="your bands" />

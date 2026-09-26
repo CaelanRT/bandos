@@ -57,7 +57,8 @@ it('distinguishes loading from zero bands and keeps Logout available', async () 
   await act(async () => pending.resolve(json({ bands: [] })))
   expect(await screen.findByText(/Share your username, @alex/)).toBeInTheDocument()
   expect(screen.getByText('You don’t belong to any bands yet.')).toBeInTheDocument()
-  expect(screen.queryByRole('link', { name: /Members|Settings|Account/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Members|Settings/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('href', '/account')
 })
 
 it('sorts names case-insensitively with ID ties and distinct duplicate destinations', async () => {

@@ -121,6 +121,12 @@ export function SessionBoundary({ children }) {
     return logoutPending.current
   }, [endSession])
 
+  const updateCurrentUser = useCallback((user) => {
+    if (statusRef.current !== 'authenticated') return
+    setSession((current) => current.status === 'authenticated' && current.user.userId === user.userId
+      ? { ...current, user } : current)
+  }, [])
+
   useEffect(() => {
     if (!started.current) {
       started.current = true
@@ -149,6 +155,7 @@ export function SessionBoundary({ children }) {
       ...session,
       completeAuthentication,
       authenticatedRequest,
+      updateCurrentUser,
       logOut,
       acknowledgeEnd,
     }}>
