@@ -33,9 +33,7 @@ export function useEvent(bandId, eventId) {
 export function useEvents(bandId) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
-  const query = useQuery({ ...freshness, queryKey: eventKeys.list(bandId), enabled: bandId !== null,
-    queryFn: ({ signal }) => getEvents(authenticatedRequest, bandId, signal),
-  })
+  const query = useQuery(eventListOptions(authenticatedRequest, bandId))
 
   useEffect(() => {
     if (bandId === null || query.error?.code !== 'BAND_NOT_FOUND') return undefined
@@ -45,6 +43,11 @@ export function useEvents(bandId) {
   }, [bandId, client, query.error])
 
   return query
+}
+
+export function eventListOptions(request, bandId) {
+  return { ...freshness, queryKey: eventKeys.list(bandId), enabled: bandId !== null,
+    queryFn: ({ signal }) => getEvents(request, bandId, signal) }
 }
 
 export async function cacheCreatedEvent(client, event, signal) {
