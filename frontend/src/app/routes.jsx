@@ -1,14 +1,11 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { SessionRoutes } from './SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
 import { Login, NotFound, Register } from './RouteViews.jsx'
 
 import { CreateBand } from '../features/bands/CreateBand.jsx'
 import { BandsHome, BandWorkspace } from '../features/bands/BandViews.jsx'
-
-const unfinishedRoutePaths = [
-  '/account',
-]
+import { Account } from '../features/account/Account.jsx'
 
 const pageRoutes = [
   {
@@ -42,14 +39,7 @@ const pageRoutes = [
   { path: '/bands/:bandId/events/:eventId', element: <ProtectedRoute><BandWorkspace section="Event" /></ProtectedRoute> },
   { path: '/bands/:bandId/events/:eventId/edit', element: <ProtectedRoute><BandWorkspace section="Edit event" /></ProtectedRoute> },
   { path: '/bands/:bandId/events/new', element: <ProtectedRoute><BandWorkspace section="Create event" /></ProtectedRoute> },
-  ...unfinishedRoutePaths.map((path) => ({
-    path,
-    element: (
-      <ProtectedRoute>
-        <Navigate to="/" replace />
-      </ProtectedRoute>
-    ),
-  })),
+  { path: '/account', element: <ProtectedRoute><Account /></ProtectedRoute> },
   {
     path: '*',
     element: <NotFound />,
