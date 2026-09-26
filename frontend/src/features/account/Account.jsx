@@ -7,6 +7,7 @@ import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
 import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
 import { changedProfile, profileFields, profileValues, readProfile, saveProfile, validateProfile } from './profile.js'
 import { reconcileProfileMembers } from './queries.js'
+import { DeactivateAccount } from './DeactivateAccount.jsx'
 
 const fields = [
   { name: 'firstName', label: 'First name', autoComplete: 'given-name' },
@@ -25,6 +26,7 @@ export function Account() {
   const [formError, setFormError] = useState(null)
   const [message, setMessage] = useState(null)
   const [pending, setPending] = useState(false)
+  const [deactivationPending, setDeactivationPending] = useState(false)
   const [reconciliation, setReconciliation] = useState(null)
   const [retryAt, setRetryAt] = useState(null)
   const [focusField, setFocusField] = useState(null)
@@ -35,7 +37,7 @@ export function Account() {
   const attempted = useRef(null)
   const currentBlocker = useRef(null)
   const dirty = profileFields.some((field) => values[field] !== baseline[field])
-  const { blocker } = useUnsavedNavigation(dirty)
+  const { blocker } = useUnsavedNavigation(dirty || deactivationPending)
   useEffect(() => { currentBlocker.current = blocker }, [blocker])
   useEffect(() => {
     const controller = new AbortController()
@@ -179,6 +181,7 @@ export function Account() {
       </div>
       {pending && <p role="status">Saving profile…</p>}
     </form>
-    <UnsavedNavigationDialog blocker={blocker} pending={pending || checking} />
+    <DeactivateAccount user={user} disabled={pending || checking} setPending={setDeactivationPending} />
+    <UnsavedNavigationDialog blocker={blocker} pending={pending || checking || deactivationPending} />
   </BandShell>
 }

@@ -127,6 +127,10 @@ export function SessionBoundary({ children }) {
       ? { ...current, user } : current)
   }, [])
 
+  const finishDeactivation = useCallback(() => {
+    endSession('deactivated', generation.current)
+  }, [endSession])
+
   useEffect(() => {
     if (!started.current) {
       started.current = true
@@ -156,6 +160,7 @@ export function SessionBoundary({ children }) {
       completeAuthentication,
       authenticatedRequest,
       updateCurrentUser,
+      finishDeactivation,
       logOut,
       acknowledgeEnd,
     }}>
