@@ -32,6 +32,7 @@ export function EventDetail({ bandId, eventId, canEdit = false }) {
       eventManagementPermissionNotice: _managementPermission, eventEditingClosed: _closed, ...state } = location.state
     navigate(location.pathname + location.search + location.hash, { replace: true, state })
   }, [location, navigate])
+  if (detail.error?.code === 'BAND_NOT_FOUND') return <p role="status">Checking band access…</p>
   if (event === null) return <><h1>This event is no longer available.</h1><Link to={schedule}>Back to Schedule</Link></>
   return <>
     {notice && <p role="status">{notice}</p>}

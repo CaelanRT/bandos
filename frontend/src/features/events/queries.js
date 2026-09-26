@@ -10,7 +10,7 @@ const freshness = { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: tr
 export function useEvent(bandId, eventId) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
-  return useQuery({ ...freshness, queryKey: eventKeys.detail(bandId, eventId),
+  const query = useQuery({ ...freshness, queryKey: eventKeys.detail(bandId, eventId),
     enabled: bandId !== null && eventId !== null,
     queryFn: async ({ signal }) => {
       try {
@@ -28,6 +28,15 @@ export function useEvent(bandId, eventId) {
       }
     },
   })
+
+  useEffect(() => {
+    if (bandId === null || query.error?.code !== 'BAND_NOT_FOUND') return undefined
+    const controller = new AbortController()
+    void removeBandAccess(client, bandId, controller.signal)
+    return () => controller.abort()
+  }, [bandId, client, query.error])
+
+  return query
 }
 
 export function useEvents(bandId) {

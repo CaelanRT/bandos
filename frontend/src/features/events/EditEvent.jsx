@@ -123,6 +123,7 @@ export function EditEvent({ band, eventId }) {
     }
   }
 
+  if (detail.error?.code === 'BAND_NOT_FOUND') return <p role="status">Checking band access…</p>
   if (detail.isPending || values === null) return <p role="status">Loading event…</p>
   const locked = pending || permissionChecking || permissionFailed
   const fieldProps = (field) => ({

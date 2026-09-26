@@ -174,10 +174,26 @@ describe('route access', () => {
   it('keeps the catch-all publicly reachable', async () => {
     fetchMock.mockResolvedValueOnce(authenticationRequiredResponse())
 
-    renderApplication('/not-a-real-page')
+    const router = renderApplication('/not-a-real-page')
 
     expect(
       await screen.findByRole('heading', { name: 'Page not found' }),
     ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: 'Go to Login' }))
+    expect(router.state.location.pathname).toBe('/login')
+    expect(await screen.findByRole('heading', { name: 'Login' })).toBeInTheDocument()
+  })
+
+  it('offers the personal datebook from an authenticated unknown route', async () => {
+    fetchMock.mockImplementation(async (url) => new URL(url).pathname.endsWith('/users/me')
+      ? authenticatedResponse()
+      : jsonResponse({ data: { bands: [] } }))
+    const router = renderApplication('/not-a-real-page')
+
+    expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: 'Go to personal datebook' }))
+    expect(router.state.location.pathname).toBe('/')
+    expect(await screen.findByRole('heading', { name: 'Personal datebook' })).toBeInTheDocument()
   })
 })

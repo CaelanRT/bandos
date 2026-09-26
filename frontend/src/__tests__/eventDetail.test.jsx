@@ -8,6 +8,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { routes } from '../app/routes.jsx'
 import { SessionBoundary } from '../app/SessionBoundary.jsx'
 import { createBandosQueryClient } from '../app/queryClient.js'
+import { bandKeys, eventKeys } from '../features/bands/queries.js'
 
 const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera', email: 'alex@example.com', plan: 'free', is_active: true, created_at: 'opaque' }
 const band = (role = 'member') => ({ bandId: 2, name: 'The Waves', currentUserRole: role, isActive: true, createdAt: 'opaque', members: [] })
@@ -15,7 +16,7 @@ const event = (changes = {}) => ({ eventId: 8, bandId: 2, name: 'Long rehearsal'
 const json = (data) => new Response(JSON.stringify({ data }), { status: 200 })
 const failure = (code, status) => new Response(JSON.stringify({ error: { code, message: 'Failed' } }), { status })
 const fetchMock = vi.fn()
-let clients, role, detail
+let clients, role, detail, listedBands
 
 function mount(entry = '/bands/2/events/8') {
   const client = createBandosQueryClient()
@@ -26,11 +27,11 @@ function mount(entry = '/bands/2/events/8') {
 }
 
 beforeEach(() => {
-  clients = []; role = 'member'; detail = event(); fetchMock.mockReset()
+  clients = []; role = 'member'; detail = event(); listedBands = [band(role)]; fetchMock.mockReset()
   fetchMock.mockImplementation(async (url) => {
     const path = new URL(url).pathname.replace('/api/v1', '')
     if (path === '/users/me') return json({ user })
-    if (path === '/bands') return json({ bands: [band(role)] })
+    if (path === '/bands') return json({ bands: listedBands })
     if (path === '/bands/2') return json({ band: band(role) })
     if (path === '/bands/2/events/8') return detail instanceof Response ? detail.clone() : json({ event: detail })
     throw new Error(`Unexpected request ${path}`)
@@ -80,6 +81,28 @@ it('uses neutral unavailable recovery and retains cached detail through a failed
   detail = event({ name: 'Updated rehearsal' })
   await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
   await screen.findByRole('heading', { name: 'Updated rehearsal' })
+})
+
+it('removes a stale event workspace when its detail read denies band access', async () => {
+  role = 'leader'
+  listedBands = [band(role)]
+  const { client } = mount()
+  await screen.findByRole('heading', { name: 'Long rehearsal' })
+  client.setQueryData(eventKeys.list(2), [event()])
+  client.setQueryData(bandKeys.detail(3), { bandId: 3, name: 'Another band' })
+  listedBands = []
+  detail = failure('BAND_NOT_FOUND', 404)
+
+  await act(async () => { focusManager.setFocused(false); focusManager.setFocused(true) })
+  expect(await screen.findByRole('heading', { name: 'This band is no longer available' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Long rehearsal' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Delete event' })).not.toBeInTheDocument()
+  expect(client.getQueryData(eventKeys.detail(2, 8))).toBeUndefined()
+  expect(client.getQueryData(eventKeys.list(2))).toBeUndefined()
+  expect(client.getQueryData(bandKeys.detail(2))).toBeNull()
+  expect(client.getQueryData(bandKeys.detail(3))).toEqual({ bandId: 3, name: 'Another band' })
+  await userEvent.click(screen.getByRole('link', { name: 'Go home' }))
+  expect(await screen.findByRole('heading', { name: 'Personal datebook' })).toBeInTheDocument()
 })
 
 it('redirects an expired event read through the existing protected-session boundary', async () => {
