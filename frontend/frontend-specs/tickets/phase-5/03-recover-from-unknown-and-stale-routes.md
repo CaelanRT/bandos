@@ -1,5 +1,8 @@
 # Recover from unknown and stale routes
 
+> **Status:** For Review
+> **Draft PR:** [#42](https://github.com/CaelanRT/bandos/pull/42)
+
 ## Objective
 
 A musician reaching an unknown URL or a resource that became unavailable can find an appropriate destination without seeing stale private content or unsupported actions.
