@@ -1,5 +1,8 @@
 # View and edit the account profile
 
+> **Status:** For Review
+> **Draft PR:** [#40](https://github.com/CaelanRT/bandos/pull/40)
+
 ## Objective
 
 An authenticated musician can reach Account, inspect current profile information, and save supported name and username changes without stale identity elsewhere in the app.
