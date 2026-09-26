@@ -1,6 +1,6 @@
 # View and edit the account profile
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#40](https://github.com/CaelanRT/bandos/pull/40)
 
 ## Objective
