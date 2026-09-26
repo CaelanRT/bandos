@@ -1,6 +1,6 @@
 # Deactivate the account
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#41](https://github.com/CaelanRT/bandos/pull/41)
 
 ## Objective
