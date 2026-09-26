@@ -1,6 +1,6 @@
 # Browse the personal datebook
 
-> **Status:** For Review
+> **Status:** Completed
 > **Pull request:** [#39](https://github.com/CaelanRT/bandos/pull/39)
 > **Specification:** [Phase 4 — Personal datebook](../../05-phase-4-personal-datebook.md), sections 2, 4, and 5
 
