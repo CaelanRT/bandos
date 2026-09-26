@@ -101,7 +101,7 @@ describe('session restoration', () => {
     renderApplication('/')
 
     expect(
-      await screen.findByRole('heading', { name: 'Bandos' }),
+      await screen.findByRole('heading', { name: 'Personal datebook' }),
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/users\/me$/),
@@ -165,7 +165,7 @@ describe('route access', () => {
     const router = renderApplication(entry)
 
     expect(
-      await screen.findByRole('heading', { name: 'Bandos' }),
+      await screen.findByRole('heading', { name: 'Personal datebook' }),
     ).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(router.state.historyAction).toBe('REPLACE')

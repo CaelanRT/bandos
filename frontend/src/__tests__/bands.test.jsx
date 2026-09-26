@@ -63,9 +63,12 @@ it('distinguishes loading from zero bands and keeps Logout available', async () 
 it('sorts names case-insensitively with ID ties and distinct duplicate destinations', async () => {
   list = [band(7, 'Zulu'), band(9, 'alpha'), band(2, 'Alpha'), band(3, 'Alpha')]
   mount()
-  await screen.findByText(/Share your username/)
-  const links = within(screen.getByRole('main')).getAllByRole('link')
-  expect(links.map((link) => link.getAttribute('href'))).toEqual(['/bands/new', '/bands/2', '/bands/3', '/bands/9', '/bands/7'])
+  await screen.findByText('No upcoming events.')
+  const links = within(screen.getByRole('navigation', { name: 'Primary' })).getAllByRole('link', { name: /Alpha|alpha|Zulu/ })
+  expect(links.map((link) => link.getAttribute('href'))).toEqual(['/bands/2', '/bands/3', '/bands/9', '/bands/7'])
+  expect(within(screen.getByRole('main')).getAllByRole('link').map((link) => link.textContent)).toEqual([
+    'Zulu schedule', 'alpha schedule', 'Alpha schedule', 'Alpha schedule',
+  ])
   expect(list.map((item) => item.bandId)).toEqual([7, 9, 2, 3])
 })
 
