@@ -52,12 +52,15 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
-it.each([{ existing: [] }, { existing: [band(2, 'Existing')] }])('exposes creation in home and global navigation with bands %j', async ({ existing }) => {
+it.each([{ existing: [] }, { existing: [band(2, 'Existing')] }])('exposes creation from home navigation with bands %j', async ({ existing }) => {
   list = existing
   const { router } = mount(['/'])
-  await screen.findByRole('heading', { name: 'Bandos' })
+  await screen.findByRole('heading', { name: 'Personal datebook' })
   const home = within(screen.getByRole('main'))
-  await userEvent.click(await home.findByRole('link', { name: 'Create a band' }))
+  const createLink = existing.length === 0
+    ? await home.findByRole('link', { name: 'Create a band' })
+    : within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Create a band' })
+  await userEvent.click(createLink)
   await screen.findByLabelText('Band name')
   expect(router.state.location.state.creationOrigin).toBe('/')
   await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -150,7 +153,7 @@ it('returns Cancel to a validated origin including search and hash; restores foc
 
 it('guards Back and Forward and SPA links, and unload only while input differs from baseline', async () => {
   const { router } = mount(['/', '/bands/new', '/'])
-  await screen.findByRole('heading', { name: 'Bandos' })
+  await screen.findByRole('heading', { name: 'Personal datebook' })
   await act(() => router.navigate(-1))
   await enter()
   const unload = new Event('beforeunload', { cancelable: true })

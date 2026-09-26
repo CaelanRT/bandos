@@ -12,6 +12,7 @@ import { EventDetail } from '../events/EventDetail.jsx'
 import { BandSchedule } from '../events/BandSchedule.jsx'
 import { CreateEvent } from '../events/CreateEvent.jsx'
 import { EditEvent } from '../events/EditEvent.jsx'
+import { Datebook } from '../datebook/Datebook.jsx'
 
 export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
@@ -78,14 +79,13 @@ export function BandsHome() {
   const { user } = useSession()
   return <BandShell bands={bands} context="Home">
     <DeletionNotice />
-    <h1>Bandos</h1>
-    <h2>Your bands</h2>
-    <CreateBandLink />
-    {bands.isPending && <p role="status">Loading bands…</p>}
-    <ReadFailure query={bands} subject="your bands" />
-    {bands.data?.length > 0 && <BandLinks bands={bands.data} />}
-    {bands.data?.length === 0 && <p>You don’t belong to any bands yet.</p>}
-    {bands.data && <p>Already playing with a band? Share your username, @{user.username}, with its leader so they can add you.</p>}
+    <h1>Personal datebook</h1>
+    <Datebook />
+    {bands.data?.length === 0 && <>
+      <p>You don’t belong to any bands yet.</p>
+      <CreateBandLink />
+      <p>Already playing with a band? Share your username, @{user.username}, with its leader so they can add you.</p>
+    </>}
   </BandShell>
 }
 
