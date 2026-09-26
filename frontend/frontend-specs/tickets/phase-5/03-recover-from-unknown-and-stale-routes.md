@@ -1,6 +1,6 @@
 # Recover from unknown and stale routes
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#42](https://github.com/CaelanRT/bandos/pull/42)
 
 ## Objective
