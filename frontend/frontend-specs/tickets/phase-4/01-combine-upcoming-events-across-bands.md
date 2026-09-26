@@ -1,6 +1,6 @@
 # Combine upcoming events across bands
 
-> **Status:** For Review
+> **Status:** Completed
 > **Pull request:** [#38](https://github.com/CaelanRT/bandos/pull/38)
 > **Specification:** [Phase 4 — Personal datebook](../../05-phase-4-personal-datebook.md), sections 3 and 5
 
