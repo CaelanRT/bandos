@@ -1,5 +1,9 @@
 # Verify and harden critical flows
 
+> **Status:** For Review
+> **Draft PR:** [#43](https://github.com/CaelanRT/bandos/pull/43)
+> **Verification record:** [Critical-flow verification](04-verification-result.md)
+
 ## Objective
 
 The completed functional frontend remains coherent and operable across its critical journey when viewed with a keyboard, narrow viewport, and browser zoom.
