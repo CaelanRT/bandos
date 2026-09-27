@@ -41,9 +41,15 @@ export function EditEvent({ band, eventId }) {
   useEffect(() => { if (event && values === null) { const initial = eventValues(event); setValues(initial); setOriginal(initial) } }, [event, values])
   useEffect(() => { if (formError) notice.current?.focus() }, [formError])
   useEffect(() => {
-    if (event === null) navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true })
-    else if (event && !isEventEditable(event)) navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true, state: { eventEditingClosed: true } })
-  }, [band.bandId, event, eventId, navigate])
+    if (event === null) {
+      allowNavigation()
+      navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true })
+    }
+    else if (event && !isEventEditable(event)) {
+      allowNavigation()
+      navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true, state: { eventEditingClosed: true } })
+    }
+  }, [allowNavigation, band.bandId, event, eventId, navigate])
 
   function validate(nextValues, changed) {
     const next = validateEventValues(nextValues)
@@ -124,6 +130,12 @@ export function EditEvent({ band, eventId }) {
   }
 
   if (detail.error?.code === 'BAND_NOT_FOUND') return <p role="status">Checking band access…</p>
+  if (detail.isError && values === null) return <div role="alert">
+    <p>We couldn’t load this event.</p>
+    <button type="button" disabled={detail.isFetching} onClick={() => detail.refetch()}>
+      {detail.isFetching ? 'Retrying…' : 'Retry'}
+    </button>
+  </div>
   if (detail.isPending || values === null) return <p role="status">Loading event…</p>
   const locked = pending || permissionChecking || permissionFailed
   const fieldProps = (field) => ({

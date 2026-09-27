@@ -12,6 +12,6 @@ export function useUnsavedNavigation(dirty) {
       event.returnValue = ''
     }
   }, [dirty, status]))
-  return { blocker, allowNavigation: () => { bypass.current = true } }
+  const allowNavigation = useCallback(() => { bypass.current = true }, [])
+  return { blocker, allowNavigation }
 }
-

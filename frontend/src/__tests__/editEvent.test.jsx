@@ -32,7 +32,8 @@ beforeEach(() => {
     if (path === '/users/me') return json({ user })
     if (path === '/bands') return json({ bands: [band(role)] })
     if (path === '/bands/2') return json({ band: band(role) })
-    if (path === '/bands/2/events/8') return options.method === 'PATCH' ? patch() : json({ event: detail })
+    if (path === '/bands/2/events/8') return options.method === 'PATCH' ? patch() :
+      detail instanceof Response ? detail.clone() : json({ event: detail })
     if (path === '/bands/2/events') return json({ events: [detail] })
     throw new Error(`Unexpected request ${path}`)
   })
@@ -87,6 +88,40 @@ it('does not submit invalid edits and maps backend field errors', async () => {
   await userEvent.type(screen.getByLabelText('Location'), 'Hall')
   await userEvent.click(screen.getByRole('button', { name: 'Save' }))
   expect(await screen.findByText('Server location error.')).toBeInTheDocument()
+})
+
+it('offers a retry when the edit route cannot load the event', async () => {
+  detail = failure('VALIDATION_ERROR', 400)
+  mount()
+  expect(await screen.findByText('We couldn’t load this event.')).toBeInTheDocument()
+  expect(screen.queryByRole('form')).not.toBeInTheDocument()
+  detail = event()
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  expect(await screen.findByDisplayValue('Practice')).toBeInTheDocument()
+})
+
+it('leaves a dirty edit when a background read confirms the event is gone', async () => {
+  const { client, router } = mount()
+  await screen.findByDisplayValue('Practice')
+  await userEvent.clear(screen.getByLabelText('Name'))
+  await userEvent.type(screen.getByLabelText('Name'), 'My draft')
+  detail = failure('EVENT_NOT_FOUND', 404)
+  await act(() => client.invalidateQueries({ queryKey: eventKeys.detail(2, 8) }))
+  expect(await screen.findByRole('heading', { name: 'This event is no longer available.' })).toBeInTheDocument()
+  expect(router.state.location.pathname).toBe('/bands/2/events/8')
+  expect(screen.queryByRole('dialog', { name: 'Discard your unsaved changes?' })).not.toBeInTheDocument()
+})
+
+it('leaves a dirty edit when a background read shows the event has started', async () => {
+  const { client, router } = mount()
+  await screen.findByDisplayValue('Practice')
+  await userEvent.clear(screen.getByLabelText('Name'))
+  await userEvent.type(screen.getByLabelText('Name'), 'My draft')
+  detail = event({ date: '2020-09-16' })
+  await act(() => client.invalidateQueries({ queryKey: eventKeys.detail(2, 8) }))
+  expect(await screen.findByText('This event has already started and can no longer be edited.')).toBeInTheDocument()
+  expect(router.state.location.pathname).toBe('/bands/2/events/8')
+  expect(screen.queryByRole('dialog', { name: 'Discard your unsaved changes?' })).not.toBeInTheDocument()
 })
 
 it.each([
