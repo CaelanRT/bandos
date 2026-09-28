@@ -1,5 +1,8 @@
 # Establish the visual direction in the personal datebook
 
+> **Status:** For Review
+> **Draft PR:** [#44](https://github.com/CaelanRT/bandos/pull/44)
+
 ## Objective
 
 Give the personal datebook a reviewed, usable visual identity that becomes the baseline for Phase 6's remaining routes.
