@@ -16,7 +16,7 @@ import { Datebook } from '../datebook/Datebook.jsx'
 
 export function BandLinks({ bands }) {
   return <ul>{sortBands(bands).map((band) => (
-    <li key={band.bandId}><Link to={`/bands/${band.bandId}`}>{band.name}</Link></li>
+    <li key={band.bandId}><NavLink to={`/bands/${band.bandId}`}>{band.name}</NavLink></li>
   ))}</ul>
 }
 
@@ -63,7 +63,7 @@ export function BandShell({ children, bands, context }) {
       <LogoutButton />
     </header>
     <nav ref={index} id="band-index" className={`band-index${open ? ' is-open' : ''}`} aria-label="Primary">
-      <Link to="/">Home</Link>
+      <NavLink to="/" end>Home</NavLink>
       <CreateBandLink />
       <NavLink to="/account">Account</NavLink>
       <h2>Your bands</h2>
@@ -79,14 +79,16 @@ export function BandsHome() {
   const bands = useBands()
   const { user } = useSession()
   return <BandShell bands={bands} context="Home">
-    <DeletionNotice />
-    <h1>Personal datebook</h1>
-    <Datebook />
-    {bands.data?.length === 0 && <>
-      <p>You don’t belong to any bands yet.</p>
-      <CreateBandLink />
-      <p>Already playing with a band? Share your username, @{user.username}, with its leader so they can add you.</p>
-    </>}
+    <div className="datebook-home">
+      <DeletionNotice />
+      <h1>Personal datebook</h1>
+      <Datebook />
+      {bands.data?.length === 0 && <div className="datebook-empty">
+        <p>You don’t belong to any bands yet.</p>
+        <CreateBandLink />
+        <p>Already playing with a band? Share your username, @{user.username}, with its leader so they can add you.</p>
+      </div>}
+    </div>
   </BandShell>
 }
 
