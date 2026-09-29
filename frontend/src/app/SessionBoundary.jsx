@@ -8,14 +8,14 @@ import { SessionContext } from './sessionContext.js'
 function FullPageStatus({ retry, retryPending }) {
   if (retry === undefined) {
     return (
-      <main>
+      <main className="entry-status">
         <p role="status">Loading Bandos…</p>
       </main>
     )
   }
 
   return (
-    <main>
+    <main className="entry-status">
       <h1>We couldn’t connect to Bandos</h1>
       <button type="button" disabled={retryPending} onClick={retry}>
         {retryPending ? 'Retrying…' : 'Retry'}

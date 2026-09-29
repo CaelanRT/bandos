@@ -147,13 +147,13 @@ export function BandWorkspace({ section = 'Schedule' }) {
               <NavLink to={`/bands/${band.bandId}/settings`}
                 onClick={(event) => { if (section === 'Settings') event.preventDefault() }}>Settings</NavLink>}
           </nav>
-          {section === 'Event' ? eventId === null ? <>
+          {section === 'Event' ? eventId === null ? <div className="event-recovery">
             <h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link>
-          </> : <EventDetail bandId={band.bandId} eventId={eventId} canEdit={band.currentUserRole === 'leader' && !band.managementDenied} /> :
+          </div> : <EventDetail bandId={band.bandId} eventId={eventId} canEdit={band.currentUserRole === 'leader' && !band.managementDenied} /> :
             section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
             section === 'Members' ? <BandMembers key={band.bandId} band={band} /> :
             section === 'Create event' ? band.currentUserRole === 'leader' && <CreateEvent key={band.bandId} band={band} /> :
-            section === 'Edit event' ? eventId === null ? <><h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link></> :
+            section === 'Edit event' ? eventId === null ? <div className="event-recovery"><h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link></div> :
               band.currentUserRole === 'leader' && <EditEvent key={`${band.bandId}-${eventId}`} band={band} eventId={eventId} /> :
               <BandSchedule key={band.bandId} bandId={band.bandId} canCreate={band.currentUserRole === 'leader' && !band.managementDenied} />}
         </>}
