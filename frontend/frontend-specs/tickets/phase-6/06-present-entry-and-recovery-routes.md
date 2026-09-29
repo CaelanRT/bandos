@@ -1,5 +1,8 @@
 # Present entry and recovery routes
 
+> **Status:** For Review
+> **Draft PR:** [#49](https://github.com/CaelanRT/bandos/pull/49)
+
 ## Objective
 
 Give Login, Registration, and unavailable-destination screens the same visual identity as the working app while keeping their actions direct and predictable.
