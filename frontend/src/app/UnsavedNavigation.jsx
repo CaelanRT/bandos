@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export function UnsavedNavigationDialog({ blocker, pending = false }) {
+export function UnsavedNavigationDialog({ blocker, pending = false, className }) {
   const dialog = useRef(null)
   const keep = useRef(null)
   const blocked = blocker.state === 'blocked'
@@ -16,7 +16,7 @@ export function UnsavedNavigationDialog({ blocker, pending = false }) {
     }
   }, [blocked])
   if (!blocked) return null
-  return <dialog ref={dialog} aria-labelledby="unsaved-title" aria-describedby="unsaved-description"
+  return <dialog className={className} ref={dialog} aria-labelledby="unsaved-title" aria-describedby="unsaved-description"
     onKeyDown={(event) => { if (event.key === 'Escape') event.stopPropagation() }}
     onCancel={(event) => { event.preventDefault(); blocker.reset() }}>
     <h2 id="unsaved-title">Discard your unsaved changes?</h2>

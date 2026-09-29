@@ -644,3 +644,69 @@ dialog {
   max-width: min(32rem, calc(100% - 2rem));
   overflow-wrap: anywhere;
 }
+
+.account-page { max-width: 44rem; }
+.account-heading {
+  max-width: none;
+  padding: 0 0 1.5rem;
+  border-bottom: 1px solid var(--ink);
+}
+.account-heading h1 { margin: 0; }
+.account-heading p { margin: 0.5rem 0 0; color: var(--graphite); }
+.account-profile, .account-details { margin-block-start: 2.5rem; }
+.account-profile > h2, .account-details > h2 { margin-block-end: 1.5rem; }
+.account-form { max-width: 36rem; }
+.account-field { margin-block-end: 1.25rem; }
+.account-field label { display: block; font-size: 0.875rem; font-weight: 600; }
+.account-field input { width: 100%; margin-block-start: 0.375rem; }
+.account-field input[aria-invalid='true'] { border-color: var(--error-ink); }
+.account-field-error { margin: 0.375rem 0 0; color: var(--error-ink); font-size: 0.875rem; }
+.account-form > [role='alert'], .account-form > [role='status'],
+.account-deactivation-form > [role='alert'], .account-deactivation-form > [role='status'] {
+  margin-block: 0 1.25rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid currentColor;
+}
+.account-form > .form-actions { margin-block-start: 1.75rem; }
+.account-details dl { margin: 0; border-top: 1px solid var(--rule); }
+.account-details dl > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  padding-block: 0.875rem;
+  border-bottom: 1px solid var(--rule);
+}
+.account-details dt { color: var(--graphite); font-size: 0.875rem; }
+.account-details dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.account-deactivation { margin-block-start: 3rem; padding-block-start: 1.5rem; border-top: 1px solid var(--rule); }
+.account-deactivation h2 { margin-block-end: 1rem; }
+.account-deactivation-trigger { color: var(--error-ink); }
+.account-deactivation-trigger:hover:not(:disabled) { border-color: var(--error-ink); }
+.account-deactivation-dialog, .account-unsaved-dialog {
+  width: min(32rem, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1rem 3rem rgb(37 35 31 / 18%);
+}
+.account-deactivation-dialog::backdrop, .account-unsaved-dialog::backdrop { background: rgb(37 35 31 / 45%); }
+.account-deactivation-dialog h2, .account-unsaved-dialog h2 { margin-block-end: 0.75rem; }
+.account-deactivation-dialog > p, .account-unsaved-dialog > p { margin-block-end: 1.5rem; }
+.account-deactivation-form > input { margin-block-start: 0.375rem; }
+.account-deactivation-form > .account-field-error { margin-block: 0.375rem 0 1.25rem; padding: 0; border: 0; }
+.account-deactivation-dialog .form-actions, .account-unsaved-dialog .form-actions { margin-block-start: 1.5rem; }
+.account-deactivation-form .form-actions .account-deactivation-confirm {
+  border-color: var(--error-ink);
+  background: var(--error-ink);
+  color: var(--surface);
+}
+.account-deactivation-form .form-actions .account-deactivation-confirm:hover:not(:disabled) { background: #70251f; }
+
+@media (max-width: 36rem) {
+  .account-profile, .account-details { margin-block-start: 2rem; }
+  .account-details dl > div { grid-template-columns: minmax(0, 1fr); gap: 0.125rem; }
+  .account-deactivation { margin-block-start: 2.5rem; }
+  .account-deactivation-dialog, .account-unsaved-dialog { padding: 1rem; }
+}
