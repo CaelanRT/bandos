@@ -1,5 +1,8 @@
 # Present event details and management
 
+> **Status:** For Review
+> **Draft PR:** [#46](https://github.com/CaelanRT/bandos/pull/46)
+
 ## Objective
 
 Give event detail and management screens a clear print-inspired hierarchy while keeping editing and destructive actions straightforward.
