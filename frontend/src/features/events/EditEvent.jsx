@@ -129,27 +129,27 @@ export function EditEvent({ band, eventId }) {
     }
   }
 
-  if (detail.error?.code === 'BAND_NOT_FOUND') return <p role="status">Checking band access…</p>
-  if (detail.isError && values === null) return <div role="alert">
+  if (detail.error?.code === 'BAND_NOT_FOUND') return <p className="event-notice" role="status">Checking band access…</p>
+  if (detail.isError && values === null) return <div className="event-notice" role="alert">
     <p>We couldn’t load this event.</p>
     <button type="button" disabled={detail.isFetching} onClick={() => detail.refetch()}>
       {detail.isFetching ? 'Retrying…' : 'Retry'}
     </button>
   </div>
-  if (detail.isPending || values === null) return <p role="status">Loading event…</p>
+  if (detail.isPending || values === null) return <p className="event-notice" role="status">Loading event…</p>
   const locked = pending || permissionChecking || permissionFailed
   const fieldProps = (field) => ({
     ref: (element) => { fields.current[field] = element }, name: field, value: values[field], disabled: locked,
     'aria-invalid': Boolean(errors[field]), 'aria-describedby': errors[field] ? `${field}-error` : undefined,
     onChange: (input) => change(field, input.target.value), onBlur: () => blur(field),
   })
-  return <section aria-labelledby="edit-event-heading">
+  return <section className="event-editor" aria-labelledby="edit-event-heading">
     <h2 id="edit-event-heading">Edit event</h2>
-    {(permissionChecking || permissionFailed) ? <div role="alert">
+    {(permissionChecking || permissionFailed) ? <div className="event-notice" role="alert">
       <p>{permissionChecking ? 'Checking your permissions…' : 'We couldn’t confirm leader access. Check your permissions to continue.'}</p>
       {permissionFailed && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
-    </div> : <form className="band-form" onSubmit={submit} noValidate>
-      {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+    </div> : <form className="band-form event-form" onSubmit={submit} noValidate>
+      {formError && <p className="event-notice" ref={notice} role="alert" tabIndex="-1">{formError}</p>}
       <label htmlFor="event-name">Name</label><input id="event-name" {...fieldProps('name')} />{errors.name && <p id="name-error">{errors.name}</p>}
       <label htmlFor="event-type">Type</label><select id="event-type" {...fieldProps('type')}><option value="">Choose a type</option><option value="rehearsal">Rehearsal</option><option value="performance">Performance</option></select>{errors.type && <p id="type-error">{errors.type}</p>}
       <label htmlFor="event-date">Date</label><input id="event-date" type="date" {...fieldProps('date')} />{errors.date && <p id="date-error">{errors.date}</p>}
@@ -157,14 +157,14 @@ export function EditEvent({ band, eventId }) {
       <label htmlFor="event-end-time">End time</label><input id="event-end-time" type="time" step="60" {...fieldProps('endTime')} />{errors.endTime && <p id="endTime-error">{errors.endTime}</p>}
       <label htmlFor="event-timezone">Timezone</label><input id="event-timezone" list="event-timezones" autoComplete="off" {...fieldProps('timezone')} />
       <datalist id="event-timezones">{timezoneOptions.map((timezone) => <option key={timezone} value={timezone} label={timezoneLabel(timezone)} />)}</datalist>
-      <p id="event-timezone-hint">Search for a timezone and select its IANA name.</p>{errors.timezone && <p id="timezone-error">{errors.timezone}</p>}
+      <p className="event-field-hint" id="event-timezone-hint">Search for a timezone and select its IANA name.</p>{errors.timezone && <p id="timezone-error">{errors.timezone}</p>}
       <label htmlFor="event-location">Location</label><input id="event-location" {...fieldProps('location')} />{errors.location && <p id="location-error">{errors.location}</p>}
       <label htmlFor="event-description">Description (optional)</label><textarea id="event-description" {...fieldProps('description')} />{errors.description && <p id="description-error">{errors.description}</p>}
       <div className="form-actions">
         <button type="submit" disabled={locked || !dirty}>{pending ? 'Saving event…' : 'Save'}</button>
         <button type="button" disabled={locked} onClick={() => navigate(`/bands/${band.bandId}/events/${eventId}`)}>Cancel</button>
       </div>
-      {pending && <p role="status">Saving event…</p>}
+      {pending && <p className="event-notice" role="status">Saving event…</p>}
     </form>}
     <UnsavedNavigationDialog blocker={blocker} pending={pending} />
   </section>

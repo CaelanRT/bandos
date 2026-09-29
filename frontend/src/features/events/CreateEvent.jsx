@@ -118,13 +118,13 @@ export function CreateEvent({ band }) {
     'aria-invalid': Boolean(errors[field]), 'aria-describedby': errors[field] ? `${field}-error` : undefined,
     onChange: (event) => change(field, event.target.value), onBlur: () => blur(field),
   })
-  return <section aria-labelledby="create-event-heading">
+  return <section className="event-editor" aria-labelledby="create-event-heading">
     <h2 id="create-event-heading">Create event</h2>
-    {(permissionChecking || permissionFailed) ? <div role="alert">
+    {(permissionChecking || permissionFailed) ? <div className="event-notice" role="alert">
       <p>{permissionChecking ? 'Checking your permissions…' : 'We couldn’t confirm leader access. Check your permissions to continue.'}</p>
       {permissionFailed && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
-    </div> : <form className="band-form" onSubmit={submit} noValidate>
-      {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+    </div> : <form className="band-form event-form" onSubmit={submit} noValidate>
+      {formError && <p className="event-notice" ref={notice} role="alert" tabIndex="-1">{formError}</p>}
       <label htmlFor="event-name">Name</label>
       <input id="event-name" {...fieldProps('name')} />{errors.name && <p id="name-error">{errors.name}</p>}
       <label htmlFor="event-type">Type</label>
@@ -138,17 +138,17 @@ export function CreateEvent({ band }) {
       <label htmlFor="event-timezone">Timezone</label>
       <input id="event-timezone" list="event-timezones" autoComplete="off" {...fieldProps('timezone')} />
       <datalist id="event-timezones">{timezoneOptions.map((timezone) => <option key={timezone} value={timezone} label={timezoneLabel(timezone)} />)}</datalist>
-      <p id="event-timezone-hint">Search for a timezone and select its IANA name.</p>{errors.timezone && <p id="timezone-error">{errors.timezone}</p>}
+      <p className="event-field-hint" id="event-timezone-hint">Search for a timezone and select its IANA name.</p>{errors.timezone && <p id="timezone-error">{errors.timezone}</p>}
       <label htmlFor="event-location">Location</label>
       <input id="event-location" {...fieldProps('location')} />{errors.location && <p id="location-error">{errors.location}</p>}
       <label htmlFor="event-description">Description (optional)</label>
       <textarea id="event-description" {...fieldProps('description')} />{errors.description && <p id="description-error">{errors.description}</p>}
-      {uncertain && <p role="status">Creating again may create a duplicate event.</p>}
+      {uncertain && <p className="event-notice" role="status">Creating again may create a duplicate event.</p>}
       <div className="form-actions">
         <button type="submit" disabled={locked}>{pending ? 'Creating event…' : uncertain ? 'Create again' : 'Create event'}</button>
         <button type="button" disabled={locked} onClick={() => navigate(`/bands/${band.bandId}`)}>Cancel</button>
       </div>
-      {pending && <p role="status">Creating event…</p>}
+      {pending && <p className="event-notice" role="status">Creating event…</p>}
     </form>}
     <UnsavedNavigationDialog blocker={blocker} pending={pending} />
   </section>

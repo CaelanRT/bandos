@@ -91,24 +91,24 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false }) {
     }
   }
 
-  return <section aria-label="Event management">
-    {error && !open && <p role="alert">{error}</p>}
-    {permissionState && <div role="alert">
+  return <section className="event-management" aria-label="Event management">
+    {error && !open && <p className="event-notice" role="alert">{error}</p>}
+    {permissionState && <div className="event-notice" role="alert">
       <p>{permissionState === 'checking' ? 'Checking your permissions…' : 'We couldn’t confirm leader access.'}</p>
       {permissionState === 'failed' && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
     </div>}
-    <button ref={trigger} type="button" disabled={disabled || busy || Boolean(permissionState)}
+    <button ref={trigger} className="event-delete-trigger" type="button" disabled={disabled || busy || Boolean(permissionState)}
       onClick={() => { setError(null); setOpen(true) }}>Delete event</button>
-    {open && <dialog ref={dialog} aria-labelledby="delete-event-title" aria-describedby="delete-event-description"
+    {open && <dialog ref={dialog} className="event-delete-dialog" aria-labelledby="delete-event-title" aria-describedby="delete-event-description"
       onKeyDown={(keyEvent) => { if (keyEvent.key === 'Escape') keyEvent.stopPropagation() }}
       onCancel={(cancelEvent) => { cancelEvent.preventDefault(); if (!submitting.current) setOpen(false) }}>
       <h2 id="delete-event-title">Delete {event.name}?</h2>
       <p id="delete-event-description">This event will no longer be available to the band.</p>
-      {busy && <p role="status">Deleting event…</p>}
-      {error && <p role="alert">{error}</p>}
+      {busy && <p className="event-notice" role="status">Deleting event…</p>}
+      {error && <p className="event-notice" role="alert">{error}</p>}
       <div className="form-actions">
         <button ref={cancel} type="button" disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
-        <button type="button" disabled={busy} onClick={confirm}>Delete event</button>
+        <button className="event-delete-confirm" type="button" disabled={busy} onClick={confirm}>Delete event</button>
       </div>
     </dialog>}
   </section>
