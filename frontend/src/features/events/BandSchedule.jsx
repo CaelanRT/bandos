@@ -16,20 +16,20 @@ function ScheduleReadFailure({ query }) {
 
 function EventRow({ bandId, event }) {
   return <li>
-    <Link to={`/bands/${bandId}/events/${event.eventId}`}>
-      <span>{formatLocalTime(event.startTime)}</span>{' '}
-      <span>{event.name}</span>{' '}
-      <span>{event.type === 'rehearsal' ? 'Rehearsal' : 'Performance'}</span>{' '}
-      <span>{event.location}</span>
+    <Link className="schedule-event" to={`/bands/${bandId}/events/${event.eventId}`}>
+      <time dateTime={`${event.date}T${event.startTime}`}>{formatLocalTime(event.startTime)}</time>
+      <strong>{event.name}</strong>
+      <span className="schedule-event-type">{event.type === 'rehearsal' ? 'Rehearsal' : 'Performance'}</span>
+      <span className="schedule-event-location">{event.location}</span>
     </Link>
   </li>
 }
 
 function EventSection({ title, groups, bandId }) {
   const classification = title.toLowerCase()
-  return <section aria-labelledby={`${classification}-events-heading`}>
+  return <section className="schedule-section" aria-labelledby={`${classification}-events-heading`}>
     <h3 id={`${classification}-events-heading`}>{title}</h3>
-    {groups.length === 0 ? <p>No {classification} events.</p> : groups.map((group) => <section key={group.date} aria-labelledby={`${classification}-events-${group.date}`}>
+    {groups.length === 0 ? <p className="schedule-empty">No {classification} events.</p> : groups.map((group) => <section className="schedule-group" key={group.date} aria-labelledby={`${classification}-events-${group.date}`}>
       <h4 id={`${classification}-events-${group.date}`}>{group.label}</h4>
       <ul aria-label={`${group.label} ${title.toLowerCase()} events`}>
         {group.events.map((event) => <EventRow key={event.eventId} bandId={bandId} event={event} />)}
@@ -65,15 +65,15 @@ export function BandSchedule({ bandId, canCreate = false }) {
     return () => window.clearTimeout(timer)
   }, [events.data, now])
 
-  return <>
-    <h2>Schedule</h2>
-    {deletedNotice && <p role="status">Event deleted. <button type="button" onClick={() => setDeletedNotice(false)}>Dismiss</button></p>}
-    {canCreate && <Link to={`/bands/${bandId}/events/new`}>Create event</Link>}
-    {events.isPending && <p role="status">Loading schedule…</p>}
-    <ScheduleReadFailure query={events} />
+  return <div className="band-schedule">
+    <div className="schedule-heading"><h2>Schedule</h2>
+      {canCreate && <Link to={`/bands/${bandId}/events/new`}>Create event</Link>}</div>
+    {deletedNotice && <p className="schedule-notice" role="status">Event deleted. <button type="button" onClick={() => setDeletedNotice(false)}>Dismiss</button></p>}
+    {events.isPending && <p className="schedule-message" role="status">Loading schedule…</p>}
+    <div className="schedule-notice"><ScheduleReadFailure query={events} /></div>
     {groups && <>
       <EventSection title="Upcoming" groups={groups.upcoming} bandId={bandId} />
       <EventSection title="Past" groups={groups.past} bandId={bandId} />
     </>}
-  </>
+  </div>
 }
