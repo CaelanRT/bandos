@@ -368,6 +368,8 @@ Deliverables:
 
 Governing ideas: “contemporary musician's stationery,” “software composed like printed matter,” and “conventional interaction, unconventional composition.”
 
+The focused [Phase 6 specification](07-phase-6-visual-implementation.md) settles the cross-application visual choices: a warm light theme, IBM Plex Sans, a dark wood-toned oxblood graphic ink, quiet working screens with rare informative bold moments, and datebook-first browser review before incremental rollout to every current route.
+
 ## 8. Testing strategy
 
 Testing is limited and risk-based.
@@ -534,11 +536,10 @@ Resolve during focused Grill Me sessions:
 - partial-failure datebook wording;
 - notification placement/dismissal;
 - exact mobile navigation and breakpoints;
-- Phase 6 visual-system choices.
+- Phase 6 route-level compositions after the datebook browser review.
 
 ## 13. Maintenance
 
 Runtime backend behavior outranks this plan. Update the backend contract first when APIs change, then revisit affected specs and tickets.
 
 Update this master only for decisions affecting multiple features, phases, or overall direction. Keep feature details in focused specs. If a feature decision changes a cross-application assumption, update both documents together.
-
