@@ -1,6 +1,6 @@
 # Present account management
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#48](https://github.com/CaelanRT/bandos/pull/48)
 
 ## Objective
