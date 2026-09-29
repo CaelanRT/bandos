@@ -94,14 +94,15 @@ export function BandsHome() {
 
 function BandMembers({ band }) {
   const { members } = band
-  return <section aria-labelledby="members-heading">
+  return <section className="band-people" aria-labelledby="members-heading">
     <h2 id="members-heading">Members</h2>
     <AddBandMember band={band} />
     {members.length === 0 ? <p>No active members to display.</p> :
       <ul aria-label="Band members" className="member-list">
         {sortMembers(members).map((member) => <li key={member.userId}>
-          <p><strong>{memberFullName(member)}</strong>{member.role === 'leader' && <> · <span>Leader</span></>}</p>
-          <p>@{member.username}</p>
+          <p className="member-name"><strong>{memberFullName(member)}</strong></p>
+          <p className="member-username">@{member.username}</p>
+          <p className="member-role">{member.role === 'leader' ? 'Leader' : 'Member'}</p>
         </li>)}
       </ul>}
   </section>
