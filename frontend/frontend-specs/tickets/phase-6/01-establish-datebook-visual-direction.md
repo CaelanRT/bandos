@@ -1,6 +1,6 @@
 # Establish the visual direction in the personal datebook
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#44](https://github.com/CaelanRT/bandos/pull/44)
 
 ## Objective
