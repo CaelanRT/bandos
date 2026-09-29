@@ -1,5 +1,8 @@
 # Present band people and settings
 
+> **Status:** For Review
+> **Draft PR:** [#47](https://github.com/CaelanRT/bandos/pull/47)
+
 ## Objective
 
 Make band creation, the member index, member addition, and settings coherent working pages within the band visual system.
