@@ -64,7 +64,7 @@ This is a presentation phase. Existing API endpoints, normalized models, session
 
 ## 8. Focused verification
 
-Use a browser review of the datebook at desktop and narrow widths as the design checkpoint before rolling out subsequent surfaces. For each ticket, inspect populated and relevant non-happy states, keyboard focus, and narrow-width layout. Add focused component or integration tests only when a presentation change alters meaningful structure or interaction; avoid screenshots or static-markup snapshots as a default gate. Run the relevant existing tests, lint, build, and whitespace check for implementation tickets. The final pass checks every current route at desktop, 320px, and 200% zoom, with keyboard and reduced-motion settings, and records any concrete findings and fixes.
+Use a browser review of the datebook at desktop and narrow widths as the design checkpoint before rolling out subsequent surfaces. For each ticket, inspect populated and relevant non-happy states, keyboard focus, and narrow-width layout. Add focused component or integration tests only when a presentation change alters meaningful structure or interaction; avoid screenshots or static-markup snapshots as a default gate. Run the relevant existing tests, lint, build, and whitespace check for implementation tickets. The final pass checks every current route at desktop, 320px, and 200% zoom, with keyboard and reduced-motion settings, and records any concrete findings and fixes. See the [cross-route audit record](tickets/phase-6/07-verification-result.md) and [manual verification and sign-off guide](phase-6-manual-verification.md) for completed checks and the remaining phase completion steps.
 
 ## 9. Decisions and deferred work
 

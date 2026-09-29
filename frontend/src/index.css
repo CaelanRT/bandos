@@ -25,6 +25,7 @@
   --graphite: #68645d;
   --pencil: #969087;
   --rule: #ddd9d1;
+  --control-border: #878178;
   --faint-rule: #eae7e0;
   --oxblood: #743c32;
   --error-ink: #8d3028;
@@ -54,7 +55,7 @@ button { cursor: pointer; }
 button:disabled { cursor: wait; opacity: 0.55; }
 button, input, select, textarea {
   min-height: 2.75rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--control-border);
   border-radius: 6px;
   background: var(--surface);
   color: var(--ink);
@@ -641,9 +642,18 @@ main {
 }
 
 dialog {
-  max-width: min(32rem, calc(100% - 2rem));
+  width: min(32rem, calc(100% - 2rem));
+  max-width: calc(100% - 2rem);
+  padding: 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1rem 3rem rgb(37 35 31 / 18%);
   overflow-wrap: anywhere;
 }
+
+dialog::backdrop { background: rgb(37 35 31 / 45%); }
 
 .account-page { max-width: 44rem; }
 .account-heading {
