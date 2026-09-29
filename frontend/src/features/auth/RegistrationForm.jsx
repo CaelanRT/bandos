@@ -135,9 +135,9 @@ export function RegistrationForm() {
   const completionError = session.completionError
 
   return (
-    <form onSubmit={submit} noValidate>
+    <form className="auth-form" onSubmit={submit} noValidate>
       {(formError || completionError) && (
-        <div ref={formErrorRef} role="alert" tabIndex="-1">
+        <div className="auth-notice" ref={formErrorRef} role="alert" tabIndex="-1">
           {formError || 'We couldn’t complete sign-in after registration. Please log in.'}
         </div>
       )}
@@ -146,7 +146,7 @@ export function RegistrationForm() {
         const id = `register-${name}`
         const describedBy = [hint && `${id}-hint`, errors[name] && `${id}-error`].filter(Boolean).join(' ')
         return (
-          <div key={name}>
+          <div className="auth-field" key={name}>
             <label htmlFor={id}>{label}</label>
             <input
               ref={(element) => { fieldRefs.current[name] = element }}

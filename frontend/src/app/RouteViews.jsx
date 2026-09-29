@@ -15,8 +15,10 @@ export function Home() {
 export function Login() {
   return (
     <AppShell>
-      <h1>Login</h1>
-      <LoginForm />
+      <div className="auth-page">
+        <h1>Login</h1>
+        <LoginForm />
+      </div>
     </AppShell>
   )
 }
@@ -24,8 +26,10 @@ export function Login() {
 export function Register() {
   return (
     <AppShell>
-      <h1>Register</h1>
-      <RegistrationForm />
+      <div className="auth-page">
+        <h1>Register</h1>
+        <RegistrationForm />
+      </div>
     </AppShell>
   )
 }
@@ -34,10 +38,12 @@ export function NotFound() {
   const { status } = useSession()
   return (
     <AppShell>
-      <h1>Page not found</h1>
-      <Link to={status === 'authenticated' ? '/' : '/login'}>
-        {status === 'authenticated' ? 'Go to personal datebook' : 'Go to Login'}
-      </Link>
+      <div className="route-recovery">
+        <h1>Page not found</h1>
+        <Link to={status === 'authenticated' ? '/' : '/login'}>
+          {status === 'authenticated' ? 'Go to personal datebook' : 'Go to Login'}
+        </Link>
+      </div>
     </AppShell>
   )
 }

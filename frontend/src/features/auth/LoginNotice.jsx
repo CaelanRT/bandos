@@ -18,5 +18,5 @@ export function LoginNotice() {
     navigate(location.pathname + location.search + location.hash, { replace: true, state })
   }, [location, navigate])
 
-  return notice ? <p role="status">{notice}</p> : null
+  return notice ? <p className="auth-notice" role="status">{notice}</p> : null
 }

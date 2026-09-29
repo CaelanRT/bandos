@@ -127,15 +127,15 @@ export function LoginForm() {
   const completionError = session.completionError
 
   return (
-    <form onSubmit={submit} noValidate>
+    <form className="auth-form" onSubmit={submit} noValidate>
       <LoginNotice />
       {(formError || completionError) && (
-        <div ref={formErrorRef} role="alert" tabIndex="-1">
+        <div className="auth-notice" ref={formErrorRef} role="alert" tabIndex="-1">
           {formError || 'We couldn’t complete sign-in. Please try again.'}
         </div>
       )}
 
-      <div>
+      <div className="auth-field">
         <label htmlFor="login-email">Email</label>
         <input
           ref={emailRef}
@@ -153,7 +153,7 @@ export function LoginForm() {
         {errors.email && <p id="login-email-error">{errors.email}</p>}
       </div>
 
-      <div>
+      <div className="auth-field">
         <label htmlFor="login-password">Password</label>
         <input
           ref={passwordRef}

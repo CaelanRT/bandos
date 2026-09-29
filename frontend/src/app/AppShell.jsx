@@ -8,13 +8,13 @@ export function AppShell({ children }) {
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <header>
+      <header className="entry-header">
         <nav aria-label="Primary">
           <a href="/">Bandos</a>
           {session.status === 'authenticated' && <LogoutButton />}
         </nav>
       </header>
-      <main id="main-content" tabIndex="-1">
+      <main className="entry-main" id="main-content" tabIndex="-1">
         {children}
       </main>
     </>
