@@ -117,10 +117,10 @@ export function BandWorkspace({ section = 'Schedule' }) {
   const band = detail.data
   const location = useLocation()
   return <BandShell bands={bands} context={band ? `${band.name} · ${section}` : 'Band workspace'}>
-    {bandId === null ? <><h1>Invalid band address</h1><Link to="/">Go home</Link></> :
-      band === null ? <><h1>This band is no longer available</h1><Link to="/">Go home</Link></> : <>
-        {detail.isPending && <p role="status">Loading band…</p>}
-        <ReadFailure query={detail} subject="this band" />
+    {bandId === null ? <div className="workspace-message"><h1>Invalid band address</h1><Link to="/">Go home</Link></div> :
+      band === null ? <div className="workspace-message"><h1>This band is no longer available</h1><Link to="/">Go home</Link></div> : <>
+        {detail.isPending && <p className="workspace-message" role="status">Loading band…</p>}
+        <div className="workspace-notice"><ReadFailure query={detail} subject="this band" /></div>
         {band && <>
           {section === 'Settings' && band.currentUserRole === 'member' &&
             <Navigate to={`/bands/${band.bandId}`} replace state={{ bandPermissionNotice: true }} />}
@@ -128,15 +128,17 @@ export function BandWorkspace({ section = 'Schedule' }) {
             <Navigate to={`/bands/${band.bandId}`} replace state={{ eventPermissionNotice: true }} />}
           {section === 'Edit event' && band.currentUserRole === 'member' && eventId !== null &&
             <Navigate to={`/bands/${band.bandId}/events/${eventId}`} replace state={{ eventPermissionNotice: true }} />}
-          {section === 'Schedule' && location.state?.bandPermissionNotice &&
-            <p role="status">Only band leaders can access Settings.</p>}
-          {section === 'Schedule' && location.state?.eventPermissionNotice &&
-            <p role="status">Only band leaders can create events.</p>}
-          {section === 'Schedule' && location.state?.eventManagementPermissionNotice &&
-            <p role="status">Only band leaders can manage events.</p>}
-          {section !== 'Event' && <><h1>{band.name}</h1>
-            <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p></>}
-          <nav aria-label="Band workspace">
+          <div className="workspace-notice">
+            {section === 'Schedule' && location.state?.bandPermissionNotice &&
+              <p role="status">Only band leaders can access Settings.</p>}
+            {section === 'Schedule' && location.state?.eventPermissionNotice &&
+              <p role="status">Only band leaders can create events.</p>}
+            {section === 'Schedule' && location.state?.eventManagementPermissionNotice &&
+              <p role="status">Only band leaders can manage events.</p>}
+          </div>
+          {section !== 'Event' && <div className="workspace-identity"><h1>{band.name}</h1>
+            <p>{band.currentUserRole === 'leader' ? 'Leader' : 'Member'}</p></div>}
+          <nav className="workspace-navigation" aria-label="Band workspace">
             <NavLink to={`/bands/${band.bandId}`} end>Schedule</NavLink>
             <NavLink to={`/bands/${band.bandId}/members`}
               onClick={(event) => { if (section === 'Members') event.preventDefault() }}>Members</NavLink>

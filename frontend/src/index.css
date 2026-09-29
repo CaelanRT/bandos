@@ -207,6 +207,91 @@ main {
   min-width: 0;
 }
 
+.workspace-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1.25rem;
+  padding-block-end: 1.5rem;
+}
+
+.workspace-identity h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.25rem); }
+.workspace-identity p { margin: 0; color: var(--graphite); }
+
+.workspace-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+  margin-block-end: 2.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.workspace-navigation a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-block: 0.5rem;
+  border-bottom: 2px solid transparent;
+  color: var(--graphite);
+  text-decoration: none;
+}
+
+.workspace-navigation a:hover { color: var(--oxblood); }
+.workspace-navigation a[aria-current='page'] { border-bottom-color: var(--oxblood); color: var(--ink); font-weight: 600; }
+.workspace-message { padding-block: 2rem; }
+.workspace-message a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.workspace-notice:empty, .schedule-notice:empty { display: none; }
+.workspace-notice > :is(p, div), .schedule-notice > :is(p, div) {
+  margin-block: 0 1.5rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid currentColor;
+}
+.schedule-notice[role='status'] {
+  margin-block: 0 1.5rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid currentColor;
+}
+
+.band-schedule { max-width: 76rem; }
+.schedule-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-block-end: 2rem;
+}
+.schedule-heading h2 { margin: 0; font-size: 1.5rem; }
+.schedule-heading a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.schedule-message { padding-block: 1rem; }
+.schedule-section + .schedule-section { margin-block-start: 3rem; }
+.schedule-section > h3 {
+  margin-block: 0 1rem;
+  padding-block-end: 0.75rem;
+  border-bottom: 1px solid var(--ink);
+}
+.schedule-empty { padding-block: 1rem; color: var(--graphite); }
+.schedule-group { display: grid; grid-template-columns: minmax(10rem, 12rem) minmax(0, 1fr); gap: 1.5rem; }
+.schedule-group + .schedule-group { margin-block-start: 1.5rem; }
+.schedule-group h4 { margin: 0; padding-block: 0.875rem; color: var(--graphite); font-size: 0.875rem; font-weight: 600; }
+.band-shell main .schedule-group ul { margin: 0; padding: 0; list-style: none; min-width: 0; }
+.schedule-event {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 0.55fr) minmax(8rem, 1.4fr) minmax(6rem, 0.7fr) minmax(8rem, 1fr);
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  min-height: 2.75rem;
+  padding-block: 0.875rem;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.schedule-event:hover { color: var(--oxblood); }
+.schedule-event time { font-variant-numeric: tabular-nums; font-size: 0.875rem; }
+.schedule-event strong { font-weight: 600; }
+.schedule-event-type, .schedule-event-location { color: var(--graphite); font-size: 0.8125rem; }
+
 @media (min-width: 48rem) {
   .band-shell {
     display: grid;
@@ -228,6 +313,16 @@ main {
   }
 
   .band-shell main { padding: 2.5rem clamp(2rem, 5vw, 5rem); }
+}
+
+@media (max-width: 78rem) {
+  .schedule-event { grid-template-columns: minmax(5.5rem, 0.55fr) minmax(0, 1.4fr); }
+  .schedule-event-type, .schedule-event-location { grid-column: 2; }
+}
+
+@media (max-width: 56rem) {
+  .schedule-group { display: block; }
+  .schedule-group h4 { padding-block: 0.5rem; }
 }
 
 .member-list li + li {
@@ -358,6 +453,12 @@ main {
   .datebook-event:not(.datebook-featured) { grid-template-columns: 1fr; gap: 0.125rem; }
   .datebook-event:not(.datebook-featured) .datebook-event-band,
   .datebook-event:not(.datebook-featured) .datebook-event-place { grid-column: 1; }
+  .workspace-identity { padding-block-end: 1rem; }
+  .workspace-identity h1 { font-size: 1.75rem; }
+  .workspace-navigation { gap: 0 1rem; margin-block-end: 2rem; }
+  .schedule-heading { margin-block-end: 1.5rem; }
+  .schedule-event { grid-template-columns: 1fr; gap: 0.125rem; }
+  .schedule-event-type, .schedule-event-location { grid-column: 1; }
 }
 
 .form-actions {
