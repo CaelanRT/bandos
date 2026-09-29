@@ -1,6 +1,7 @@
 # Verify the Phase 6 visual implementation
 
-> **Status:** In Progress
+> **Status:** For Review
+> **Draft PR:** [#50](https://github.com/CaelanRT/bandos/pull/50)
 > **Audit:** [Verification record](07-verification-result.md)
 > **Manual sign-off:** [Phase 6 verification guide](../../phase-6-manual-verification.md)
 

@@ -1,6 +1,6 @@
 # Phase 6 Ticket Sequence
 
-> **Status:** Final verification in progress; manual phase sign-off pending
+> **Status:** Ticket 07 For Review ([Draft PR #50](https://github.com/CaelanRT/bandos/pull/50)); manual phase sign-off pending
 > **Specification:** [Phase 6 — Visual implementation](../../07-phase-6-visual-implementation.md)
 
 | Ticket | Outcome | Blocked by |
