@@ -325,17 +325,76 @@ main {
   .schedule-group h4 { padding-block: 0.5rem; }
 }
 
-.member-list li + li {
-  margin-block-start: 1rem;
+.band-people,
+.band-settings,
+.band-editor { max-width: 48rem; }
+
+.band-people > h2,
+.band-settings > h2,
+.band-editor > h1 {
+  margin-block: 0 1.5rem;
+  padding-block-end: 0.75rem;
+  border-bottom: 1px solid var(--ink);
+  font-size: 1.5rem;
 }
 
-.member-list p {
-  margin-block: 0.25rem;
+.band-people > button { margin-block-end: 1.5rem; }
+.band-people > .band-form { margin-block-end: 2rem; }
+.band-shell main .member-list { padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.member-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(5rem, auto);
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  padding-block: 0.875rem;
+  border-bottom: 1px solid var(--rule);
 }
+.member-list p { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.member-name { font-size: 1rem; }
+.member-username,
+.member-role { color: var(--graphite); font-size: 0.875rem; }
+.member-role { text-align: end; }
 
 .band-form {
   max-width: 36rem;
 }
+
+.band-form > label { font-size: 0.875rem; font-weight: 600; }
+.band-form > input { margin-block-start: 0.375rem; }
+.band-form > p[id$='-hint'] { margin-block: 0.375rem 0 0; color: var(--graphite); font-size: 0.8125rem; }
+.band-form > p[id$='-error'] { margin-block: 0.375rem 0 0; color: var(--error-ink); font-size: 0.875rem; }
+.band-form > [aria-invalid='true'] { border-color: var(--error-ink); }
+.band-form > [role='alert'],
+.band-form > [role='status'],
+.band-people > [role='status'],
+.band-settings > [role='alert'],
+.band-delete > [role='alert'],
+.band-delete > [role='status'] {
+  margin-block: 0 1.5rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid currentColor;
+}
+.band-form .form-actions { padding-block-start: 1.5rem; border-top: 1px solid var(--rule); }
+.band-form .form-actions button[type='submit'] { border-color: var(--oxblood); background: var(--oxblood); color: var(--surface); }
+.band-form .form-actions button[type='submit']:hover:not(:disabled) { background: #603128; }
+.band-settings > .band-form { margin-block-end: 3rem; }
+.band-delete { padding-block-start: 1.5rem; border-top: 1px solid var(--rule); }
+.band-delete h3 { margin-block-end: 1rem; }
+.band-delete-trigger { color: var(--error-ink); }
+.band-delete-trigger:hover:not(:disabled) { border-color: var(--error-ink); }
+.band-delete-dialog {
+  width: min(32rem, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1rem 3rem rgb(37 35 31 / 18%);
+}
+.band-delete-dialog::backdrop { background: rgb(37 35 31 / 45%); }
+.band-delete-dialog .form-actions { margin-block-start: 1.5rem; }
+.band-delete-confirm { border-color: var(--error-ink); background: var(--error-ink); color: var(--surface); }
+.band-delete-confirm:hover:not(:disabled) { background: #70251f; }
 
 .band-form label,
 .band-form input,
@@ -459,6 +518,10 @@ main {
   .schedule-heading { margin-block-end: 1.5rem; }
   .schedule-event { grid-template-columns: 1fr; gap: 0.125rem; }
   .schedule-event-type, .schedule-event-location { grid-column: 1; }
+  .member-list li { grid-template-columns: minmax(0, 1fr) auto; }
+  .member-name { grid-column: 1; }
+  .member-username { grid-column: 1; }
+  .member-role { grid-column: 2; grid-row: 1; }
 }
 
 .form-actions {

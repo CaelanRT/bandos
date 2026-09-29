@@ -246,10 +246,12 @@ it.each(['leader', 'member'])('shows the same sorted member structure for a %s w
   expect(rows.map((row) => row.querySelector('strong').textContent)).toEqual([
     'Amy Leader', 'Zoe Leader', 'Alex Smith', 'alex smith', 'Alex Smith', 'Bea Jones', 'Zoe Young',
   ])
-  expect(rows.map((row) => row.querySelector('p:last-child').textContent)).toEqual([
+  expect(rows.map((row) => row.querySelector('.member-username').textContent)).toEqual([
     '@alead', '@zlead', '@alpha', '@ALPHA', '@Beta', '@zzz', '@aaa',
   ])
-  rows.forEach((row, index) => expect(within(row).queryByText('Leader') !== null).toBe(index < 2))
+  expect(rows.map((row) => row.querySelector('.member-role').textContent)).toEqual([
+    'Leader', 'Leader', 'Member', 'Member', 'Member', 'Member', 'Member',
+  ])
   expect(client.getQueryData(bandKeys.detail(2)).members.map((item) => item.userId)).toEqual([8, 7, 5, 4, 3, 2, 9])
   expect(screen.queryByRole('button', { name: /Remove|Invite/ })).not.toBeInTheDocument()
   expect(Boolean(screen.queryByRole('button', { name: 'Add member' }))).toBe(role === 'leader')

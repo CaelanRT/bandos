@@ -85,7 +85,7 @@ export function DeleteBand({ band, disabled, setPending, allowNavigation, onDeni
     }
   }
 
-  return <section aria-labelledby="delete-heading">
+  return <section className="band-delete" aria-labelledby="delete-heading">
     <h3 id="delete-heading">Delete band</h3>
     {error && <p role="alert">{error}</p>}
     {reconciliation === 'checking' && <p role="status">Checking whether this band is still available…</p>}
@@ -94,9 +94,9 @@ export function DeleteBand({ band, disabled, setPending, allowNavigation, onDeni
       <p>We couldn’t check the latest band information. Check again before deleting.</p>
       <button type="button" onClick={() => reconcile()}>Check again</button>
     </div>}
-    <button ref={trigger} type="button" disabled={disabled || busy || ['checking', 'failed'].includes(reconciliation)}
+    <button ref={trigger} className="band-delete-trigger" type="button" disabled={disabled || busy || ['checking', 'failed'].includes(reconciliation)}
       onClick={() => setOpen(true)}>Delete band</button>
-    {open && <dialog ref={dialog} aria-labelledby="delete-title" aria-describedby="delete-description"
+    {open && <dialog ref={dialog} className="band-delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description"
       onKeyDown={(event) => { if (event.key === 'Escape') event.stopPropagation() }}
       onCancel={(event) => { event.preventDefault(); if (!submitting.current) setOpen(false) }}>
       <h2 id="delete-title">Delete {band.name}?</h2>
@@ -104,7 +104,7 @@ export function DeleteBand({ band, disabled, setPending, allowNavigation, onDeni
       {busy && <p role="status">Deleting band…</p>}
       <div className="form-actions">
         <button ref={cancel} type="button" disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
-        <button type="button" disabled={busy} onClick={confirm}>Delete band</button>
+        <button className="band-delete-confirm" type="button" disabled={busy} onClick={confirm}>Delete band</button>
       </div>
     </dialog>}
   </section>

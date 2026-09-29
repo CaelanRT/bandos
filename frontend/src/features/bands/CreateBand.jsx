@@ -100,37 +100,39 @@ export function CreateBand() {
   }
 
   return <BandShell bands={bands} context="Create a band">
-    <h1>Create a band</h1>
-    <form className="band-form" onSubmit={submit} noValidate>
-      {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
-      <label htmlFor="band-name">Band name</label>
-      <input ref={field} id="band-name" name="name" value={name} disabled={pending}
-        aria-invalid={Boolean(fieldError)} aria-describedby={`band-name-hint${fieldError ? ' band-name-error' : ''}`}
-        onBlur={() => { setTouched(true); setFieldError(validateName(name.trim())) }}
-        onChange={(event) => {
-          setName(event.target.value)
-          if (touched) setFieldError(validateName(event.target.value.trim()))
-        }} />
-      <p id="band-name-hint">1–50 characters. Bands can share the same name.</p>
-      {fieldError && <p id="band-name-error">{fieldError}</p>}
-      {reconciliation === 'checking' && <p role="status">Checking your bands…</p>}
-      {reconciliation === 'failed' && <div role="alert">
-        <p>We couldn’t check your bands. Check again before creating another band.</p>
-        <button type="button" onClick={() => reconcile()}>Check again</button>
-      </div>}
-      {reconciliation === 'checked' && <section aria-label="Check existing bands">
-        <p role="status">Your bands are up to date. Check them before trying again.</p>
-        {bands.data?.length > 0 ? <BandLinks bands={bands.data} /> : <p>No bands were found.</p>}
-        <p>A matching name doesn’t confirm creation. Create again could create another band, even with the same name.</p>
-      </section>}
-      <div className="form-actions">
-        <button type="submit" disabled={pending || reconciliation === 'checking' || reconciliation === 'failed'}>
-          {pending ? 'Creating band…' : reconciliation === 'checked' ? 'Create again' : 'Create band'}
-        </button>
-        <button type="button" disabled={pending} onClick={() => navigate(origin)}>Cancel</button>
-      </div>
-      {pending && !reconciliation && <p role="status">Creating band…</p>}
-    </form>
+    <div className="band-editor">
+      <h1>Create a band</h1>
+      <form className="band-form" onSubmit={submit} noValidate>
+        {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+        <label htmlFor="band-name">Band name</label>
+        <input ref={field} id="band-name" name="name" value={name} disabled={pending}
+          aria-invalid={Boolean(fieldError)} aria-describedby={`band-name-hint${fieldError ? ' band-name-error' : ''}`}
+          onBlur={() => { setTouched(true); setFieldError(validateName(name.trim())) }}
+          onChange={(event) => {
+            setName(event.target.value)
+            if (touched) setFieldError(validateName(event.target.value.trim()))
+          }} />
+        <p id="band-name-hint">1–50 characters. Bands can share the same name.</p>
+        {fieldError && <p id="band-name-error">{fieldError}</p>}
+        {reconciliation === 'checking' && <p role="status">Checking your bands…</p>}
+        {reconciliation === 'failed' && <div role="alert">
+          <p>We couldn’t check your bands. Check again before creating another band.</p>
+          <button type="button" onClick={() => reconcile()}>Check again</button>
+        </div>}
+        {reconciliation === 'checked' && <section aria-label="Check existing bands">
+          <p role="status">Your bands are up to date. Check them before trying again.</p>
+          {bands.data?.length > 0 ? <BandLinks bands={bands.data} /> : <p>No bands were found.</p>}
+          <p>A matching name doesn’t confirm creation. Create again could create another band, even with the same name.</p>
+        </section>}
+        <div className="form-actions">
+          <button type="submit" disabled={pending || reconciliation === 'checking' || reconciliation === 'failed'}>
+            {pending ? 'Creating band…' : reconciliation === 'checked' ? 'Create again' : 'Create band'}
+          </button>
+          <button type="button" disabled={pending} onClick={() => navigate(origin)}>Cancel</button>
+        </div>
+        {pending && !reconciliation && <p role="status">Creating band…</p>}
+      </form>
+    </div>
     <UnsavedNavigationDialog blocker={blocker} pending={pending} />
   </BandShell>
 }

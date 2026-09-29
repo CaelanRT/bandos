@@ -76,7 +76,7 @@ it('adds two users consecutively with exact trimmed bodies, ordered unique rows,
   }
   expect(posts().map(([, options]) => JSON.parse(options.body))).toEqual([{ username: 'zoe' }, { username: 'ben' }])
   expect(within(screen.getByRole('list', { name: 'Band members' })).getAllByRole('listitem').map((row) => row.textContent))
-    .toEqual(['Alex Rivera · Leader@alex', 'Ben Smith@ben', 'Zoe Smith@zoe'])
+    .toEqual(['Alex Rivera@alexLeader', 'Ben Smith@benMember', 'Zoe Smith@zoeMember'])
   await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   await waitFor(() => expect(screen.getByRole('button', { name: 'Add member' })).toHaveFocus())

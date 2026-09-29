@@ -133,7 +133,7 @@ export function BandSettings({ band }) {
   }
   const checking = reconciliation === 'checking'
   const locked = pending || deleting || checking || reconciliation === 'failed'
-  return <section aria-labelledby="settings-heading">
+  return <section className="band-settings" aria-labelledby="settings-heading">
     <h2 id="settings-heading">Settings</h2>
     {denied ? <div role="alert">
       <p>{permissionChecking ? 'Checking your permissions…' : 'We couldn’t confirm leader access. Check your permissions to continue.'}</p>
