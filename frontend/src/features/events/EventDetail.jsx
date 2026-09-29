@@ -6,7 +6,7 @@ import { DeleteEvent } from './DeleteEvent.jsx'
 
 function EventReadFailure({ query }) {
   if (!query.isError) return null
-  return <div role="alert">
+  return <div className="event-notice" role="alert">
     <p>We couldn’t {query.data ? 'update' : 'load'} this event.</p>
     <button type="button" disabled={query.isFetching} onClick={() => query.refetch()}>
       {query.isFetching ? 'Retrying…' : 'Retry'}
@@ -32,26 +32,30 @@ export function EventDetail({ bandId, eventId, canEdit = false }) {
       eventManagementPermissionNotice: _managementPermission, eventEditingClosed: _closed, ...state } = location.state
     navigate(location.pathname + location.search + location.hash, { replace: true, state })
   }, [location, navigate])
-  if (detail.error?.code === 'BAND_NOT_FOUND') return <p role="status">Checking band access…</p>
-  if (event === null) return <><h1>This event is no longer available.</h1><Link to={schedule}>Back to Schedule</Link></>
-  return <>
-    {notice && <p role="status">{notice}</p>}
-    {detail.isPending && <p role="status">Loading event…</p>}
+  if (detail.error?.code === 'BAND_NOT_FOUND') return <p className="event-notice" role="status">Checking band access…</p>
+  if (event === null) return <div className="event-recovery"><h1>This event is no longer available.</h1><Link to={schedule}>Back to Schedule</Link></div>
+  return <div className="event-detail">
+    {notice && <p className="event-notice" role="status">{notice}</p>}
+    {detail.isPending && <p className="event-notice" role="status">Loading event…</p>}
     <EventReadFailure query={detail} />
     {event && <article>
-      <h1>{event.name}</h1>
-      <p>{event.type === 'rehearsal' ? 'Rehearsal' : 'Performance'}</p>
-      <dl>
-        <dt>Date</dt><dd>{event.date}</dd>
-        <dt>Start time</dt><dd>{formatLocalTime(event.startTime)}</dd>
-        <dt>End time</dt><dd>{formatLocalTime(event.endTime)}</dd>
-        <dt>Timezone</dt><dd>{event.timezone}</dd>
-        <dt>Location</dt><dd>{event.location}</dd>
+      <header className="event-detail-heading">
+        <h1>{event.name}</h1>
+        <p>{event.type === 'rehearsal' ? 'Rehearsal' : 'Performance'}</p>
+      </header>
+      <dl className="event-detail-facts">
+        <div><dt>Date</dt><dd><time dateTime={event.date}>{event.date}</time></dd></div>
+        <div><dt>Start time</dt><dd><time dateTime={event.startTime}>{formatLocalTime(event.startTime)}</time></dd></div>
+        <div><dt>End time</dt><dd><time dateTime={event.endTime}>{formatLocalTime(event.endTime)}</time></dd></div>
+        <div><dt>Timezone</dt><dd>{event.timezone}</dd></div>
+        <div><dt>Location</dt><dd>{event.location}</dd></div>
       </dl>
-      {event.description !== null && <section aria-labelledby="description-heading"><h2 id="description-heading">Description</h2><p>{event.description}</p></section>}
-      {canEdit && isEventEditable(event) && <Link to={`/bands/${bandId}/events/${eventId}/edit`}>Edit event</Link>}
-      {canEdit && <DeleteEvent bandId={bandId} eventId={eventId} event={event} />}
-      <Link to={schedule}>Back to Schedule</Link>
+      {event.description !== null && <section className="event-description" aria-labelledby="description-heading"><h2 id="description-heading">Description</h2><p>{event.description}</p></section>}
+      <div className="event-detail-actions">
+        {canEdit && isEventEditable(event) && <Link to={`/bands/${bandId}/events/${eventId}/edit`}>Edit event</Link>}
+        {canEdit && <DeleteEvent bandId={bandId} eventId={eventId} event={event} />}
+        <Link to={schedule}>Back to Schedule</Link>
+      </div>
     </article>}
-  </>
+  </div>
 }
