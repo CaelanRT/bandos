@@ -1,5 +1,8 @@
 # Compose the band workspace and schedule
 
+> **Status:** For Review
+> **Draft PR:** [#45](https://github.com/CaelanRT/bandos/pull/45)
+
 ## Objective
 
 Make the band workspace and schedule feel like a coherent, legible working page using the reviewed Phase 6 direction.
