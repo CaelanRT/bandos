@@ -1,7 +1,7 @@
 # Present entry and recovery routes
 
-> **Status:** For Review
-> **Draft PR:** [#49](https://github.com/CaelanRT/bandos/pull/49)
+> **Status:** Completed
+> **PR:** [#49](https://github.com/CaelanRT/bandos/pull/49)
 
 ## Objective
 
@@ -29,10 +29,10 @@ Signed-out entry screens and unknown or unavailable routes use a separate app sh
 
 ## Acceptance Criteria
 
-- [ ] Login and Registration display the shared Phase 6 identity with clear fields, actions, validation, and loading/error feedback.
-- [ ] Session notices, password visibility, rate-limit feedback, and protected-destination behavior remain visible and operable where applicable.
-- [ ] Unknown and unavailable-resource views preserve their current auth-appropriate recovery links and messages.
-- [ ] These screens remain keyboard operable and readable at 320px and 200% zoom; focus remains visible.
+- [x] Login and Registration display the shared Phase 6 identity with clear fields, actions, validation, and loading/error feedback.
+- [x] Session notices, password visibility, rate-limit feedback, and protected-destination behavior remain visible and operable where applicable.
+- [x] Unknown and unavailable-resource views preserve their current auth-appropriate recovery links and messages.
+- [x] These screens remain keyboard operable and readable at 320px and 200% zoom; focus remains visible.
 
 ## Testing Strategy
 
@@ -58,9 +58,9 @@ Preserve route protection and redirects. Use meaningful type and spacing for ide
 
 ## Definition of Done
 
-- [ ] Acceptance criteria are satisfied.
-- [ ] Relevant existing tests, lint, build, and `git diff --check` pass.
-- [ ] No known regression exists in touched behavior and no out-of-scope work was introduced.
+- [x] Acceptance criteria are satisfied.
+- [x] Relevant existing tests, lint, build, and `git diff --check` pass.
+- [x] No known regression exists in touched behavior and no out-of-scope work was introduced.
 
 ## Follow-up Work
 
