@@ -1,6 +1,6 @@
 # Compose the band workspace and schedule
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#45](https://github.com/CaelanRT/bandos/pull/45)
 
 ## Objective
