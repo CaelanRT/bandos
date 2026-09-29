@@ -143,45 +143,56 @@ export function Account() {
 
   const checking = reconciliation === 'checking'
   return <BandShell bands={bands} context="Account">
-    <h1>Account</h1>
-    <form className="band-form" aria-label="Edit profile" onSubmit={submit} noValidate>
-      {message && <p role="status">{message}</p>}
-      {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
-      {fields.map(({ name, label, autoComplete }) => <div key={name}>
-        <label htmlFor={`account-${name}`}>{label}</label>
-        <input ref={(node) => { inputs.current[name] = node }} id={`account-${name}`} name={name}
-          value={values[name]} autoComplete={autoComplete} disabled={pending || checking}
-          autoCapitalize={name === 'username' ? 'none' : undefined}
-          spellCheck={name === 'username' ? false : undefined}
-          aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `account-${name}-error` : undefined}
-          onBlur={() => {
-            setTouched((current) => ({ ...current, [name]: true }))
-            setErrors((current) => ({ ...current, [name]: validateProfile(values)[name] }))
-          }}
-          onChange={(event) => {
-            const next = { ...values, [name]: event.target.value }
-            setValues(next); setMessage(null); setFocusField(null)
-            if (touched[name]) setErrors((current) => ({ ...current, [name]: validateProfile(next)[name] }))
-          }} />
-        {errors[name] && <p id={`account-${name}-error`}>{errors[name]}</p>}
-      </div>)}
-      <dl>
-        <dt>Email</dt><dd>{user.email}</dd>
-        <dt>Plan</dt><dd>{user.plan}</dd>
-      </dl>
-      {checking && <p role="status">Checking the current profile…</p>}
-      {reconciliation === 'failed' && <div role="alert">
-        <p>We couldn’t check your current profile. Check again before saving.</p>
-        <button type="button" onClick={() => checkCurrentUser()}>Check again</button>
-      </div>}
-      {reconciliation === 'different' && <p role="status">The current profile differs from your attempted changes. Your draft is preserved; review it before saving again.</p>}
-      <div className="form-actions">
-        <button type="submit" disabled={!dirty || pending || checking || reconciliation === 'failed'}>{pending ? 'Saving…' : 'Save'}</button>
-        <button type="button" disabled={pending || checking} onClick={cancel}>Cancel</button>
-      </div>
-      {pending && <p role="status">Saving profile…</p>}
-    </form>
-    <DeactivateAccount user={user} disabled={pending || checking} setPending={setDeactivationPending} />
-    <UnsavedNavigationDialog blocker={blocker} pending={pending || checking || deactivationPending} />
+    <div className="account-page">
+      <header className="account-heading">
+        <h1>Account</h1>
+        <p>@{user.username}</p>
+      </header>
+      <section className="account-profile" aria-labelledby="account-profile-heading">
+        <h2 id="account-profile-heading">Profile</h2>
+        <form className="band-form account-form" aria-label="Edit profile" onSubmit={submit} noValidate>
+          {message && <p role="status">{message}</p>}
+          {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+          {fields.map(({ name, label, autoComplete }) => <div className="account-field" key={name}>
+            <label htmlFor={`account-${name}`}>{label}</label>
+            <input ref={(node) => { inputs.current[name] = node }} id={`account-${name}`} name={name}
+              value={values[name]} autoComplete={autoComplete} disabled={pending || checking}
+              autoCapitalize={name === 'username' ? 'none' : undefined}
+              spellCheck={name === 'username' ? false : undefined}
+              aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `account-${name}-error` : undefined}
+              onBlur={() => {
+                setTouched((current) => ({ ...current, [name]: true }))
+                setErrors((current) => ({ ...current, [name]: validateProfile(values)[name] }))
+              }}
+              onChange={(event) => {
+                const next = { ...values, [name]: event.target.value }
+                setValues(next); setMessage(null); setFocusField(null)
+                if (touched[name]) setErrors((current) => ({ ...current, [name]: validateProfile(next)[name] }))
+              }} />
+            {errors[name] && <p id={`account-${name}-error`} className="account-field-error">{errors[name]}</p>}
+          </div>)}
+          {checking && <p role="status">Checking the current profile…</p>}
+          {reconciliation === 'failed' && <div role="alert">
+            <p>We couldn’t check your current profile. Check again before saving.</p>
+            <button type="button" onClick={() => checkCurrentUser()}>Check again</button>
+          </div>}
+          {reconciliation === 'different' && <p role="status">The current profile differs from your attempted changes. Your draft is preserved; review it before saving again.</p>}
+          <div className="form-actions">
+            <button type="submit" disabled={!dirty || pending || checking || reconciliation === 'failed'}>{pending ? 'Saving…' : 'Save'}</button>
+            <button type="button" disabled={pending || checking} onClick={cancel}>Cancel</button>
+          </div>
+          {pending && <p role="status">Saving profile…</p>}
+        </form>
+      </section>
+      <section className="account-details" aria-labelledby="account-details-heading">
+        <h2 id="account-details-heading">Account details</h2>
+        <dl>
+          <div><dt>Email</dt><dd>{user.email}</dd></div>
+          <div><dt>Plan</dt><dd>{user.plan}</dd></div>
+        </dl>
+      </section>
+      <DeactivateAccount user={user} disabled={pending || checking} setPending={setDeactivationPending} />
+      <UnsavedNavigationDialog blocker={blocker} pending={pending || checking || deactivationPending} className="account-unsaved-dialog" />
+    </div>
   </BandShell>
 }
