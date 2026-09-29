@@ -1,6 +1,6 @@
 # Phase 6 manual verification and sign-off
 
-Phase 6 is ready for human verification after its implementation PR is reviewed and merged. The [audit record](tickets/phase-6/07-verification-result.md) identifies checks already performed. A mocked Chromium pass and a 640px reflow check do not establish live-backend correctness, actual browser zoom, or support in every browser. Leave the checks below open until someone performs them and records evidence.
+The Phase 6 implementation PR is merged and ticket 07 is complete. Phase 6 as a whole remains open pending the human verification below. The [audit record](tickets/phase-6/07-verification-result.md) identifies checks already performed. A mocked Chromium pass and a 640px reflow check do not establish live-backend correctness, actual browser zoom, or support in every browser. Leave the checks below open until someone performs them and records evidence.
 
 ## Prepare the test environment
 
@@ -67,6 +67,7 @@ Copy one evidence row per route/state group and browser. Attach screenshots for 
 - [ ] The live journey and representative browser/device checks are recorded. All remaining blocked checks have an explicit owner and disposition; no unresolved barrier required by Phase 6 is silently accepted.
 - [ ] Concrete presentation defects are fixed and rechecked. Any work outside Phase 6 is recorded separately with its reason and follow-up.
 - [ ] Relevant tests, lint, build, and whitespace checks pass on the final reviewed implementation; any existing warnings or intermittent failures are recorded accurately.
-- [ ] Implementation PR is reviewed and merged. Update ticket and phase status only after manual results are accepted; retain the PR and evidence links.
+- [x] Implementation PR is reviewed and merged; ticket 07 is marked Completed.
+- [ ] Keep Phase 6 open until manual results are accepted; then update the phase status and retain the PR and evidence links.
 
 **Sign-off:** frontend commit: ___; backend environment/version: ___; evidence location: ___; outstanding items/disposition: ___; accepted by/date: ___.

@@ -1,7 +1,7 @@
 # Verify the Phase 6 visual implementation
 
-> **Status:** For Review
-> **Draft PR:** [#50](https://github.com/CaelanRT/bandos/pull/50)
+> **Status:** Completed; Phase 6 manual sign-off pending
+> **Merged PR:** [#50](https://github.com/CaelanRT/bandos/pull/50)
 > **Audit:** [Verification record](07-verification-result.md)
 > **Manual sign-off:** [Phase 6 verification guide](../../phase-6-manual-verification.md)
 
@@ -67,4 +67,4 @@ Keep fixes tied to observed Phase 6 issues. Do not use the audit to reopen produ
 
 ## Follow-up Work
 
-Complete the outstanding human browser/live-backend checks in the [manual verification guide](../../phase-6-manual-verification.md) and record sign-off before marking the ticket or phase Completed. The audit distinguishes the completed implementation checks from these remaining tasks.
+Complete the outstanding human browser/live-backend checks in the [manual verification guide](../../phase-6-manual-verification.md) and record sign-off before marking Phase 6 Completed. The merged ticket delivers the audited presentation fixes and captures these remaining tasks. The Phase 6 visual-implementation phase stays open until manual results are accepted.
