@@ -1,5 +1,8 @@
 # Present account management
 
+> **Status:** For Review
+> **Draft PR:** [#48](https://github.com/CaelanRT/bandos/pull/48)
+
 ## Objective
 
 Make the account page and deactivation dialog feel consistent with the Phase 6 design while preserving their careful edit and confirmation flows.
