@@ -1,6 +1,6 @@
 # Present event details and management
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#46](https://github.com/CaelanRT/bandos/pull/46)
 
 ## Objective
