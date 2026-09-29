@@ -1,6 +1,6 @@
 # Present band people and settings
 
-> **Status:** For Review
+> **Status:** Completed
 > **Draft PR:** [#47](https://github.com/CaelanRT/bandos/pull/47)
 
 ## Objective
