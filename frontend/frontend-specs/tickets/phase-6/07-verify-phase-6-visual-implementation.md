@@ -1,6 +1,6 @@
 # Verify the Phase 6 visual implementation
 
-> **Status:** Completed; Phase 6 manual sign-off pending
+> **Status:** Completed; Phase 6 manual sign-off accepted on 2026-09-30
 > **Merged PR:** [#50](https://github.com/CaelanRT/bandos/pull/50)
 > **Audit:** [Verification record](07-verification-result.md)
 > **Manual sign-off:** [Phase 6 verification guide](../../phase-6-manual-verification.md)
@@ -31,11 +31,11 @@ Tickets 01–06 deliver the visual system by route group. A cross-route review i
 
 ## Acceptance Criteria
 
-- [ ] Every current route is reviewed and any concrete Phase 6 visual inconsistency or usability barrier found is fixed or recorded with a reason it cannot be fixed in this phase.
-- [ ] Representative non-happy states retain their controls and meaning in the visual system.
-- [ ] At 320px and 200% zoom, primary content and actions remain reachable without horizontal loss; keyboard focus and reading order remain clear.
-- [ ] Text and control contrast, status distinctions, and reduced-motion behavior meet the Phase 6 guardrails.
-- [ ] The audit record names checked routes, states, viewports, findings, fixes, and verification results.
+- [x] Every current route is reviewed and any concrete Phase 6 visual inconsistency or usability barrier found is fixed or recorded with a reason it cannot be fixed in this phase.
+- [x] Representative non-happy states retain their controls and meaning in the visual system.
+- [x] At 320px and 200% zoom, primary content and actions remain reachable without horizontal loss; keyboard focus and reading order remain clear.
+- [x] Text and control contrast, status distinctions, and reduced-motion behavior meet the Phase 6 guardrails.
+- [x] The audit record names checked routes, states, viewports, findings, fixes, and verification results.
 
 ## Testing Strategy
 
@@ -61,10 +61,10 @@ Keep fixes tied to observed Phase 6 issues. Do not use the audit to reopen produ
 
 ## Definition of Done
 
-- [ ] Acceptance criteria and the audit record are complete.
-- [ ] Relevant tests, lint, build, and `git diff --check` pass.
-- [ ] No known regression exists in touched behavior and no out-of-scope work was introduced.
+- [x] Acceptance criteria and the audit record are complete.
+- [x] Relevant tests, lint, build, and `git diff --check` pass.
+- [x] No known regression exists in touched behavior and no out-of-scope work was introduced.
 
 ## Follow-up Work
 
-Complete the outstanding human browser/live-backend checks in the [manual verification guide](../../phase-6-manual-verification.md) and record sign-off before marking Phase 6 Completed. The merged ticket delivers the audited presentation fixes and captures these remaining tasks. The Phase 6 visual-implementation phase stays open until manual results are accepted.
+Manual testing was completed and accepted by the project owner on 2026-09-30, with no defects or outstanding items reported. Phase 6 is Completed. See the [manual sign-off record](../../phase-6-manual-verification.md) for the confirmation and evidence limitations; automated verification is recorded in the [audit](07-verification-result.md).

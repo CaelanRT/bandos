@@ -355,6 +355,8 @@ Complete when validation protects backend gaps, every route has recovery behavio
 
 ### Phase 6 — Visual implementation
 
+**Status:** Completed — implementation merged in [PR #50](https://github.com/CaelanRT/bandos/pull/50); manual testing accepted by the project owner on 2026-09-30. See the [manual sign-off record](phase-6-manual-verification.md).
+
 **Outcome:** The functional app expresses the approved design language without changing behavior.
 
 Deliverables:

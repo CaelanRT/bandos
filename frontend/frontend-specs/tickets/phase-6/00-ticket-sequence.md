@@ -1,6 +1,6 @@
 # Phase 6 Ticket Sequence
 
-> **Status:** Ticket 07 completed ([merged PR #50](https://github.com/CaelanRT/bandos/pull/50)); Phase 6 manual sign-off pending
+> **Status:** Completed — all implementation tickets complete; manual testing accepted by the project owner on 2026-09-30 ([merged PR #50](https://github.com/CaelanRT/bandos/pull/50))
 > **Specification:** [Phase 6 — Visual implementation](../../07-phase-6-visual-implementation.md)
 
 | Ticket | Outcome | Blocked by |
@@ -15,4 +15,4 @@
 
 Ticket 01 includes the browser review checkpoint before wider rollout. Tickets 03–06 may proceed independently once their listed prerequisites are satisfied. Each route ticket covers the relevant loading, empty, error, permission, and responsive states on its surfaces.
 
-Final verification evidence is recorded in the [ticket 07 audit](07-verification-result.md). Use the [manual verification guide](../../phase-6-manual-verification.md) to finish browser/live-backend checks and record phase sign-off.
+Final verification evidence is recorded in the [ticket 07 audit](07-verification-result.md). Completed manual testing and phase sign-off are recorded in the [manual verification guide](../../phase-6-manual-verification.md).

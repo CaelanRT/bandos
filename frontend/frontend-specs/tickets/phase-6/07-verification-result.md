@@ -1,6 +1,6 @@
 # Phase 6 cross-route verification record
 
-Date: 2026-09-29. Base: `origin/main` at `6606602`. Scope: ticket 07, [Phase 6 sections 3–8](../../07-phase-6-visual-implementation.md). Implementation is ready for review; phase completion still requires the [manual verification and sign-off](../../phase-6-manual-verification.md).
+Date: 2026-09-29. Base: `origin/main` at `6606602`. Scope: ticket 07, [Phase 6 sections 3–8](../../07-phase-6-visual-implementation.md). Implementation merged in [PR #50](https://github.com/CaelanRT/bandos/pull/50). Manual testing and Phase 6 sign-off were accepted on 2026-09-30; see the [manual verification and sign-off record](../../phase-6-manual-verification.md).
 
 ## Browser coverage and limitations
 
@@ -41,11 +41,11 @@ Every route below was rendered at **1440×900**, **320×900**, and **640×900 CS
 
 Ratios use WCAG relative luminance from sRGB tokens. Statuses retain text and semantic `status`/`alert` roles; labels and field-error associations remain in the existing markup. The featured-event secondary text uses light warm text on oxblood, not muted graphite. Disabled opacity and decorative rules were not counted as enabled-control failures. Color transitions are gated by `prefers-reduced-motion: no-preference`; reduced-motion browser measurements reported no enabled interactive transitions. Impeccable's detector on the changed CSS returned no findings. The palette, row/index composition, self-hosted font with fallback, and route-specific hierarchy remain intact; no new dependency, API, permission, route, or state logic was introduced.
 
-## Results and outstanding verification
+## Results and manual sign-off
 
 The route captures showed no document-width overflow at the tested widths, no unlabeled visible form fields, no visible interactive targets below 24px height, and no uncaught page errors. Primary form controls retain their 44px minimum height. Native dialog checks covered initial focus, Tab containment, Escape cancellation and reachable content/actions; Menu Escape returned focus to Menu. These measurements and selected screenshot inspections establish the tested rendering, not exhaustive accessibility certification.
 
-Outstanding: actual browser 200% zoom, the complete human keyboard journey, live-backend success/uncertain/rate-limit/session transitions, long-content fixtures, password managers, deployment fallback, and representative other browsers/real mobile devices. The manual guide provides setup, route/state checklist, expected results, evidence fields and the phase sign-off gate. No phase completion is claimed by this record.
+At the time of the implementation audit, outstanding manual checks included actual browser 200% zoom, the complete human keyboard journey, live-backend success/uncertain/rate-limit/session transitions, long-content fixtures, password managers, deployment fallback, and representative other browsers/real mobile devices. On 2026-09-30, the project owner confirmed their manual testing looked good and requested completion. This closes the manual verification gate and completes Phase 6. The [sign-off record](../../phase-6-manual-verification.md) records that confirmation; detailed scenario and browser/device evidence was not supplied. The original automated browser limitations above remain accurate.
 
 ## Automated regression checks
 
@@ -55,4 +55,4 @@ Outstanding: actual browser 200% zoom, the complete human keyboard journey, live
 - `git diff --check`: passed.
 - No new unit/integration tests: fixes change only shared CSS; existing navigation, form and native-dialog behavior stays intact and the browser checks exercise the rendered change.
 
-Independent `review-ticket` review: **PASS**, no blocking or non-blocking findings. Review covered the diff, ticket/specification, surrounding CSS and dialog code, browser measurements/screenshots, and reported automated results. Outstanding manual verification remains required before ticket/phase completion.
+Independent `review-ticket` review: **PASS**, no blocking or non-blocking findings. Review covered the diff, ticket/specification, surrounding CSS and dialog code, browser measurements/screenshots, and reported automated results. Manual verification was subsequently accepted by the project owner on 2026-09-30, completing the phase.
