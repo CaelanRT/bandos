@@ -1,6 +1,6 @@
 # Navigate the authenticated app with a mobile drawer
 
-> **Status:** In progress — implementation and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #52](https://github.com/CaelanRT/bandos/pull/52), 2026-10-01
 > **Dependencies:** [Phase 7 ticket 01](01-simplify-navigation-and-account-access.md).
 
 ## Objective
