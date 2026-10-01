@@ -1,6 +1,6 @@
 # Simplify authenticated navigation and account access
 
-> **Status:** For Review — [Draft PR #51](https://github.com/CaelanRT/bandos/pull/51)
+> **Status:** Completed — [merged PR #51](https://github.com/CaelanRT/bandos/pull/51), 2026-10-01
 > **Dependencies:** Phase 6 completed baseline.
 
 ## Objective
