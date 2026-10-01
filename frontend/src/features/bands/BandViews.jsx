@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { LogoutButton } from '../auth/LogoutButton.jsx'
+import { AccountMenu } from '../../app/AccountMenu.jsx'
 import { useSession } from '../../app/sessionContext.js'
 import { memberFullName, parseBandId, sortBands, sortMembers } from './api.js'
 import { BandSettings } from './BandSettings.jsx'
@@ -60,16 +60,15 @@ export function BandShell({ children, bands, context }) {
           if (open) closeMenu()
           else setOpenAt(location.key)
         }}>Menu</button>
-      <LogoutButton />
+      <AccountMenu onOpen={() => setOpenAt(null)} />
     </header>
     <nav ref={index} id="band-index" className={`band-index${open ? ' is-open' : ''}`} aria-label="Primary">
-      <NavLink to="/" end>Home</NavLink>
-      <CreateBandLink />
-      <NavLink to="/account">Account</NavLink>
+      <NavLink to="/" end>Datebook</NavLink>
       <h2>Your bands</h2>
       {bands.isPending && <p role="status">Loading bands…</p>}
       <ReadFailure query={bands} subject="your bands" />
       {bands.data && <BandLinks bands={bands.data} />}
+      <CreateBandLink compact />
     </nav>
     <main ref={main} id="main-content" tabIndex="-1">{children}</main>
   </div>
@@ -78,7 +77,7 @@ export function BandShell({ children, bands, context }) {
 export function BandsHome() {
   const bands = useBands()
   const { user } = useSession()
-  return <BandShell bands={bands} context="Home">
+  return <BandShell bands={bands} context="Datebook">
     <div className="datebook-home">
       <DeletionNotice />
       <h1>Personal datebook</h1>
@@ -161,10 +160,22 @@ export function BandWorkspace({ section = 'Schedule' }) {
   </BandShell>
 }
 
-function CreateBandLink() {
+function CreateBandLink({ compact = false }) {
   const location = useLocation()
-  if (/^\/bands\/new\/?$/.test(location.pathname)) return <span aria-current="page">Create a band</span>
-  return <Link to="/bands/new" state={{ creationOrigin: destinationFromLocation(location) }}>Create a band</Link>
+  const current = /^\/bands\/new\/?$/.test(location.pathname)
+  return <Link to="/bands/new"
+    className={compact ? 'create-band-action' : undefined}
+    aria-label={compact ? 'Create a band' : undefined}
+    aria-current={current ? 'page' : undefined}
+    state={current ? location.state : { creationOrigin: destinationFromLocation(location) }}
+    onClick={(event) => { if (current) event.preventDefault() }}>
+    {compact ? <>
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      <span className="create-band-label">Create a band</span>
+    </> : 'Create a band'}
+  </Link>
 }
 
 function DeletionNotice() {

@@ -75,8 +75,11 @@ it.each(['/bands/new', '/bands/new/'])('keeps Create a band non-navigating on %s
   const { router } = mount([{ pathname, state: { creationOrigin: '/bands/2' } }])
   await screen.findByLabelText('Band name')
   const navigation = within(screen.getByRole('navigation', { name: 'Primary' }))
-  expect(navigation.getByText('Create a band')).toHaveAttribute('aria-current', 'page')
-  expect(navigation.queryByRole('link', { name: 'Create a band' })).not.toBeInTheDocument()
+  const create = navigation.getByRole('link', { name: 'Create a band' })
+  expect(create).toHaveAttribute('aria-current', 'page')
+  expect(create).toHaveClass('create-band-action')
+  await userEvent.click(create)
+  expect(router.state.location.state.creationOrigin).toBe('/bands/2')
   await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
   await screen.findByRole('heading', { name: 'Existing' })
   expect(router.state.location.pathname).toBe('/bands/2')
@@ -165,7 +168,7 @@ it('guards Back and Forward and SPA links, and unload only while input differs f
     await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
     expect(router.state.location.pathname).toBe('/bands/new')
   }
-  await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: false, cancelable: true }))
   expect(router.state.location.pathname).toBe('/bands/new')
   await enter('')
@@ -272,6 +275,7 @@ it('expires without a dirty prompt and restores creation without replay', async 
 it('does not cache or navigate late creation after Logout', async () => {
   const pending = deferred(); post = () => pending.promise
   const { client, router } = mount(); await enter(); await submit()
+  await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
   await screen.findByRole('heading', { name: 'Login' })
   await act(async () => pending.resolve(json({ band: band(9) }, 201)))
@@ -291,7 +295,7 @@ it('recognizes static creation destinations and safely validates its separate or
 it.each(['validation', 'success'])('holds attempted navigation during a pending write until %s resolves', async (outcome) => {
   const pending = deferred(); post = () => pending.promise
   const { router } = mount(); await enter(); await submit()
-  await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   expect(await screen.findByRole('dialog')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
   expect(screen.getByText(/Please wait for the result before leaving/)).toBeInTheDocument()
@@ -313,7 +317,7 @@ it('keeps the mobile menu open when Escape cancels its dirty-navigation dialog',
   mount(); await enter()
   const menu = screen.getByRole('button', { name: 'Menu' })
   await userEvent.click(menu)
-  const home = screen.getByRole('link', { name: 'Home' })
+  const home = screen.getByRole('link', { name: 'Datebook' })
   await userEvent.click(home)
   fireEvent.keyDown(screen.getByRole('button', { name: 'Keep editing' }), { key: 'Escape' })
   fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }))

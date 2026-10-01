@@ -42,6 +42,7 @@ afterEach(cleanup)
 it('opens protected Account with read-only information and active navigation', async () => {
   renderAccount()
   expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('aria-current', 'page')
   expect(screen.getByText('alex@example.com')).toBeInTheDocument()
   expect(screen.getByText('free')).toBeInTheDocument()

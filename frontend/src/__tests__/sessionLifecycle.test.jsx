@@ -55,7 +55,7 @@ async function open(entry) {
   fetchMock.mockResolvedValueOnce(identity())
   const app = mount(entry)
   await screen.findByRole('heading', { name: 'Private page' })
-  app.client.setQueryData(['private', 'bands'], ['private data'])
+  app.client.setQueryData(['private', 'probe'], ['private data'])
   app.client.setQueryData(['public', 'config'], ['public data'])
   return app
 }
@@ -66,20 +66,25 @@ async function login() {
   await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
   await screen.findByRole('heading', { name: 'Private page' })
 }
-beforeEach(() => { fetchMock.mockReset(); vi.stubGlobal('fetch', fetchMock) })
+beforeEach(() => {
+  fetchMock.mockReset()
+  vi.stubGlobal('fetch', (url, options) => new URL(url).pathname.endsWith('/bands')
+    ? Promise.resolve(response({ data: { bands: [] } })) : fetchMock(url, options))
+})
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 it('logs out once without a body, retains content while pending, clears private data and replaces to Login', async () => {
   const { router, client } = await open()
   const pending = deferred()
   fetchMock.mockReturnValueOnce(pending.promise)
+  await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   const button = screen.getByRole('button', { name: 'Log out' })
   button.focus()
   await userEvent.keyboard('{Enter}')
   expect(screen.getByRole('button', { name: 'Logging out…' })).toBeDisabled()
   expect(screen.getByRole('status')).toHaveTextContent('Logging out…')
   expect(currentSession.user.userId).toBe(17)
-  expect(client.getQueryData(['private', 'bands'])).toEqual(['private data'])
+  expect(client.getQueryData(['private', 'probe'])).toEqual(['private data'])
   fireEvent.click(button)
   expect(fetchMock).toHaveBeenCalledTimes(2)
   expect(fetchMock.mock.calls[1][0]).toMatch(/\/auth\/logout$/)
@@ -88,7 +93,7 @@ it('logs out once without a body, retains content while pending, clears private 
   await act(async () => pending.resolve(response({ data: { message: 'Logged out' } })))
   expect(await screen.findByRole('heading', { name: 'Login' })).toBeInTheDocument()
   expect(currentSession.user).toBeNull()
-  expect(client.getQueryData(['private', 'bands'])).toBeUndefined()
+  expect(client.getQueryData(['private', 'probe'])).toBeUndefined()
   expect(client.getQueryData(['public', 'config'])).toEqual(['public data'])
   expect(router.state.location.state).toEqual({})
   expect(router.state.historyAction).toBe('REPLACE')
@@ -101,15 +106,16 @@ it.each(['server', 'network', 'unauthenticated'])('retains identity and private 
   const { client } = await open()
   if (kind === 'network') fetchMock.mockRejectedValueOnce(new TypeError('Offline'))
   else fetchMock.mockResolvedValueOnce(kind === 'server' ? failure('INTERNAL_ERROR', 500) : failure())
+  await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t log you out. Try again.')
   expect(screen.getByRole('alert')).toHaveFocus()
   expect(currentSession.user.userId).toBe(17)
-  expect(client.getQueryData(['private', 'bands'])).toEqual(['private data'])
+  expect(client.getQueryData(['private', 'probe'])).toEqual(['private data'])
   fetchMock.mockResolvedValueOnce(response({ data: { message: 'Logged out' } }))
   await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
   expect(await screen.findByRole('heading', { name: 'Login' })).toBeInTheDocument()
-  expect(client.getQueryData(['private', 'bands'])).toBeUndefined()
+  expect(client.getQueryData(['private', 'probe'])).toBeUndefined()
 })
 
 it('converges concurrent expiration signals and restores the deep URL without replaying the interrupted action', async () => {
@@ -124,7 +130,7 @@ it('converges concurrent expiration signals and restores the deep URL without re
   expect(await screen.findByRole('heading', { name: 'Login' })).toBeInTheDocument()
   expect(screen.getAllByText('Your session expired. Log in to continue.')).toHaveLength(1)
   expect(currentSession.user).toBeNull()
-  expect(client.getQueryData(['private', 'bands'])).toBeUndefined()
+  expect(client.getQueryData(['private', 'probe'])).toBeUndefined()
   expect(client.getQueryData(['public', 'config'])).toEqual(['public data'])
   expect(router.state.location.state).toEqual({ destination: '/bands/8/events/21?view=details#notes' })
   expect(router.state.historyAction).toBe('REPLACE')
@@ -137,9 +143,9 @@ it('converges concurrent expiration signals and restores the deep URL without re
 it.each([['INVALID_CREDENTIALS', 401], ['AUTHENTICATION_REQUIRED', 403]])('does not expire on %s with status %s', async (code, status) => {
   const { client } = await open()
   fetchMock.mockResolvedValueOnce(failure(code, status))
-  await act(async () => { await expect(currentSession.authenticatedRequest('/bands')).rejects.toMatchObject({ code }) })
+  await act(async () => { await expect(currentSession.authenticatedRequest('/probe')).rejects.toMatchObject({ code }) })
   expect(currentSession.status).toBe('authenticated')
-  expect(client.getQueryData(['private', 'bands'])).toEqual(['private data'])
+  expect(client.getQueryData(['private', 'probe'])).toEqual(['private data'])
 })
 
 it.each(['loggedOut', 'expired'])('consumes the %s notice so refresh and form navigation do not replay it', async (reason) => {
@@ -147,7 +153,7 @@ it.each(['loggedOut', 'expired'])('consumes the %s notice so refresh and form na
   fetchMock.mockResolvedValueOnce(reason === 'loggedOut' ? response({ data: { message: 'Logged out' } }) : failure())
   await act(async () => {
     if (reason === 'loggedOut') await currentSession.logOut()
-    else await currentSession.authenticatedRequest('/bands').catch(() => {})
+    else await currentSession.authenticatedRequest('/probe').catch(() => {})
   })
   await screen.findByRole('heading', { name: 'Login' })
   await waitFor(() => expect(router.state.location.state).not.toHaveProperty('notice'))
@@ -188,7 +194,7 @@ it('removes pending private queries and rejects stale successful responses after
 it('restores an expired destination through Registration and consumes the notice when switching forms', async () => {
   const { router } = await open()
   fetchMock.mockResolvedValueOnce(failure())
-  await act(async () => { await currentSession.authenticatedRequest('/bands').catch(() => {}) })
+  await act(async () => { await currentSession.authenticatedRequest('/probe').catch(() => {}) })
   await screen.findByRole('heading', { name: 'Login' })
   await userEvent.click(screen.getByRole('link', { name: 'Register' }))
   await act(() => router.navigate(-1))
@@ -207,7 +213,7 @@ it('restores an expired destination through Registration and consumes the notice
 it('falls back to root when expiration occurs on an unrecognized URL', async () => {
   const { router } = await open('/unknown')
   fetchMock.mockResolvedValueOnce(failure())
-  await act(async () => { await currentSession.authenticatedRequest('/bands').catch(() => {}) })
+  await act(async () => { await currentSession.authenticatedRequest('/probe').catch(() => {}) })
   await screen.findByRole('heading', { name: 'Login' })
   expect(router.state.location.state).toEqual({ destination: '/' })
 })
@@ -220,7 +226,7 @@ it('deduplicates shared Logout calls and ignores a late Logout success after rea
   expect(currentSession.logOut()).toBe(first)
   expect(fetchMock).toHaveBeenCalledTimes(2)
   fetchMock.mockResolvedValueOnce(failure())
-  await act(async () => { await currentSession.authenticatedRequest('/bands').catch(() => {}) })
+  await act(async () => { await currentSession.authenticatedRequest('/probe').catch(() => {}) })
   await screen.findByRole('heading', { name: 'Login' })
   await login()
   await act(async () => { pending.resolve(response({ data: { message: 'Logged out' } })); await first })
