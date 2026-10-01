@@ -273,6 +273,7 @@ it('expires sessions during save, clears private state, and retains a safe Setti
 it('does not repopulate a logged-out session from a late save', async () => {
   const pending = deferred(); patch = () => pending.promise
   const { client } = mount(); await enter(); await save()
+  await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
   await screen.findByRole('heading', { name: 'Login' })
   await act(async () => pending.resolve(json({ band: { ...band, name: 'Zebra' } })))

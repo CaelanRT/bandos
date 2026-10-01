@@ -814,3 +814,67 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
   .entry-main, .entry-status { padding-block: 2rem; }
   .auth-page h1 { margin-block-end: 1.5rem; }
 }
+
+/* Shared account disclosure; logout state stays mounted across dismissal. */
+.account-menu { position: relative; flex: none; margin-inline-start: auto; }
+.account-menu-trigger { display: grid; place-items: center; width: 2.75rem; padding: 0; }
+.account-menu-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-end: 0;
+  z-index: 5;
+  width: min(17rem, calc(100vw - 2rem));
+  padding: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.account-menu-panel > a, .account-menu-panel button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: start;
+  text-decoration: none;
+  color: var(--ink);
+  border: 0;
+  border-radius: 4px;
+}
+.account-menu-panel > a:hover, .account-menu-panel button:hover:not(:disabled) { background: var(--paper); }
+.account-menu-panel > a[aria-current='page'] { font-weight: 600; text-decoration: underline; }
+.account-menu-panel :is([role='alert'], [role='status']) { display: block; margin: 0.5rem 0.75rem; }
+.band-index > .create-band-action {
+  position: relative;
+  justify-content: center;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  margin-block-start: auto;
+  padding: 0;
+  border: 1px solid var(--oxblood);
+  border-radius: 6px;
+  background: var(--oxblood);
+  color: var(--surface);
+}
+.band-index > .create-band-action:hover { background: #603128; color: var(--surface); }
+.band-index > .create-band-action[aria-current='page'] { outline: 2px solid var(--oxblood); outline-offset: 3px; }
+.band-index > .create-band-action[aria-current='page']::before { position: absolute; inset-inline-start: -1rem; margin: 0; }
+.create-band-label {
+  position: absolute;
+  inset-inline-start: calc(100% + 0.75rem);
+  width: max-content;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  visibility: hidden;
+  z-index: 1;
+}
+.create-band-action:is(:hover, :focus) .create-band-label { visibility: visible; }
+.band-index.is-open { display: flex; flex-direction: column; gap: 0; }
+.band-index > :last-child { margin-block-start: auto; }
+.band-index ul { margin-block-end: 1.5rem; }
+@media (min-width: 48rem) {
+  .band-index { display: flex; flex-direction: column; }
+}

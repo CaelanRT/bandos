@@ -1,8 +1,10 @@
 import { useSession } from './sessionContext.js'
-import { LogoutButton } from '../features/auth/LogoutButton.jsx'
+import { BandShell } from '../features/bands/BandViews.jsx'
+import { useBands } from '../features/bands/queries.js'
 
 export function AppShell({ children }) {
   const session = useSession()
+  if (session.status === 'authenticated') return <AuthenticatedShell>{children}</AuthenticatedShell>
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -11,7 +13,6 @@ export function AppShell({ children }) {
       <header className="entry-header">
         <nav aria-label="Primary">
           <a href="/">Bandos</a>
-          {session.status === 'authenticated' && <LogoutButton />}
         </nav>
       </header>
       <main className="entry-main" id="main-content" tabIndex="-1">
@@ -19,4 +20,9 @@ export function AppShell({ children }) {
       </main>
     </>
   )
+}
+
+function AuthenticatedShell({ children }) {
+  const bands = useBands()
+  return <BandShell bands={bands}>{children}</BandShell>
 }

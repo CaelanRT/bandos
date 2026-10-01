@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from '../../app/sessionContext.js'
 
-export function LogoutButton() {
+export function LogoutButton({ onFailure }) {
   const session = useSession()
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -9,8 +9,11 @@ export function LogoutButton() {
   const alertRef = useRef(null)
 
   useEffect(() => {
-    if (failed) alertRef.current?.focus()
-  }, [failed])
+    if (failed) {
+      onFailure?.()
+      alertRef.current?.focus()
+    }
+  }, [failed, onFailure])
 
   async function submit() {
     if (submitting.current) return

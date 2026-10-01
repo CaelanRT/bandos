@@ -149,7 +149,7 @@ it('guards Cancel, SPA links, Back and unload while dirty; keeps edits or discar
   const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload)
   expect(unload.defaultPrevented).toBe(true)
   for (const navigate of [() => userEvent.click(screen.getByRole('button', { name: 'Cancel' })),
-    () => userEvent.click(screen.getByRole('link', { name: 'Home' })), () => act(() => router.navigate(-1))]) {
+    () => userEvent.click(screen.getByRole('link', { name: 'Datebook' })), () => act(() => router.navigate(-1))]) {
     await navigate(); await screen.findByRole('dialog')
     expect(screen.getByRole('button', { name: 'Keep editing' })).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
@@ -160,7 +160,7 @@ it('guards Cancel, SPA links, Back and unload while dirty; keeps edits or discar
   await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
   expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
   await open(); await enter()
-  await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
   expect(router.state.location.pathname).toBe('/')
 })
@@ -171,7 +171,7 @@ it('prevents overlapping submissions and leaving during a pending write', async 
   fireEvent.submit(screen.getByRole('form', { name: 'Add member' }))
   expect(posts()).toHaveLength(1)
   expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
-  await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   expect(await screen.findByRole('dialog')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
   await act(async () => pending.resolve(failure('USER_NOT_FOUND', 404)))
@@ -246,7 +246,7 @@ it('closes a dirty form with an explanation when a background read revokes leade
   await act(() => client.invalidateQueries({ queryKey: bandKeys.detail(2) }))
   expect(await screen.findByText(/Your permissions changed/)).toBeInTheDocument()
   expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
-  await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
@@ -274,6 +274,7 @@ it('expires without a dirty prompt or mutation replay', async () => {
 it('does not repopulate private data after logout with a late successful addition', async () => {
   const pending = deferred(); post = () => pending.promise
   const { client } = mount(); await open(); await enter(); await submit()
+  await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
   await screen.findByRole('heading', { name: 'Login' })
   await act(async () => pending.resolve(json({ member: zoe }, 201)))
@@ -331,7 +332,7 @@ it('preserves current Members context when its active navigation link is clicked
 it('resumes requested navigation after a confirmed pending addition', async () => {
   const pending = deferred(); post = () => pending.promise
   const { router } = mount(); await open(); await enter(); await submit()
-  await userEvent.click(screen.getByRole('link', { name: 'Home' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await screen.findByRole('dialog')
   band.members.push(zoe)
   await act(async () => pending.resolve(json({ member: zoe }, 201)))
