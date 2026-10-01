@@ -2,17 +2,20 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { NavLink, useLocation } from 'react-router-dom'
 import { LogoutButton } from '../features/auth/LogoutButton.jsx'
 
-export function AccountMenu({ onOpen }) {
+export function AccountMenu({ onOpen, drawerOpen = false }) {
   const location = useLocation()
   const [openAt, setOpenAt] = useState(null)
-  const open = openAt === location.key
+  const open = !drawerOpen && openAt === location.key
   const id = useId()
   const container = useRef(null)
   const trigger = useRef(null)
   const account = useRef(null)
-  if (openAt !== null && openAt !== location.key) setOpenAt(null)
+  if (openAt !== null && (openAt !== location.key || drawerOpen)) setOpenAt(null)
 
-  const showFailure = useCallback(() => setOpenAt(location.key), [location.key])
+  const showFailure = useCallback(() => {
+    onOpen?.()
+    setOpenAt(location.key)
+  }, [location.key, onOpen])
   useLayoutEffect(() => {
     if (open) (container.current?.querySelector('[role="alert"]') ?? account.current)?.focus()
   }, [open])

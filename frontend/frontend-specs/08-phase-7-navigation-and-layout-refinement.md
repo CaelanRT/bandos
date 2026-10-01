@@ -1,6 +1,6 @@
 # Phase 7 — Navigation and layout refinement
 
-> **Status:** In progress — ticket 01 [completed in merged PR #51](https://github.com/CaelanRT/bandos/pull/51); tickets 02–04 remain open
+> **Status:** In progress — ticket 01 [completed in merged PR #51](https://github.com/CaelanRT/bandos/pull/51); ticket 02 [For Review in Draft PR #52](https://github.com/CaelanRT/bandos/pull/52); tickets 03–04 remain open
 > **Source:** [Phase 6 user-testing feedback](feedback/phase6-usertestingfeedback.md) and Grill Me decisions, 2026-10-01
 > **Baseline:** [Phase 6 visual implementation](07-phase-6-visual-implementation.md)
 > **Sequence:** Phase 7 → [Phase 8](09-phase-8-forms-and-membership-refinement.md) → [Phase 9](10-phase-9-event-experience-refinement.md)

@@ -313,14 +313,34 @@ it.each(['validation', 'success'])('holds attempted navigation during a pending 
   }
 })
 
-it('keeps the mobile menu open when Escape cancels its dirty-navigation dialog', async () => {
+it('keeps the drawer dismissed when Escape cancels its dirty-navigation dialog', async () => {
+  vi.stubGlobal('matchMedia', vi.fn((query) => ({ matches: query.includes('max-width'), addEventListener: vi.fn(), removeEventListener: vi.fn() })))
   mount(); await enter()
-  const menu = screen.getByRole('button', { name: 'Menu' })
+  const menu = screen.getByRole('button', { name: 'Open navigation' })
   await userEvent.click(menu)
   const home = screen.getByRole('link', { name: 'Datebook' })
   await userEvent.click(home)
   fireEvent.keyDown(screen.getByRole('button', { name: 'Keep editing' }), { key: 'Escape' })
   fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }))
-  expect(menu).toHaveAttribute('aria-expanded', 'true')
-  expect(home).toHaveFocus()
+  expect(menu).toHaveAttribute('aria-expanded', 'false')
+  expect(menu).toHaveFocus()
+})
+
+
+it('keeps unsaved leave/stay protection when selecting a mobile drawer destination', async () => {
+  vi.stubGlobal('matchMedia', vi.fn((query) => ({ matches: query.includes('max-width'), addEventListener: vi.fn(), removeEventListener: vi.fn() })))
+  const { router } = mount()
+  await enter('Unsaved band')
+  await userEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+  await userEvent.click(within(screen.getByRole('dialog', { name: 'Navigation' })).getByRole('link', { name: 'Datebook' }))
+  expect(screen.queryByRole('dialog', { name: 'Navigation' })).not.toBeInTheDocument()
+  expect(document.documentElement.style.overflow).toBe('')
+  await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+  expect(router.state.location.pathname).toBe('/bands/new')
+  expect(screen.getByLabelText('Band name')).toHaveValue('Unsaved band')
+  await userEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+  await userEvent.click(within(screen.getByRole('dialog', { name: 'Navigation' })).getByRole('link', { name: 'Datebook' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
+  await screen.findByRole('heading', { name: 'Personal datebook' })
+  expect(screen.getByRole('main')).toHaveFocus()
 })
