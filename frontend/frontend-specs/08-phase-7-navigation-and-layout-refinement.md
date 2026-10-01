@@ -1,6 +1,6 @@
 # Phase 7 — Navigation and layout refinement
 
-> **Status:** Specified — tickets and implementation deferred
+> **Status:** In progress — ticket 01 [For Review in Draft PR #51](https://github.com/CaelanRT/bandos/pull/51); tickets 02–04 remain open
 > **Source:** [Phase 6 user-testing feedback](feedback/phase6-usertestingfeedback.md) and Grill Me decisions, 2026-10-01
 > **Baseline:** [Phase 6 visual implementation](07-phase-6-visual-implementation.md)
 > **Sequence:** Phase 7 → [Phase 8](09-phase-8-forms-and-membership-refinement.md) → [Phase 9](10-phase-9-event-experience-refinement.md)

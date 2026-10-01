@@ -1,6 +1,6 @@
 # Simplify authenticated navigation and account access
 
-> **Status:** Implemented — verification and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #51](https://github.com/CaelanRT/bandos/pull/51)
 > **Dependencies:** Phase 6 completed baseline.
 
 ## Objective
