@@ -46,7 +46,7 @@ beforeEach(() => {
   })
   vi.stubGlobal('fetch', fetchMock)
 })
-afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); focusManager.setFocused(undefined); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); focusManager.setFocused(undefined); vi.unstubAllGlobals(); document.documentElement.style.overflow = '' })
 
 it('distinguishes loading from zero bands and keeps Logout available', async () => {
   const pending = deferred()
@@ -90,10 +90,11 @@ it.each(['leader', 'member'])('uses detail authority for a direct %s workspace a
   await screen.findByRole('heading', { name: 'Second' })
 })
 
-it('supports Menu opening, Escape focus return, and destination focus after navigation', async () => {
+it('supports drawer opening, Escape focus return, and destination focus after navigation', async () => {
+  mobileViewport()
   list = [band(2, 'First')]; details['/bands/2'] = list[0]
   const { router } = mount()
-  const menu = await screen.findByRole('button', { name: 'Menu' })
+  const menu = await screen.findByRole('button', { name: 'Open navigation' })
   await userEvent.click(menu)
   expect(menu).toHaveAttribute('aria-expanded', 'true')
   await waitFor(() => expect(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'Datebook' })).toHaveFocus())
@@ -103,10 +104,76 @@ it('supports Menu opening, Escape focus return, and destination focus after navi
   await userEvent.click(menu)
   await userEvent.click(within(screen.getByRole('navigation', { name: 'Primary' })).getByRole('link', { name: 'First' }))
   await screen.findByRole('heading', { name: 'First' })
-  expect(screen.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-expanded', 'false')
   expect(screen.getByRole('main')).toHaveFocus()
   await act(() => router.navigate(-1))
-  expect(screen.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-expanded', 'false')
+})
+
+function mobileViewport() {
+  const media = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }
+  vi.stubGlobal('matchMedia', vi.fn((query) => query.includes('min-width') ? media : { ...media, matches: true }))
+  return media
+}
+
+it('contains focus and restores background and scrolling on every dismissal and unmount', async () => {
+  mobileViewport()
+  document.documentElement.style.overflow = 'auto'
+  mount()
+  const trigger = await screen.findByRole('button', { name: 'Open navigation' })
+  await userEvent.click(trigger)
+  const drawer = screen.getByRole('dialog', { name: 'Navigation' })
+  expect(within(drawer).getByText('BandOS')).toBeInTheDocument()
+  expect(document.documentElement.style.overflow).toBe('hidden')
+  expect(screen.getByRole('main')).toHaveAttribute('inert')
+  expect(trigger.closest('header')).toHaveAttribute('inert')
+  const close = within(drawer).getByRole('button', { name: 'Close navigation' })
+  close.focus()
+  expect(close).toHaveFocus()
+  await userEvent.tab({ shift: true })
+  expect(within(drawer).getByRole('link', { name: 'Create a band' })).toHaveFocus()
+  await userEvent.tab()
+  expect(close).toHaveFocus()
+  await userEvent.click(close)
+  expect(trigger).toHaveFocus()
+  expect(document.documentElement.style.overflow).toBe('auto')
+  expect(screen.getByRole('main')).not.toHaveAttribute('inert')
+  await userEvent.click(trigger)
+  fireEvent.click(screen.getByRole('dialog', { name: 'Navigation' }).parentElement)
+  expect(trigger).toHaveFocus()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  await userEvent.click(trigger)
+  cleanup()
+  expect(document.documentElement.style.overflow).toBe('auto')
+  document.documentElement.style.overflow = ''
+})
+
+it('clears the drawer on desktop switching and keeps the account menu mutually exclusive', async () => {
+  const media = mobileViewport()
+  mount()
+  const trigger = await screen.findByRole('button', { name: 'Open navigation' })
+  const account = screen.getByRole('button', { name: 'Account menu' })
+  await userEvent.click(account)
+  expect(account).toHaveAttribute('aria-expanded', 'true')
+  await userEvent.click(trigger)
+  expect(account).toHaveAttribute('aria-expanded', 'false')
+  expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  // A modal makes the account trigger unavailable until navigation is dismissed.
+  expect(account.closest('header')).toHaveAttribute('inert')
+  await userEvent.keyboard('{Escape}')
+  await userEvent.click(account)
+  expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  expect(account).toHaveAttribute('aria-expanded', 'true')
+  await userEvent.click(trigger)
+  const listener = media.addEventListener.mock.calls[0][1]
+  await act(() => { media.matches = true; listener() })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(document.documentElement.style.overflow).toBe('')
+  expect(screen.getByRole('main')).not.toHaveAttribute('inert')
+  expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
+  await act(() => { media.matches = false; listener() })
+  expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
 it('refreshes list and active detail on tab return without repeating session bootstrap', async () => {
@@ -420,4 +487,25 @@ it('gives authenticated recovery routes the same Datebook, bands, creation and a
   expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('href', '/account')
+})
+
+
+it('allows navigation after a logout failure while retaining its account-menu retry', async () => {
+  mobileViewport()
+  mount()
+  const account = await screen.findByRole('button', { name: 'Account menu' })
+  await userEvent.click(account)
+  const original = fetchMock.getMockImplementation()
+  fetchMock.mockImplementation((url, options) => new URL(url).pathname.endsWith('/auth/logout') ? failure('INTERNAL_ERROR', 500) : original(url, options))
+  await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t log you out.')
+  const trigger = screen.getByRole('button', { name: 'Open navigation' })
+  await userEvent.click(trigger)
+  expect(screen.getByRole('dialog', { name: 'Navigation' })).toBeInTheDocument()
+  expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  expect(account).toHaveAttribute('aria-expanded', 'false')
+  await userEvent.keyboard('{Escape}')
+  await userEvent.click(account)
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  expect(screen.getByRole('alert')).toHaveTextContent('We couldn’t log you out.')
 })

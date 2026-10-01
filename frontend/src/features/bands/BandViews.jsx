@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AccountMenu } from '../../app/AccountMenu.jsx'
 import { useSession } from '../../app/sessionContext.js'
@@ -32,45 +32,98 @@ function ReadFailure({ query, subject }) {
 
 export function BandShell({ children, bands, context }) {
   const location = useLocation()
+  const [narrow, setNarrow] = useState(() => window.matchMedia?.('(max-width: 47.999rem)').matches ?? false)
   const [openAt, setOpenAt] = useState(null)
   if (openAt !== null && openAt !== location.key) setOpenAt(null)
-  const open = openAt === location.key
+  const open = narrow && openAt === location.key
+  const dismissDrawer = useCallback(() => setOpenAt(null), [])
   const menu = useRef(null)
+  const drawer = useRef(null)
+  const returnFocusAt = useRef(null)
   const index = useRef(null)
   const main = useRef(null)
   useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 48rem)')
+    if (!media) return
+    function resize() {
+      setNarrow(!media.matches)
+      if (media.matches) setOpenAt(null)
+    }
+    resize()
+    media.addEventListener('change', resize)
+    return () => media.removeEventListener('change', resize)
+  }, [])
+  useLayoutEffect(() => {
     main.current?.focus()
   }, [location.key])
-  useEffect(() => {
-    if (open) index.current?.querySelector('a')?.focus()
-  }, [open])
+  useLayoutEffect(() => {
+    if (!open) {
+      if (returnFocusAt.current === location.key) menu.current?.focus()
+      returnFocusAt.current = null
+      return
+    }
+    const previousOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    index.current?.querySelector('a')?.focus()
+    return () => { document.documentElement.style.overflow = previousOverflow }
+  }, [open, location.key])
   function closeMenu() {
+    returnFocusAt.current = location.key
     setOpenAt(null)
-    menu.current?.focus()
   }
-  return <div className="band-shell" onKeyDown={(event) => {
-    if (event.key === 'Escape' && open) { event.preventDefault(); closeMenu() }
-  }}>
-    <a className="skip-link" href="#main-content">Skip to main content</a>
-    <header className="workspace-header">
-      <Link to="/">Bandos</Link>
+  function containFocus(event) {
+    if (event.key === 'Escape') { event.preventDefault(); closeMenu() }
+    if (event.key !== 'Tab') return
+    const controls = [...drawer.current.querySelectorAll('a[href], button')].filter((control) => !control.disabled)
+    const first = controls[0]
+    const last = controls.at(-1)
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault(); last?.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first?.focus()
+    }
+  }
+  const navigation = <nav ref={index} id="band-index" className="band-index" aria-label="Primary"
+    onClick={(event) => {
+      if (open && event.target.closest('a[href]') && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) closeMenu()
+    }}>
+    <NavLink to="/" end>Datebook</NavLink>
+    <h2>Your bands</h2>
+    {bands.isPending && <p role="status">Loading bands…</p>}
+    <ReadFailure query={bands} subject="your bands" />
+    {bands.data && <BandLinks bands={bands.data} />}
+    <CreateBandLink compact />
+  </nav>
+  return <div className="band-shell">
+    <a className="skip-link" href="#main-content" inert={open}>Skip to main content</a>
+    <header className="workspace-header" inert={open}>
+      <button ref={menu} className="menu-toggle" type="button" aria-label="Open navigation"
+        aria-expanded={open} aria-controls="navigation-drawer" onClick={() => setOpenAt(location.key)}>
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+      </button>
+      <Link className="workspace-wordmark" to="/">Bandos</Link>
       <p>{context}</p>
-      <button ref={menu} className="menu-toggle" type="button" aria-expanded={open}
-        aria-controls="band-index" onClick={() => {
-          if (open) closeMenu()
-          else setOpenAt(location.key)
-        }}>Menu</button>
-      <AccountMenu onOpen={() => setOpenAt(null)} />
+      <AccountMenu drawerOpen={open} onOpen={dismissDrawer} />
     </header>
-    <nav ref={index} id="band-index" className={`band-index${open ? ' is-open' : ''}`} aria-label="Primary">
-      <NavLink to="/" end>Datebook</NavLink>
-      <h2>Your bands</h2>
-      {bands.isPending && <p role="status">Loading bands…</p>}
-      <ReadFailure query={bands} subject="your bands" />
-      {bands.data && <BandLinks bands={bands.data} />}
-      <CreateBandLink compact />
-    </nav>
-    <main ref={main} id="main-content" tabIndex="-1">{children}</main>
+    {narrow ? <div className="navigation-overlay" hidden={!open} onClick={(event) => {
+      if (event.target === event.currentTarget) closeMenu()
+    }}>
+      <div ref={drawer} id="navigation-drawer" className="navigation-drawer" role="dialog"
+        aria-modal="true" aria-label="Navigation" onKeyDown={containFocus}>
+        <div className="drawer-header">
+          <span className="drawer-wordmark">BandOS</span>
+          <button type="button" aria-label="Close navigation" onClick={closeMenu}>
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+        {navigation}
+      </div>
+    </div> : navigation}
+    <main ref={main} id="main-content" tabIndex="-1" inert={open}>{children}</main>
   </div>
 }
 

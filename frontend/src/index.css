@@ -878,3 +878,29 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
 @media (min-width: 48rem) {
   .band-index { display: flex; flex-direction: column; }
 }
+
+/* Mobile navigation is the only temporary scroll area in the shared shell. */
+.menu-toggle { display: grid; place-items: center; width: 2.75rem; padding: 0; flex: none; }
+.drawer-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 1rem; }
+.drawer-wordmark { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.035em; }
+.drawer-header button { display: grid; place-items: center; width: 2.75rem; padding: 0; flex: none; }
+.navigation-overlay { position: fixed; inset: 0; z-index: 10; background: rgb(30 25 23 / 45%); }
+.navigation-overlay[hidden] { display: none; }
+.navigation-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--paper);
+  animation: navigation-enter 200ms ease-out;
+}
+.navigation-drawer .band-index { display: flex; flex: 1; flex-direction: column; border: 0; }
+.navigation-drawer .create-band-label { max-width: calc(80vw - 6.5rem); width: max-content; }
+@keyframes navigation-enter { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@media (max-width: 47.999rem) {
+  .workspace-header > .workspace-wordmark { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-drawer { animation: none; }
+}
