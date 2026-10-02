@@ -54,7 +54,7 @@ export function BandShell({ children, bands, context }) {
     return () => media.removeEventListener('change', resize)
   }, [])
   useLayoutEffect(() => {
-    main.current?.focus()
+    main.current?.focus({ preventScroll: true })
   }, [location.key])
   useLayoutEffect(() => {
     if (!open) {
