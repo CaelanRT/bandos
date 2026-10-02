@@ -39,6 +39,26 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 
+it('focuses Account content without scrolling the header out of view', async () => {
+  const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+  try {
+    const { router } = renderAccount()
+    await screen.findByRole('heading', { name: 'Account' })
+    const main = screen.getByRole('main')
+    expect(main).toHaveFocus()
+    expect(focus.mock.calls.some((args, index) =>
+      focus.mock.contexts[index] === main && args[0]?.preventScroll === true)).toBe(true)
+    await router.navigate('/')
+    await screen.findByRole('heading', { name: 'Personal datebook' })
+    await router.navigate('/account')
+    await screen.findByRole('heading', { name: 'Account' })
+    expect(screen.getByRole('main')).toHaveFocus()
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true })
+  } finally {
+    focus.mockRestore()
+  }
+})
+
 it('opens protected Account with read-only information and active navigation', async () => {
   renderAccount()
   expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument()
