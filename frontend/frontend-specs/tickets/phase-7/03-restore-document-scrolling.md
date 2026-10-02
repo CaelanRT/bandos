@@ -1,6 +1,6 @@
 # Restore ordinary scrolling on Account and long pages
 
-> **Status:** In progress — implementation verified; independent review passed
+> **Status:** For Review — [draft PR #53](https://github.com/CaelanRT/bandos/pull/53), 2026-10-02
 > **Dependencies:** [Phase 7 ticket 02](02-navigate-with-mobile-drawer.md), so the final drawer and scrolling rules are verified together.
 
 ## Objective
