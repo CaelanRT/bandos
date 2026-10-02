@@ -1,6 +1,6 @@
 # Phase 7 shared-shell browser review
 
-Date: 2026-10-02. Base: `origin/main` at `04bdb28`. Scope: [ticket 04](04-review-navigation-and-layout.md), [Phase 7 sections 5–6](../../08-phase-7-navigation-and-layout-refinement.md).
+Date: 2026-10-02. Base: `origin/main` at `04bdb28`. Draft implementation: [PR #54](https://github.com/CaelanRT/bandos/pull/54). Scope: [ticket 04](04-review-navigation-and-layout.md), [Phase 7 sections 5–6](../../08-phase-7-navigation-and-layout-refinement.md).
 
 **Result: PASS.** The combined shell browser review passed with no demonstrated in-scope defect or unresolved Phase 7 acceptance failure. No application code, dependencies, or duplicate tests were needed. Phase 8's browser-review prerequisite is satisfied; ticket 04 still awaits human PR review.
 

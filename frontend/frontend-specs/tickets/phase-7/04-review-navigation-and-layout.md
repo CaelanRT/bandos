@@ -1,6 +1,6 @@
 # Review the Phase 7 navigation and layout
 
-> **Status:** Verification complete — independent review passed; awaiting Draft PR
+> **Status:** For Review — [Draft PR #54](https://github.com/CaelanRT/bandos/pull/54); combined browser and independent reviews passed, 2026-10-02
 > **Dependencies:** Phase 7 implementation tickets [01](01-simplify-navigation-and-account-access.md), [02](02-navigate-with-mobile-drawer.md), [03](03-restore-document-scrolling.md) complete.
 
 ## Objective
