@@ -125,7 +125,7 @@ it('submits once while pending, caches confirmed Leader, replaces history and co
   expect(client.getQueryData(bandKeys.list)[0].bandId).toBe(9)
   expect(locations.some((location) => location.state?.openAddMember === true)).toBe(true)
   await waitFor(() => expect(router.state.location.state?.openAddMember).toBeUndefined())
-  expect(screen.getByLabelText('Username')).toHaveValue('')
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
   await act(() => router.navigate(-1))
   expect(router.state.location.pathname).toBe('/')
 })

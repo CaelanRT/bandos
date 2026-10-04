@@ -31,8 +31,7 @@ function mount(entries = ['/bands/2/members']) {
   return { client, router }
 }
 const posts = () => fetchMock.mock.calls.filter(([url, options]) => url.endsWith('/members') && options.method === 'POST')
-async function open() { await userEvent.click(await screen.findByRole('button', { name: 'Add member', exact: true })) }
-async function enter(value = 'zoe') { fireEvent.change(await screen.findByLabelText('Username'), { target: { value } }) }
+async function enter(value = 'zoe') { fireEvent.change(await screen.findByLabelText('Add band member or user'), { target: { value } }) }
 async function submit() { await userEvent.click(screen.getByRole('button', { name: 'Add member', exact: true })) }
 beforeEach(() => {
   clients = []
@@ -65,33 +64,35 @@ afterEach(() => {
 })
 
 it('adds two users consecutively with exact trimmed bodies, ordered unique rows, clearing and focus', async () => {
-  mount(); await open()
+  mount(); await screen.findByLabelText('Add band member or user')
   for (const name of ['  zoe  ', ' ben ']) {
-    await userEvent.type(screen.getByLabelText('Username'), name)
+    await userEvent.type(screen.getByLabelText('Add band member or user'), name)
     await userEvent.keyboard('{Enter}')
     await screen.findByText(`@${name.trim()} added to the band.`)
-    await waitFor(() => expect(screen.getByLabelText('Username')).toHaveFocus())
-    expect(screen.getByLabelText('Username')).toHaveValue('')
-    expect(screen.getByLabelText('Username')).toHaveAttribute('aria-invalid', 'false')
+    await waitFor(() => expect(screen.getByLabelText('Add band member or user')).toHaveFocus())
+    expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
+    expect(screen.getByLabelText('Add band member or user')).toHaveAttribute('aria-invalid', 'false')
   }
   expect(posts().map(([, options]) => JSON.parse(options.body))).toEqual([{ username: 'zoe' }, { username: 'ben' }])
   expect(within(screen.getByRole('list', { name: 'Band members' })).getAllByRole('listitem').map((row) => row.textContent))
     .toEqual(['Alex Rivera@alexLeader', 'Ben Smith@benMember', 'Zoe Smith@zoeMember'])
-  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Add member' })).toHaveFocus())
+  expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Add member' })).toBeEnabled()
 })
 
-it('opens and focuses once from creation state, but not on normal or later visits', async () => {
-  const { router } = mount([{ pathname: '/bands/2/members', state: { openAddMember: true } }])
-  await waitFor(() => expect(screen.getByLabelText('Username')).toHaveFocus())
-  expect(router.state.location.state?.openAddMember).toBeUndefined()
-  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+it('focuses once from creation state, while normal visits and background refresh keep route focus', async () => {
+  const { router, client } = mount([{ pathname: '/bands/2/members', state: { openAddMember: true } }])
+  await waitFor(() => expect(screen.getByLabelText('Add band member or user')).toHaveFocus())
+  await waitFor(() => expect(router.state.location.state?.openAddMember).toBeUndefined())
+  await waitFor(() => expect(screen.getByLabelText('Add band member or user')).toHaveFocus())
+  const link = screen.getByRole('link', { name: 'Datebook' })
+  link.focus()
+  await act(() => client.invalidateQueries({ queryKey: bandKeys.detail(2) }))
+  expect(link).toHaveFocus()
   await act(() => router.navigate('/bands/2'))
   await act(() => router.navigate('/bands/2/members'))
-  expect(await screen.findByRole('button', { name: 'Add member' })).toBeInTheDocument()
-  expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+  expect(await screen.findByLabelText('Add band member or user')).toHaveValue('')
+  expect(screen.getByLabelText('Add band member or user')).not.toHaveFocus()
 })
 
 it('never exposes addition to members, including with a creation marker', async () => {
@@ -99,12 +100,12 @@ it('never exposes addition to members, including with a creation marker', async 
   mount([{ pathname: '/bands/2/members', state: { openAddMember: true } }])
   await screen.findByRole('heading', { name: 'Members' })
   expect(screen.queryByRole('button', { name: 'Add member' })).not.toBeInTheDocument()
-  expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Add band member or user')).not.toBeInTheDocument()
 })
 
 it('validates trimmed 3–50 JS characters on blur/edit and submit without invented restrictions', async () => {
-  mount(); await open()
-  const input = screen.getByLabelText('Username')
+  mount(); await screen.findByLabelText('Add band member or user')
+  const input = screen.getByLabelText('Add band member or user')
   expect(input).toHaveAttribute('aria-invalid', 'false')
   fireEvent.blur(input)
   expect(await screen.findByText('Enter a username.')).toBeInTheDocument()
@@ -126,17 +127,17 @@ it.each([['USER_NOT_FOUND', 404, 'No active account found with that username.', 
   ['USER_ALREADY_IN_BAND', 409, 'That person is already in this band.', 'zoe']])
 ('preserves and focuses %s inline errors for %s', async (code, status, message, name) => {
   post = () => failure(code, status)
-  mount(); await open(); await enter(name); await submit()
+  mount(); await screen.findByLabelText('Add band member or user'); await enter(name); await submit()
   expect(await screen.findByText(message)).toBeInTheDocument()
-  await waitFor(() => expect(screen.getByLabelText('Username')).toHaveFocus())
-  expect(screen.getByLabelText('Username')).toHaveValue(name)
-  expect(screen.getByLabelText('Username')).toHaveAttribute('aria-describedby', expect.stringContaining('member-username-error'))
+  await waitFor(() => expect(screen.getByLabelText('Add band member or user')).toHaveFocus())
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue(name)
+  expect(screen.getByLabelText('Add band member or user')).toHaveAttribute('aria-describedby', expect.stringContaining('member-username-error'))
   expect(posts()).toHaveLength(1)
 })
 
 it('maps backend username and form validation and honors rate limiting', async () => {
   post = () => failure('VALIDATION_ERROR', 400, [{ field: 'username', message: 'Invalid username.' }, { field: 'other', message: 'Other error.' }])
-  mount(); await open(); await enter(); await submit()
+  mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   expect(await screen.findByText('Invalid username.')).toBeInTheDocument()
   expect(screen.getByRole('alert')).toHaveTextContent('Other error.')
   post = () => failure('TOO_MANY_ATTEMPTS', 429, undefined, { 'Retry-After': '3600' })
@@ -144,22 +145,17 @@ it('maps backend username and form validation and honors rate limiting', async (
   await submit(); expect(posts()).toHaveLength(2)
 })
 
-it('guards Cancel, SPA links, Back and unload while dirty; keeps edits or discards', async () => {
-  const { router } = mount(['/', '/bands/2/members']); await open(); await enter()
+it('guards SPA links, Back and unload while dirty; keeps edits or discards', async () => {
+  const { router } = mount(['/', '/bands/2/members']); await screen.findByLabelText('Add band member or user'); await enter()
   const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload)
   expect(unload.defaultPrevented).toBe(true)
-  for (const navigate of [() => userEvent.click(screen.getByRole('button', { name: 'Cancel' })),
-    () => userEvent.click(screen.getByRole('link', { name: 'Datebook' })), () => act(() => router.navigate(-1))]) {
+  for (const navigate of [() => userEvent.click(screen.getByRole('link', { name: 'Datebook' })), () => act(() => router.navigate(-1))]) {
     await navigate(); await screen.findByRole('dialog')
     expect(screen.getByRole('button', { name: 'Keep editing' })).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
-    expect(screen.getByLabelText('Username')).toHaveValue('zoe')
+    expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
     expect(router.state.location.pathname).toBe('/bands/2/members')
   }
-  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
-  expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
-  await open(); await enter()
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
   expect(router.state.location.pathname).toBe('/')
@@ -167,17 +163,17 @@ it('guards Cancel, SPA links, Back and unload while dirty; keeps edits or discar
 
 it('prevents overlapping submissions and leaving during a pending write', async () => {
   const pending = deferred(); post = () => pending.promise
-  mount(); await open(); await enter(); await submit()
+  mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   fireEvent.submit(screen.getByRole('form', { name: 'Add member' }))
   expect(posts()).toHaveLength(1)
-  expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  expect(screen.getByLabelText('Add band member or user')).toBeDisabled()
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   expect(await screen.findByRole('dialog')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
   await act(async () => pending.resolve(failure('USER_NOT_FOUND', 404)))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Discard changes' })).toBeEnabled())
   await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
-  expect(screen.getByLabelText('Username')).toHaveValue('zoe')
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
 })
 
 it.each(['network', 'server', 'malformed', 'wrong-status', 'wrong-user'])('reconciles uncertain %s outcomes without attributing a case-insensitive match to the write', async (kind) => {
@@ -189,20 +185,20 @@ it.each(['network', 'server', 'malformed', 'wrong-status', 'wrong-user'])('recon
     if (kind === 'wrong-user') return json({ member: ben }, 201)
     return json({ member: {} }, 201)
   }
-  mount(); await open(); await enter(' ZOE '); await submit()
+  mount(); await screen.findByLabelText('Add band member or user'); await enter(' ZOE '); await submit()
   expect(await screen.findByText('That person is now in the band.')).toBeInTheDocument()
   expect(screen.queryByText(/added to the band/)).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Username')).toHaveValue(' ZOE ')
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue(' ZOE ')
   expect(posts()).toHaveLength(1)
   await userEvent.click(screen.getByRole('button', { name: 'Clear and add another' }))
-  await waitFor(() => expect(screen.getByLabelText('Username')).toHaveFocus())
-  expect(screen.getByLabelText('Username')).toHaveValue('')
+  await waitFor(() => expect(screen.getByLabelText('Add band member or user')).toHaveFocus())
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
 })
 
 it('blocks replay through failed checks until an explicit recheck and retry', async () => {
   const check = deferred()
   post = () => { detailRead = () => check.promise; return failure('INTERNAL_ERROR', 500) }
-  mount(); await open(); await enter(); await submit()
+  mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await screen.findByText('Checking band membership…')
   fireEvent.submit(screen.getByRole('form', { name: 'Add member' }))
   await act(async () => check.resolve(failure('INTERNAL_ERROR', 503)))
@@ -223,9 +219,9 @@ it('blocks replay through failed checks until an explicit recheck and retry', as
 it.each([false, true])('suppresses denied controls while refreshing permissions, with refresh failure=%s', async (fails) => {
   const check = deferred()
   post = () => { detailRead = () => check.promise; return failure('LEADER_REQUIRED', 403) }
-  const { client } = mount(); await open(); await enter(); await submit()
+  const { client } = mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await screen.findByText('Checking your permissions…')
-  expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Add band member or user')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Add member' })).not.toBeInTheDocument()
   expect(screen.getByText(/Your permissions changed/)).toBeInTheDocument()
   band.currentUserRole = 'member'
@@ -241,29 +237,29 @@ it.each([false, true])('suppresses denied controls while refreshing permissions,
 })
 
 it('closes a dirty form with an explanation when a background read revokes leadership', async () => {
-  const { client } = mount(); await open(); await enter()
+  const { client } = mount(); await screen.findByLabelText('Add band member or user'); await enter()
   band = { ...band, currentUserRole: 'member' }
   await act(() => client.invalidateQueries({ queryKey: bandKeys.detail(2) }))
   expect(await screen.findByText(/Your permissions changed/)).toBeInTheDocument()
-  expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Add band member or user')).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
 it('clears inaccessible band context and resources after BAND_NOT_FOUND', async () => {
   post = () => { listRead = () => json({ bands: [] }); return failure('BAND_NOT_FOUND', 404) }
-  const { client } = mount(); await open(); await enter()
+  const { client } = mount(); await screen.findByLabelText('Add band member or user'); await enter()
   client.setQueryData([...bandKeys.detail(2), 'future-resource'], ['private'])
   await submit()
   await screen.findByRole('heading', { name: 'This band is no longer available' })
   expect(client.getQueryData([...bandKeys.detail(2), 'future-resource'])).toBeUndefined()
   expect(client.getQueryData(bandKeys.list)).toEqual([])
-  expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Add band member or user')).not.toBeInTheDocument()
 })
 
 it('expires without a dirty prompt or mutation replay', async () => {
   post = () => failure('AUTHENTICATION_REQUIRED', 401)
-  const { router, client } = mount(); await open(); await enter(); await submit()
+  const { router, client } = mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await screen.findByRole('heading', { name: 'Login' })
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(client.getQueryCache().findAll({ queryKey: ['private'] })).toHaveLength(0)
@@ -273,7 +269,7 @@ it('expires without a dirty prompt or mutation replay', async () => {
 
 it('does not repopulate private data after logout with a late successful addition', async () => {
   const pending = deferred(); post = () => pending.promise
-  const { client } = mount(); await open(); await enter(); await submit()
+  const { client } = mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
   await screen.findByRole('heading', { name: 'Login' })
@@ -282,7 +278,7 @@ it('does not repopulate private data after logout with a late successful additio
 })
 
 it('cancels older detail reads so they cannot erase a confirmed addition, and deduplicates returned IDs', async () => {
-  const { client } = mount(); await open(); await enter()
+  const { client } = mount(); await screen.findByLabelText('Add band member or user'); await enter()
   const old = deferred(); let calls = 0
   detailRead = () => ++calls === 1 ? old.promise : json({ band })
   let refresh
@@ -297,41 +293,43 @@ it('cancels older detail reads so they cannot erase a confirmed addition, and de
 
 it('retains confirmed addition when revalidation fails', async () => {
   post = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return json({ member: zoe }, 201) }
-  mount(); await open(); await enter(); await submit()
+  mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await screen.findByText('@zoe added to the band.')
   await screen.findByText('We couldn’t update this band.')
   expect(screen.getByText('@zoe')).toBeInTheDocument()
-  expect(screen.getByLabelText('Username')).toHaveValue('')
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
   expect(screen.queryByText(/couldn’t confirm/)).not.toBeInTheDocument()
 })
 
-it('does not apply late reconciliation to a closed and reopened form', async () => {
+it('can discard navigation during reconciliation without applying late results to a later visit', async () => {
   const check = deferred()
   post = () => { detailRead = () => check.promise; return failure('INTERNAL_ERROR', 500) }
-  mount(); await open(); await enter(); await submit()
+  const { router } = mount(); await enter(); await submit()
   await screen.findByText('Checking band membership…')
-  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(screen.getByLabelText('Add band member or user')).toBeDisabled()
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
-  await open()
-  expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled()
+  detailRead = () => json({ band })
+  await act(() => router.navigate('/bands/2/members'))
+  await screen.findByLabelText('Add band member or user')
   await act(async () => check.resolve(json({ band: { ...band, members: [leader, zoe] } })))
   expect(screen.queryByText('That person is now in the band.')).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Username')).toHaveValue('')
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
   expect(screen.getByRole('button', { name: 'Add member' })).toBeEnabled()
 })
 
 it('preserves current Members context when its active navigation link is clicked', async () => {
-  const { router } = mount(); await open(); await enter()
+  const { router } = mount(); await screen.findByLabelText('Add band member or user'); await enter()
   const key = router.state.location.key
   await userEvent.click(screen.getByRole('link', { name: 'Members' }))
   expect(router.state.location.key).toBe(key)
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Username')).toHaveValue('zoe')
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
 })
 
 it('resumes requested navigation after a confirmed pending addition', async () => {
   const pending = deferred(); post = () => pending.promise
-  const { router } = mount(); await open(); await enter(); await submit()
+  const { router } = mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await screen.findByRole('dialog')
   band.members.push(zoe)
@@ -341,17 +339,16 @@ it('resumes requested navigation after a confirmed pending addition', async () =
 })
 
 
-it('retains required reconciliation across discarding and reopening after a failed check', async () => {
+it('keeps a failed reconciliation locked after cancelling navigation', async () => {
   post = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return failure('INTERNAL_ERROR', 500) }
-  mount(); await open(); await enter(); await submit()
+  mount(); await enter(); await submit()
   await screen.findByRole('button', { name: 'Check again' })
-  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
-  await open()
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
   expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled()
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
   detailRead = () => json({ band })
   await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Add member' })).toBeEnabled())
-  expect(screen.getByLabelText('Username')).toHaveValue('')
+  expect(await screen.findByRole('button', { name: 'Try adding again' })).toBeEnabled()
   expect(posts()).toHaveLength(1)
 })
