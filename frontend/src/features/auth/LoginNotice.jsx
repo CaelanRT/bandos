@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 const MESSAGES = {
   loggedOut: 'You’ve been logged out.',
-  expired: 'Your session expired. Log in to continue.',
   deactivated: 'Your account has been deactivated.',
 }
 

@@ -70,7 +70,7 @@ beforeEach(() => fetchMock.mockReset())
 afterEach(() => cleanup())
 
 describe('Login form', () => {
-  it('is labeled, validates after blur, and toggles password visibility without losing its value', async () => {
+  it('is labeled, stays unvalidated on typing and blur, and toggles password visibility without losing its value', async () => {
     await openLogin()
     const user = userEvent.setup()
     const email = screen.getByRole('textbox', { name: 'Email' })
@@ -82,7 +82,8 @@ describe('Login form', () => {
 
     await user.click(email)
     await user.tab()
-    expect(screen.getByText('Enter your email address.')).toBeInTheDocument()
+    expect(email).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.queryByText('Enter your email address.')).not.toBeInTheDocument()
     await user.type(email, 'alex@example.com')
     expect(screen.queryByText('Enter your email address.')).not.toBeInTheDocument()
 
@@ -100,7 +101,45 @@ describe('Login form', () => {
 
     expect(screen.getByRole('textbox', { name: 'Email' })).toHaveFocus()
     expect(screen.getByText('Enter your email address.')).toBeInTheDocument()
-    expect(screen.getByText('Enter your password.')).toBeInTheDocument()
+    expect(screen.getByText('Please enter your password')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('clears only edited errors without revalidating until Enter or resubmission', async () => {
+    await openLogin()
+    const user = userEvent.setup()
+    const email = screen.getByRole('textbox', { name: 'Email' })
+    const password = screen.getByLabelText('Password')
+
+    await user.click(email)
+    await user.keyboard('{Enter}')
+    expect(email).toHaveFocus()
+    expect(email).toHaveAttribute('aria-describedby', 'login-email-error')
+    expect(password).toHaveAttribute('aria-invalid', 'true')
+
+    await user.type(email, 'invalid')
+    await user.tab()
+    expect(email).toHaveAttribute('aria-invalid', 'false')
+    expect(email).not.toHaveAttribute('aria-describedby')
+    expect(screen.queryByText('Enter a valid email address.')).not.toBeInTheDocument()
+    expect(screen.getByText('Please enter your password')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument()
+    expect(email).toHaveFocus()
+
+    await user.type(password, 'x')
+    await user.clear(password)
+    await user.tab()
+    expect(password).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.queryByText('Please enter your password')).not.toBeInTheDocument()
+    expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument()
+
+    await user.click(password)
+    await user.keyboard('{Enter}')
+    expect(screen.getByText('Please enter your password')).toBeInTheDocument()
+    expect(password).toHaveAttribute('aria-describedby', 'login-password-error')
+    expect(email).toHaveFocus()
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 

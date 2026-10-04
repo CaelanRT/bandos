@@ -5,7 +5,7 @@ describe('Login credential validation', () => {
   it('reports required credentials', () => {
     expect(validateLogin({ email: '  ', password: '' })).toEqual({
       email: 'Enter your email address.',
-      password: 'Enter your password.',
+      password: 'Please enter your password',
     })
   })
 

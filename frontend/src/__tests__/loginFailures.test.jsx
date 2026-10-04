@@ -59,7 +59,7 @@ afterEach(() => {
 })
 
 describe('Login failures', () => {
-  it('shows privacy-safe invalid-credential feedback, focuses it, and preserves values', async () => {
+  it.each(['Email', 'Password'])('clears privacy-safe invalid-credential feedback when %s is edited', async (field) => {
     await renderReadyLogin()
     fetchMock.mockResolvedValueOnce(
       errorResponse('INVALID_CREDENTIALS', 'Unknown email address', 401),
@@ -73,6 +73,19 @@ describe('Login failures', () => {
     expect(alert).toHaveFocus()
     expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('alex@example.com')
     expect(screen.getByLabelText('Password')).toHaveValue('secret')
+    await userEvent.type(screen.getByLabelText(field), 'x')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByLabelText(field)).toHaveAttribute('aria-invalid', 'false')
+  })
+
+  it('retains meaningful server-error feedback while credentials are edited', async () => {
+    await renderReadyLogin()
+    fetchMock.mockResolvedValueOnce(errorResponse('INTERNAL_ERROR', 'Unavailable', 503))
+
+    await submit()
+    expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t log you in. Try again.')
+    await userEvent.type(screen.getByLabelText('Password'), 'x')
+    expect(screen.getByRole('alert')).toHaveTextContent('We couldn’t log you in. Try again.')
   })
 
   it('maps recognized backend details to their fields', async () => {
@@ -87,6 +100,9 @@ describe('Login failures', () => {
 
     expect(await screen.findByText('Email is not accepted.')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Email' })).toHaveFocus()
+    await userEvent.clear(screen.getByLabelText('Email'))
+    expect(screen.queryByText('Email is not accepted.')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false')
   })
 
   it('uses neutral rate-limit guidance without timing metadata', async () => {
@@ -112,6 +128,9 @@ describe('Login failures', () => {
 
     await submit()
     await screen.findByRole('alert')
+    await userEvent.type(screen.getByLabelText('Email'), 'x')
+    await userEvent.clear(screen.getByLabelText('Password'))
+    expect(screen.getByRole('alert')).toHaveTextContent('Try again after')
     await submit()
 
     expect(screen.getByRole('alert')).toHaveTextContent('Try again after')
@@ -156,6 +175,8 @@ describe('Login failures', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'We couldn’t complete sign-in. Please try again.',
     )
+    await userEvent.type(screen.getByLabelText('Password'), 'x')
+    expect(screen.getByRole('alert')).toHaveTextContent('We couldn’t complete sign-in. Please try again.')
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })

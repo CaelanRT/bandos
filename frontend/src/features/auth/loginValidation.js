@@ -23,7 +23,7 @@ const validators = {
     emailAddress,
   ),
   password: composeValidators(
-    required('Enter your password.'),
+    required('Please enter your password'),
     maxLength(72),
   ),
 }
