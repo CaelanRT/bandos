@@ -1,6 +1,6 @@
 # Validate Login on submission and silence expiration notices
 
-> **Status:** For Review — [Draft PR #55](https://github.com/CaelanRT/bandos/pull/55); implementation, verification and independent review passed
+> **Status:** Completed — [merged PR #55](https://github.com/CaelanRT/bandos/pull/55); merged and completion confirmed 2026-10-04
 > **Dependencies:** [Phase 7 shell review](../phase-7/04-review-navigation-and-layout.md) passed.
 
 ## Objective
