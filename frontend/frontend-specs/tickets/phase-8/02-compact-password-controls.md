@@ -1,6 +1,6 @@
 # Use compact password controls and simplify registration hints
 
-> **Status:** In Progress — implementation and verification complete; independent review in progress
+> **Status:** For Review — [Draft PR #56](https://github.com/CaelanRT/bandos/pull/56); implementation, verification, and independent review passed 2026-10-04
 > **Dependencies:** [Phase 7 shell review](../phase-7/04-review-navigation-and-layout.md) passed; can proceed independently of Phase 8 tickets 01 and 03.
 
 ## Objective
@@ -74,3 +74,4 @@ Ticket 04 reviews Phase 8 before Phase 9.
 - `npm run lint`, `npm run build`, and `git diff --check` passed. Lint retains the existing `EditEvent.jsx` effect warning.
 - Chromium checks passed on Login and Registration at desktop (1440px), 320px, and native 200% zoom. Verified keyboard toggling, unchanged values without submission, input association, 44px touch targets, visible focus, disabled pending controls, and default/error/pending layouts without horizontal overflow.
 - Registration keeps the username hint and validation errors, with no persistent password/email limit hint or dangling hint description.
+- Independent `review-ticket` review: **PASS**, with no blocking or non-blocking findings and no outstanding manual verification.
