@@ -1,8 +1,8 @@
 # Phase 7 shared-shell browser review
 
-Date: 2026-10-02. Base: `origin/main` at `04bdb28`. Draft implementation: [PR #54](https://github.com/CaelanRT/bandos/pull/54). Scope: [ticket 04](04-review-navigation-and-layout.md), [Phase 7 sections 5–6](../../08-phase-7-navigation-and-layout-refinement.md).
+Date: 2026-10-02. Base: `origin/main` at `04bdb28`. Merged implementation: [PR #54](https://github.com/CaelanRT/bandos/pull/54). Scope: [ticket 04](04-review-navigation-and-layout.md), [Phase 7 sections 5–6](../../08-phase-7-navigation-and-layout-refinement.md).
 
-**Result: PASS.** The combined shell browser review passed with no demonstrated in-scope defect or unresolved Phase 7 acceptance failure. No application code, dependencies, or duplicate tests were needed. Phase 8's browser-review prerequisite is satisfied; ticket 04 still awaits human PR review.
+**Result: PASS.** The combined shell browser review passed with no demonstrated in-scope defect or unresolved Phase 7 acceptance failure. No application code, dependencies, or duplicate tests were needed. Phase 8's browser-review prerequisite is satisfied. PR #54 merged on 2026-10-02; the project owner confirmed completion on 2026-10-04.
 
 ## Browser setup and evidence
 
@@ -94,4 +94,4 @@ Scoped technical audit: **17/20 (Good)** — accessibility 3, performance 3, res
 
 This pass establishes the approved shared-shell behavior in Chromium using controlled frontend/API states. It does not claim live-backend end-to-end success, real-device testing, other-engine compatibility, assistive-technology certification, or real mobile keyboard behavior. Existing integration tests supply session/mutation coverage; these limits are not unresolved failures of the Phase 7 shell review.
 
-The required combined browser-review gate passes. Phase 8 may proceed after this ticket's review is accepted. Independent `review-ticket` review: **PASS**, no blocking findings. Its non-blocking Account-bottom screenshot clarification was addressed with the six supplemental viewport-bound checks and settled native-zoom CDP capture above. The reviewer independently reran lint, build and whitespace checks successfully.
+The required combined browser-review gate passes. The ticket's review is accepted and Phase 7 is completed; Phase 8 may proceed. Independent `review-ticket` review: **PASS**, no blocking findings. Its non-blocking Account-bottom screenshot clarification was addressed with the six supplemental viewport-bound checks and settled native-zoom CDP capture above. The reviewer independently reran lint, build and whitespace checks successfully.
