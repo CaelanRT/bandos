@@ -1,6 +1,6 @@
 # Validate Login on submission and silence expiration notices
 
-> **Status:** In Progress — implementation, verification and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #55](https://github.com/CaelanRT/bandos/pull/55); implementation, verification and independent review passed
 > **Dependencies:** [Phase 7 shell review](../phase-7/04-review-navigation-and-layout.md) passed.
 
 ## Objective
