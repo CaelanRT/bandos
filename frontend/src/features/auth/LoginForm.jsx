@@ -8,7 +8,6 @@ import { useSession } from '../../app/sessionContext.js'
 import {
   normalizeLogin,
   validateLogin,
-  validateLoginField,
 } from './loginValidation.js'
 
 const INITIAL_VALUES = { email: '', password: '' }
@@ -19,7 +18,6 @@ export function LoginForm() {
   const session = useSession()
   const destination = resolveDestination(location.state?.destination)
   const [values, setValues] = useState(INITIAL_VALUES)
-  const [touched, setTouched] = useState({})
   const [errors, setErrors] = useState({})
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [pending, setPending] = useState(false)
@@ -31,22 +29,9 @@ export function LoginForm() {
   const formErrorRef = useRef(null)
 
   function updateField(field, value) {
-    const nextValues = { ...values, [field]: value }
-    setValues(nextValues)
-    if (touched[field]) {
-      setErrors((current) => ({
-        ...current,
-        [field]: validateLoginField(field, nextValues),
-      }))
-    }
-  }
-
-  function blurField(field) {
-    setTouched((current) => ({ ...current, [field]: true }))
-    setErrors((current) => ({
-      ...current,
-      [field]: validateLoginField(field, values),
-    }))
+    setValues((current) => ({ ...current, [field]: value }))
+    setErrors((current) => ({ ...current, [field]: undefined }))
+    setFormError((current) => current?.code === 'INVALID_CREDENTIALS' ? null : current)
   }
 
   useEffect(() => {
@@ -78,7 +63,6 @@ export function LoginForm() {
     if (retryAt) setRetryAt(null)
 
     const nextErrors = validateLogin(values)
-    setTouched({ email: true, password: true })
     setErrors(nextErrors)
     setFormError(null)
     setFocusField(null)
@@ -98,7 +82,7 @@ export function LoginForm() {
       if (error?.code === 'TOO_MANY_ATTEMPTS') {
         setRetryAt(error.retryAt ?? null)
         const timing = error.retryAt ? ` Try again after ${new Date(error.retryAt).toLocaleTimeString()}.` : ' Please wait before trying again.'
-        setFormError(`${error.message}${timing}`)
+        setFormError({ code: error.code, message: `${error.message}${timing}` })
       } else if (error?.code === 'VALIDATION_ERROR' && Array.isArray(error.details)) {
         const fieldErrors = {}
         const remaining = []
@@ -108,16 +92,17 @@ export function LoginForm() {
         }
         setErrors((current) => ({ ...current, ...fieldErrors }))
         if (remaining.length > 0) {
-          setFormError(remaining.join(' '))
+          setFormError({ code: error.code, message: remaining.join(' ') })
         } else {
           setFocusField(FIELD_ORDER.find((field) => fieldErrors[field]))
         }
       } else {
-        setFormError(
-          error?.code === 'INVALID_CREDENTIALS'
+        setFormError({
+          code: error?.code,
+          message: error?.code === 'INVALID_CREDENTIALS'
             ? 'Invalid email or password'
             : 'We couldn’t log you in. Try again.',
-        )
+        })
       }
     } finally {
       setPending(false)
@@ -131,7 +116,7 @@ export function LoginForm() {
       <LoginNotice />
       {(formError || completionError) && (
         <div className="auth-notice" ref={formErrorRef} role="alert" tabIndex="-1">
-          {formError || 'We couldn’t complete sign-in. Please try again.'}
+          {formError?.message || 'We couldn’t complete sign-in. Please try again.'}
         </div>
       )}
 
@@ -147,7 +132,6 @@ export function LoginForm() {
           value={values.email}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'login-email-error' : undefined}
-          onBlur={() => blurField('email')}
           onChange={(event) => updateField('email', event.target.value)}
         />
         {errors.email && <p id="login-email-error">{errors.email}</p>}
@@ -165,7 +149,6 @@ export function LoginForm() {
           value={values.password}
           aria-invalid={Boolean(errors.password)}
           aria-describedby={errors.password ? 'login-password-error' : undefined}
-          onBlur={() => blurField('password')}
           onChange={(event) => updateField('password', event.target.value)}
         />
         <PasswordVisibility
