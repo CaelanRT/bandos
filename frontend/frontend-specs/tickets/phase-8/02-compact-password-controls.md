@@ -1,6 +1,6 @@
 # Use compact password controls and simplify registration hints
 
-> **Status:** For Review — [Draft PR #56](https://github.com/CaelanRT/bandos/pull/56); implementation, verification, and independent review passed 2026-10-04
+> **Status:** Completed — [merged PR #56](https://github.com/CaelanRT/bandos/pull/56); merged and completion confirmed 2026-10-04
 > **Dependencies:** [Phase 7 shell review](../phase-7/04-review-navigation-and-layout.md) passed; can proceed independently of Phase 8 tickets 01 and 03.
 
 ## Objective
