@@ -1,6 +1,6 @@
 # Phase 8 — Forms and membership refinement
 
-> **Status:** In Progress — ticket 01 Completed ([merged PR #55](https://github.com/CaelanRT/bandos/pull/55)); ticket 02 Completed ([merged PR #56](https://github.com/CaelanRT/bandos/pull/56)); ticket 03 For Review ([Draft PR #57](https://github.com/CaelanRT/bandos/pull/57)); ticket 04 pending
+> **Status:** In Progress — ticket 01 Completed ([merged PR #55](https://github.com/CaelanRT/bandos/pull/55)); ticket 02 Completed ([merged PR #56](https://github.com/CaelanRT/bandos/pull/56)); ticket 03 Completed ([merged PR #57](https://github.com/CaelanRT/bandos/pull/57)); ticket 04 pending
 > **Source:** [Phase 6 user-testing feedback](feedback/phase6-usertestingfeedback.md) and Grill Me decisions, 2026-10-01
 > **Prerequisite:** [Phase 7 shell review](08-phase-7-navigation-and-layout-refinement.md)
 > **Behavioral baselines:** [Authentication](02-phase-1-authentication.md) and [Bands and membership](03-phase-2-bands-and-membership.md)
