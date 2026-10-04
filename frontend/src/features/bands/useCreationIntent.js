@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 // Read once per Members mount, then remove the history marker. The add form
-// initializes from this value; refresh/later visits return false.
+// uses this value for initial focus; refresh/later visits return false.
 export function useCreationIntent() {
   const location = useLocation()
   const navigate = useNavigate()
