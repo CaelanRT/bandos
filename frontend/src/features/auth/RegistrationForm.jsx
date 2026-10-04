@@ -16,7 +16,7 @@ const FIELDS = [
   { name: 'lastName', label: 'Last name', autoComplete: 'family-name' },
   { name: 'username', label: 'Username', autoComplete: 'username', hint: '3–50 characters' },
   { name: 'email', label: 'Email', autoComplete: 'email', type: 'email' },
-  { name: 'password', label: 'Password', autoComplete: 'new-password', hint: '8–72 characters' },
+  { name: 'password', label: 'Password', autoComplete: 'new-password' },
 ]
 const FIELD_ORDER = FIELDS.map(({ name }) => name)
 
@@ -145,30 +145,35 @@ export function RegistrationForm() {
       {FIELDS.map(({ name, label, autoComplete, hint, type = 'text' }) => {
         const id = `register-${name}`
         const describedBy = [hint && `${id}-hint`, errors[name] && `${id}-error`].filter(Boolean).join(' ')
+        const input = (
+          <input
+            ref={(element) => { fieldRefs.current[name] = element }}
+            id={id}
+            name={name}
+            type={name === 'password' ? (passwordVisible ? 'text' : 'password') : type}
+            autoComplete={autoComplete}
+            disabled={pending}
+            value={values[name]}
+            aria-invalid={Boolean(errors[name])}
+            aria-describedby={describedBy || undefined}
+            onBlur={() => blurField(name)}
+            onChange={(event) => updateField(name, event.target.value)}
+          />
+        )
         return (
           <div className="auth-field" key={name}>
             <label htmlFor={id}>{label}</label>
-            <input
-              ref={(element) => { fieldRefs.current[name] = element }}
-              id={id}
-              name={name}
-              type={name === 'password' ? (passwordVisible ? 'text' : 'password') : type}
-              autoComplete={autoComplete}
-              disabled={pending}
-              value={values[name]}
-              aria-invalid={Boolean(errors[name])}
-              aria-describedby={describedBy || undefined}
-              onBlur={() => blurField(name)}
-              onChange={(event) => updateField(name, event.target.value)}
-            />
-            {name === 'password' && (
-              <PasswordVisibility
-                controls={id}
-                visible={passwordVisible}
-                disabled={pending}
-                onToggle={() => setPasswordVisible((visible) => !visible)}
-              />
-            )}
+            {name === 'password' ? (
+              <div className="password-control">
+                {input}
+                <PasswordVisibility
+                  controls={id}
+                  visible={passwordVisible}
+                  disabled={pending}
+                  onToggle={() => setPasswordVisible((visible) => !visible)}
+                />
+              </div>
+            ) : input}
             {hint && <p id={`${id}-hint`}>{hint}</p>}
             {errors[name] && <p id={`${id}-error`}>{errors[name]}</p>}
           </div>

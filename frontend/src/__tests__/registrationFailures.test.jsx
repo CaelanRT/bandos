@@ -197,7 +197,7 @@ it('maps all recognized field details and focuses the first field in display ord
   expect(await screen.findByText('First name rejected.')).toBeInTheDocument()
   expect(screen.getByLabelText('First name')).toHaveFocus()
   expect(screen.getByLabelText('Username')).toHaveAccessibleDescription('3–50 characters Username rejected.')
-  expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('8–72 characters Password rejected.')
+  expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('Password rejected.')
 })
 
 it('keeps unknown backend details in a focused form alert', async () => {
