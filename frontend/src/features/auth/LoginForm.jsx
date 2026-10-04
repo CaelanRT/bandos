@@ -139,24 +139,26 @@ export function LoginForm() {
 
       <div className="auth-field">
         <label htmlFor="login-password">Password</label>
-        <input
-          ref={passwordRef}
-          id="login-password"
-          name="password"
-          type={passwordVisible ? 'text' : 'password'}
-          autoComplete="current-password"
-          disabled={pending}
-          value={values.password}
-          aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'login-password-error' : undefined}
-          onChange={(event) => updateField('password', event.target.value)}
-        />
-        <PasswordVisibility
-          controls="login-password"
-          visible={passwordVisible}
-          disabled={pending}
-          onToggle={() => setPasswordVisible((visible) => !visible)}
-        />
+        <div className="password-control">
+          <input
+            ref={passwordRef}
+            id="login-password"
+            name="password"
+            type={passwordVisible ? 'text' : 'password'}
+            autoComplete="current-password"
+            disabled={pending}
+            value={values.password}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? 'login-password-error' : undefined}
+            onChange={(event) => updateField('password', event.target.value)}
+          />
+          <PasswordVisibility
+            controls="login-password"
+            visible={passwordVisible}
+            disabled={pending}
+            onToggle={() => setPasswordVisible((visible) => !visible)}
+          />
+        </div>
         {errors.password && <p id="login-password-error">{errors.password}</p>}
       </div>
 
