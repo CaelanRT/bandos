@@ -1,6 +1,6 @@
 # Keep member addition immediately available to band leaders
 
-> **Status:** In Progress — implementation and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #57](https://github.com/CaelanRT/bandos/pull/57); implementation and independent review passed 2026-10-04
 > **Dependencies:** [Phase 7 shell review](../phase-7/04-review-navigation-and-layout.md) passed; can proceed independently of Phase 8 tickets 01 and 02.
 
 ## Objective
