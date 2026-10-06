@@ -52,7 +52,29 @@ npm run build
 
 Bandos supports the current major evergreen releases of Chrome, Edge, Firefox, and Safari, including current Chrome on Android and Safari on iOS.
 
-Vite provides history fallback during development and preview. A production host must serve `index.html` for unknown document paths so that direct visits and refreshes of client-side routes work. Configure that SPA fallback in the selected hosting platform.
+Vite provides history fallback during development and preview. Keep `VITE_API_ORIGIN=http://localhost:3000` for the separate Vite/API development workflow.
+
+For the combined Express deployment, build with the explicit same-origin value `/`:
+
+```sh
+VITE_API_ORIGIN=/ npm run build
+```
+
+This produces relative `/api/v1` requests with cookie credentials. Do not set the value to `/api/v1` or a container hostname. The same bundle can run under different public origins without rebuilding; missing configuration still fails. Absolute backend origins remain supported for separate hosting.
+
+Express serves only the generated `frontend/dist/` directory, resolved relative to `backend/` independently of the working directory. Ticket 04 must preserve that layout in the packaged image. Production startup fails if `dist/index.html` is missing. Development startup without a build logs API-only mode; UI requests return JSON 404, and Vite continues to host the UI separately. If a build is present, development also serves it; rebuild to refresh it.
+
+GET/HEAD document requests to extensionless UI paths receive `index.html`, including nested paths and unknown routes handled by React Router. `/api/v1` has its own JSON not-found boundary. Missing `/assets` resources, dotted file paths, non-HTML requests and other methods do not receive fallback HTML.
+
+Generated fingerprinted files directly under `dist/assets/` use one-year immutable caching. HTML and other files use `Cache-Control: no-cache` so browsers revalidate on updates. Helmet covers HTML, assets and API; its default CSP permits bundled scripts, styles, local fonts and same-origin API requests. HTTPS upgrading is disabled only in development for local HTTP. Static serving occurs outside API session middleware, so static requests cannot load or roll session cookies and remain available during a database outage. Production HTTPS/proxy rules still apply to UI and API; only the exact private readiness probe bypasses them.
+
+After a clean frontend build, run the focused backend verification from the repository root:
+
+```sh
+node --test backend/test/runtime-config.test.js backend/test/frontend.integration.test.js
+```
+
+The frontend integration check requires the generated bundle and uses a disposable child API with failing database queries, without touching a real database. For browser verification, use a configured backend and visit/refresh a nested UI route, visit an unknown route, inspect loaded local fonts and relative API URLs, and check the console for CSP violations. In production, access through the trusted HTTPS edge described in [runtime configuration](../backend/runtime-configuration.md).
 
 ## Validation convention
 

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { buildApiBaseUrl } from '../config.js'
 import { createApiClient } from '../api/client.js'
 import {
   ApiError,
@@ -14,6 +15,14 @@ function jsonResponse(payload, init) {
 }
 
 describe('API client', () => {
+  it('uses relative same-origin requests with credentials', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ data: [] }))
+    const client = createApiClient({ baseUrl: buildApiBaseUrl('/'), fetchImpl })
+    await client.request('/bands')
+    expect(fetchImpl.mock.calls[0][0]).toBe('/api/v1/bands')
+    expect(fetchImpl.mock.calls[0][1].credentials).toBe('include')
+  })
+
   it('joins endpoint paths to the configured API base and includes credentials', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ data: [] }))
     const client = createApiClient({

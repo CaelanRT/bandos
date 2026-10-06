@@ -7,6 +7,7 @@ import {
 
 describe('API configuration', () => {
   it.each([
+    ['/', '/api/v1'],
     ['http://localhost:3000', 'http://localhost:3000/api/v1'],
     ['http://localhost:3000/', 'http://localhost:3000/api/v1'],
     ['https://api.example.com///', 'https://api.example.com/api/v1'],
