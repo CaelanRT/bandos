@@ -1,6 +1,6 @@
 # Bound API readiness and gracefully stop the backend
 
-> **Status:** For Review — [Draft PR #64](https://github.com/CaelanRT/bandos/pull/64)
+> **Status:** Completed — [merged PR #64](https://github.com/CaelanRT/bandos/pull/64)
 
 > **Dependencies:** [01 — Runtime configuration/security](01-runtime-configuration-security.md).
 
@@ -84,3 +84,5 @@ Tickets 04–06 verify these behaviors in the image and reference stack.
 - Additional production smoke with default timeouts: private HTTP health returned 200; SIGTERM exited 0 in 7 ms and SIGINT in 6 ms. Both logged one shutdown start and successful pool closure.
 
 Independent `review-ticket` review: PASS; all five acceptance criteria passed with no blocking or non-blocking findings. Reviewer independently reran all 11 Node checks and the staged whitespace check.
+
+Completion: PR #64 merged into `main` on 2026-10-06 at `8f56a2c7694205d85a8cbf46313911481386e663`. Ticket status and completion metadata persisted to `main`.
