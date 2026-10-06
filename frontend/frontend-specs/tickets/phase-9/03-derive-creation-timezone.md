@@ -1,6 +1,6 @@
 # Derive Create Event timezone from the browser
 
-> **Status:** For Review — [Draft PR #61](https://github.com/CaelanRT/bandos/pull/61); implementation, verification, and independent review passed
+> **Status:** Completed — [merged PR #61](https://github.com/CaelanRT/bandos/pull/61); merged and completion confirmed 2026-10-06
 > **Dependencies:** [Phase 8 review](../phase-8/04-review-forms-and-membership.md) passed.
 
 ## Objective
