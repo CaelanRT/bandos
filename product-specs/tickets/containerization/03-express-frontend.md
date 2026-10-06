@@ -1,6 +1,6 @@
 # Serve the built frontend and same-origin API through Express
 
-> **Status:** For Review — [Draft PR #65](https://github.com/CaelanRT/bandos/pull/65)
+> **Status:** Completed — [merged PR #65](https://github.com/CaelanRT/bandos/pull/65)
 
 > **Dependencies:** No implementation dependency; agree middleware boundaries with 01–02. Can proceed alongside runtime work.
 
