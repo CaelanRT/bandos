@@ -1,6 +1,6 @@
 # Review the Phase 8 forms and membership increment
 
-> **Status:** For Review — [Draft PR #58](https://github.com/CaelanRT/bandos/pull/58); combined and independent reviews passed 2026-10-06
+> **Status:** Completed — [merged PR #58](https://github.com/CaelanRT/bandos/pull/58); merged and completion confirmed 2026-10-06
 > **Dependencies:** Phase 8 implementation tickets [01](01-refine-login-feedback.md), [02](02-compact-password-controls.md), [03](03-keep-member-addition-visible.md) complete.
 
 ## Objective

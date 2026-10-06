@@ -1,6 +1,6 @@
 # Phase 8 Ticket Sequence
 
-> **Status:** In Progress — implementation tickets 01–03 Completed; ticket 04 For Review ([Draft PR #58](https://github.com/CaelanRT/bandos/pull/58)); combined and independent reviews passed
+> **Status:** Completed — tickets 01–04 Completed; [review PR #58](https://github.com/CaelanRT/bandos/pull/58) merged and completion confirmed 2026-10-06
 > **Specification:** [Phase 8 — Forms and membership refinement](../../09-phase-8-forms-and-membership-refinement.md)
 > **Phase prerequisite:** Phase 7 verification ticket 04 passed
 
