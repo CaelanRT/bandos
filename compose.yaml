@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Set an environment-specific DB_NAME}
+      POSTGRES_USER: bandos_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a private bootstrap password}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?Set a separate application password}
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sh:/docker-entrypoint-initdb.d/10-bandos.sh:ro
+      - ./deploy/postgres/ready.sh:/opt/bandos/ready.sh:ro
+      - ./backend/db/schemas/schema.sql:/opt/bandos/schema.sql:ro
+    networks: [database]
+    healthcheck:
+      test: [CMD, bash, /opt/bandos/ready.sh]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    cpus: 1.0
+    mem_limit: 512m
+    shm_size: 128m
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  app:
+    image: ${APP_IMAGE:?Set the built application image or release digest}
+    environment:
+      NODE_ENV: production
+      PORT: '3000'
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set the HTTPS origin}
+      SESSION_SECRET: ${SESSION_SECRET:?Set a stable environment-specific secret}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_NAME: ${DB_NAME:?Set an environment-specific DB_NAME}
+      DB_USERNAME: bandos_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set a separate application password}
+      DB_SSL: 'false'
+      DB_CONNECTION_TIMEOUT_MS: '2000'
+      HEALTH_QUERY_TIMEOUT_MS: '2000'
+      SHUTDOWN_TIMEOUT_MS: '10000'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [database, edge]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/v1/health').then(r => { if (r.status !== 200) process.exitCode = 1; }).catch(() => { process.exitCode = 1; })"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    stop_grace_period: 15s
+    cpus: 1.0
+    mem_limit: 512m
+    deploy:
+      replicas: 1
+    logging: *logging
+networks:
+  database:
+    internal: true
+  edge:
+    internal: true
+volumes:
+  database:
