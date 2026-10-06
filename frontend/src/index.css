@@ -288,7 +288,10 @@ main {
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-.schedule-event:hover { color: var(--oxblood); }
+.schedule-event:hover, .schedule-event:focus-visible {
+  background: var(--faint-rule);
+  color: var(--oxblood);
+}
 .schedule-event time { font-variant-numeric: tabular-nums; font-size: 0.875rem; }
 .schedule-event strong { font-weight: 600; }
 .schedule-event-type, .schedule-event-location { color: var(--graphite); font-size: 0.8125rem; }
