@@ -6,6 +6,15 @@ export const emptyEventValues = {
   name: '', type: '', date: '', startTime: '', endTime: '', timezone: '', location: '', description: '',
 }
 
+export function detectBrowserTimezone() {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    return typeof timezone === 'string' && timezone.length <= 255 && isSupportedTimezone(timezone) ? timezone : ''
+  } catch {
+    return ''
+  }
+}
+
 export function normalizeEventValues(values) {
   return {
     name: values.name.trim(),

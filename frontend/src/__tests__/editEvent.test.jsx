@@ -41,12 +41,21 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') }
 })
-afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 it('lets a leader save one changed normalized field and opens updated detail', async () => {
+  detail = event({ timezone: 'America/New_York' })
+  const DateTimeFormat = Intl.DateTimeFormat
+  const timezoneSpy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (...args) {
+    return args.length ? new DateTimeFormat(...args) : { resolvedOptions: () => ({ timeZone: 'Asia/Tokyo' }) }
+  })
   const waiting = deferred(); patch = () => waiting.promise
   const { client, router } = mount()
   expect(await screen.findByDisplayValue('Practice')).toBeInTheDocument()
+  expect(screen.getByLabelText('Timezone')).toHaveValue('America/New_York')
+  expect(document.querySelector('datalist')).toBeInTheDocument()
+  expect(screen.getByText(/Search for a timezone/)).toBeInTheDocument()
+  expect(timezoneSpy.mock.calls.filter((args) => args.length === 0)).toHaveLength(0)
   expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   await userEvent.clear(screen.getByLabelText('Name'))
   await userEvent.type(screen.getByLabelText('Name'), '  Updated practice  ')
