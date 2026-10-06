@@ -1,6 +1,6 @@
 # Review the complete Phase 7–9 frontend refinement
 
-> **Status:** For Review — [Draft PR #62](https://github.com/CaelanRT/bandos/pull/62); combined browser and independent review passed
+> **Status:** Completed — [merged PR #62](https://github.com/CaelanRT/bandos/pull/62); merged and completion confirmed 2026-10-06
 > **Dependencies:** Phase 9 implementation tickets [01](01-highlight-schedule-event-rows.md), [02](02-simplify-event-detail-controls.md), [03](03-derive-creation-timezone.md) complete.
 
 ## Objective
