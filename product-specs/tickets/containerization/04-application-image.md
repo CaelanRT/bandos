@@ -1,6 +1,6 @@
 # Build one non-root application image from clean lockfiles
 
-> **Status:** Implemented — verification and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #66](https://github.com/CaelanRT/bandos/pull/66)
 
 > **Dependencies:** [01](01-runtime-configuration-security.md), [02](02-readiness-shutdown.md), and [03](03-express-frontend.md).
 
@@ -65,7 +65,7 @@ There is no Dockerfile or root Docker ignore file. Both applications have lockfi
 - [x] Existing relevant tests pass; no known regression exists in touched behavior.
 - [x] Run frontend `npm test`, `npm run lint`, and `npm run build`; run relevant focused backend checks, Docker/Compose checks described above, `bash -n` on changed shell scripts, and `git diff --check`. Use clean lockfile installs and disposable databases.
 - [x] No unnecessary out-of-scope work is introduced.
-- [ ] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
+- [x] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
 
 ## Follow-up Work
 
