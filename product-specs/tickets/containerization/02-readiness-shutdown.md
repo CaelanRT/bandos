@@ -1,6 +1,6 @@
 # Bound API readiness and gracefully stop the backend
 
-> **Status:** In Progress
+> **Status:** For Review — [Draft PR #64](https://github.com/CaelanRT/bandos/pull/64)
 
 > **Dependencies:** [01 — Runtime configuration/security](01-runtime-configuration-security.md).
 
@@ -65,7 +65,7 @@ Health only runs an unbounded SELECT 1. Production rejects it over HTTP before r
 - [x] Existing relevant tests pass; no known regression exists in touched behavior.
 - [x] Run new focused backend checks and relevant existing smoke checks against disposable data; run `node --check` on changed JavaScript and `git diff --check`. Backend currently has no npm test, lint, or typecheck script; document the exact new check command.
 - [x] No unnecessary out-of-scope work is introduced.
-- [ ] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
+- [x] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
 
 ## Follow-up Work
 
