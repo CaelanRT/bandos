@@ -1,6 +1,6 @@
 # Orchestrate the application and fresh persistent PostgreSQL with Compose
 
-> **Status:** For Review — [Draft PR #67](https://github.com/CaelanRT/bandos/pull/67)
+> **Status:** Completed — [PR #67](https://github.com/CaelanRT/bandos/pull/67) merged into `main` on 2026-10-06.
 
 > **Dependencies:** [04 — Application image](04-application-image.md).
 
