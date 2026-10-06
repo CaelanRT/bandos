@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { formatLocalTime, isEventEditable } from './schedule.js'
+import { formatEventDate, formatLocalTime, isEventEditable, nextStartBoundary } from './schedule.js'
 import { useEvent } from './queries.js'
 import { DeleteEvent } from './DeleteEvent.jsx'
 
@@ -17,6 +17,14 @@ function EventReadFailure({ query }) {
 export function EventDetail({ bandId, eventId, canEdit = false }) {
   const detail = useEvent(bandId, eventId)
   const event = detail.data
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    if (!event) return
+    const boundary = nextStartBoundary([event])
+    if (!boundary) return
+    const timer = window.setTimeout(() => setNow(new Date()), Math.min(Math.max(0, boundary.getTime() - Date.now()), 2147483647))
+    return () => window.clearTimeout(timer)
+  }, [event, now])
   const schedule = `/bands/${bandId}`
   const location = useLocation()
   const navigate = useNavigate()
@@ -40,22 +48,27 @@ export function EventDetail({ bandId, eventId, canEdit = false }) {
     <EventReadFailure query={detail} />
     {event && <article>
       <header className="event-detail-heading">
-        <h1>{event.name}</h1>
+        <div className="event-detail-title">
+          <h1>{event.name}</h1>
+          {canEdit && <DeleteEvent bandId={bandId} eventId={eventId} event={event}
+            editHref={isEventEditable(event) ? `/bands/${bandId}/events/${eventId}/edit` : null} />}
+        </div>
         <p>{event.type === 'rehearsal' ? 'Rehearsal' : 'Performance'}</p>
       </header>
+      <Link className="event-detail-back" to={schedule}>
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path d="M20 12H4m7-7-7 7 7 7" />
+        </svg>
+        Back
+      </Link>
       <dl className="event-detail-facts">
-        <div><dt>Date</dt><dd><time dateTime={event.date}>{event.date}</time></dd></div>
+        <div><dt>Date</dt><dd><time dateTime={event.date}>{formatEventDate(event.date)}</time></dd></div>
         <div><dt>Start time</dt><dd><time dateTime={event.startTime}>{formatLocalTime(event.startTime)}</time></dd></div>
         <div><dt>End time</dt><dd><time dateTime={event.endTime}>{formatLocalTime(event.endTime)}</time></dd></div>
         <div><dt>Timezone</dt><dd>{event.timezone}</dd></div>
         <div><dt>Location</dt><dd>{event.location}</dd></div>
       </dl>
       {event.description !== null && <section className="event-description" aria-labelledby="description-heading"><h2 id="description-heading">Description</h2><p>{event.description}</p></section>}
-      <div className="event-detail-actions">
-        {canEdit && isEventEditable(event) && <Link to={`/bands/${bandId}/events/${eventId}/edit`}>Edit event</Link>}
-        {canEdit && <DeleteEvent bandId={bandId} eventId={eventId} event={event} />}
-        <Link to={schedule}>Back to Schedule</Link>
-      </div>
     </article>}
   </div>
 }

@@ -26,6 +26,11 @@ function mount(entry = '/bands/2/events/8') {
   return { client, router }
 }
 
+async function openDelete() {
+  await userEvent.click(screen.getByRole('button', { name: 'Event settings' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Delete Event' }))
+}
+
 beforeEach(() => {
   clients = []; role = 'leader'; deleted = false; deleteResponse = () => json({ message: 'Event deleted' })
   fetchMock.mockReset().mockImplementation(async (url, options = {}) => {
@@ -54,7 +59,7 @@ afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); vi.uns
 it('lets leaders delete historical events once, removes cached event data, and returns to Schedule', async () => {
   const { client, router } = mount()
   await screen.findByRole('heading', { name: 'Old rehearsal' })
-  await userEvent.click(screen.getByRole('button', { name: 'Delete event' }))
+  await openDelete()
   const dialog = await screen.findByRole('dialog', { name: 'Delete Old rehearsal?' })
   expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
   await userEvent.click(within(dialog).getByRole('button', { name: 'Delete event' }))
@@ -70,12 +75,12 @@ it('lets leaders delete historical events once, removes cached event data, and r
 
 it('lets Cancel or Escape close confirmation without deleting', async () => {
   mount(); await screen.findByRole('heading', { name: 'Old rehearsal' })
-  const trigger = screen.getByRole('button', { name: 'Delete event' })
-  await userEvent.click(trigger)
+  const trigger = screen.getByRole('button', { name: 'Event settings' })
+  await openDelete()
   let dialog = await screen.findByRole('dialog')
   await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
   expect(trigger).toHaveFocus()
-  await userEvent.click(trigger); dialog = await screen.findByRole('dialog')
+  await openDelete(); dialog = await screen.findByRole('dialog')
   fireEvent(dialog, new Event('cancel', { cancelable: true }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'DELETE')).toHaveLength(0)
@@ -85,7 +90,7 @@ it('prevents another DELETE request while the first request is pending', async (
   const waiting = deferred()
   deleteResponse = () => waiting.promise
   mount(); await screen.findByRole('heading', { name: 'Old rehearsal' })
-  await userEvent.click(screen.getByRole('button', { name: 'Delete event' }))
+  await openDelete()
   const dialog = await screen.findByRole('dialog')
   const confirm = within(dialog).getByRole('button', { name: 'Delete event' })
   await userEvent.click(confirm)
@@ -102,7 +107,7 @@ it('hides Delete from members and keeps failed deletion unconfirmed without retr
   expect(screen.queryByRole('button', { name: 'Delete event' })).not.toBeInTheDocument()
   cleanup(); role = 'leader'; deleteResponse = () => failure('INTERNAL_ERROR', 500)
   mount(); await screen.findByRole('heading', { name: 'Old rehearsal' })
-  await userEvent.click(screen.getByRole('button', { name: 'Delete event' }))
+  await openDelete()
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete event' }))
   expect(await screen.findByText(/couldn’t confirm that the event was deleted/)).toBeInTheDocument()
   expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -112,7 +117,7 @@ it('hides Delete from members and keeps failed deletion unconfirmed without retr
 it('uses neutral unavailable state after a not-found response', async () => {
   deleteResponse = () => failure('EVENT_NOT_FOUND', 404)
   mount(); await screen.findByRole('heading', { name: 'Old rehearsal' })
-  await userEvent.click(screen.getByRole('button', { name: 'Delete event' }))
+  await openDelete()
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete event' }))
   expect(await screen.findByRole('heading', { name: 'This event is no longer available.' })).toBeInTheDocument()
 })
@@ -120,7 +125,7 @@ it('uses neutral unavailable state after a not-found response', async () => {
 it('refreshes permissions after leader access is denied by the server', async () => {
   deleteResponse = () => { role = 'member'; return failure('LEADER_REQUIRED', 403) }
   mount(); await screen.findByRole('heading', { name: 'Old rehearsal' })
-  await userEvent.click(screen.getByRole('button', { name: 'Delete event' }))
+  await openDelete()
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete event' }))
   expect(await screen.findByRole('status')).toHaveTextContent('Only band leaders can manage events.')
   expect(screen.queryByRole('button', { name: 'Delete event' })).not.toBeInTheDocument()
@@ -131,7 +136,7 @@ it('uses the protected session recovery after authentication expires', async () 
   const { router } = mount('/bands/2/events/8?from=mail')
   await screen.findByRole('heading', { name: 'Old rehearsal' })
   deleteResponse = () => failure('AUTHENTICATION_REQUIRED', 401)
-  await userEvent.click(screen.getByRole('button', { name: 'Delete event' }))
+  await openDelete()
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete event' }))
   await screen.findByRole('heading', { name: 'Login' })
   expect(router.state.location.state.destination).toBe('/bands/2/events/8?from=mail')

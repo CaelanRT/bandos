@@ -1,7 +1,7 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { INVALID_API_RESPONSE } from '../api/errors.js'
 import { getEvent, getEvents, parseEventId } from '../features/events/api.js'
-import { classifyEvent, formatDateHeading, formatLocalTime, groupEvents, isLaterSameDay, isRealDate, isSupportedTimezone, isTime, nextBrowserCalendarBoundary, nextStartBoundary, resolveLocalDateTime } from '../features/events/schedule.js'
+import { classifyEvent, formatEventDate, formatDateHeading, formatLocalTime, groupEvents, isLaterSameDay, isRealDate, isSupportedTimezone, isTime, nextBrowserCalendarBoundary, nextStartBoundary, resolveLocalDateTime } from '../features/events/schedule.js'
 
 const event = (overrides = {}) => ({ eventId: 8, bandId: 2, name: 'Practice', type: 'rehearsal', date: '2026-09-19', startTime: '09:05', endTime: '10:05', timezone: 'America/New_York', location: 'Studio', description: null, createdByUserId: 4, isActive: true, createdAt: 'opaque', updatedAt: 'opaque', ...overrides })
 const invalid = (promise) => expect(promise).rejects.toMatchObject({ code: INVALID_API_RESPONSE })
@@ -57,4 +57,14 @@ it("preserves backend ties and refreshes relative headings at the browser calend
   const midnight = nextBrowserCalendarBoundary(now)
   expect(midnight).toEqual(new Date(2026, 8, 17))
   expect(formatDateHeading("2026-09-17", midnight)).toBe("Today")
+})
+
+it.each(['America/Los_Angeles', 'Pacific/Kiritimati', 'UTC'])('formats the stored detail date without a day shift in %s', (timezone) => {
+  vi.stubEnv('TZ', timezone)
+  try {
+    expect(formatEventDate('2026-10-01')).toBe('1 October 2026')
+    expect(formatEventDate('2024-02-29')).toBe('29 February 2024')
+    expect(formatEventDate('0100-10-01')).toBe('1 October 0100')
+    expect(formatEventDate('2026-02-29')).toBeNull()
+  } finally { vi.unstubAllEnvs() }
 })

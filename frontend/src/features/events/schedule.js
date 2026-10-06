@@ -74,6 +74,14 @@ export function formatDateHeading(date, now = new Date()) {
   return new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(year, month - 1, day))
 }
 
+export function formatEventDate(date) {
+  if (!isRealDate(date)) return null
+  const [, year, month, day] = date.match(datePattern).map(Number)
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .formatToParts(new Date(Date.UTC(year, month - 1, day)))
+    .map((part) => part.type === 'year' ? date.slice(0, 4) : part.value).join('')
+}
+
 export function formatLocalTime(time) {
   if (!isTime(time)) return null
   const [, hour, minute] = time.match(timePattern).map(Number)
