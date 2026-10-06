@@ -1,6 +1,6 @@
 # Phase 8 forms and membership review
 
-Date: 2026-10-06. Base: `origin/main` at `f18a346`. Scope: [ticket 04](04-review-forms-and-membership.md), [Phase 8 sections 5–6](../../09-phase-8-forms-and-membership-refinement.md). Implementation prerequisites: merged PRs [#55](https://github.com/CaelanRT/bandos/pull/55), [#56](https://github.com/CaelanRT/bandos/pull/56), and [#57](https://github.com/CaelanRT/bandos/pull/57).
+Date: 2026-10-06. Base: `origin/main` at `f18a346`. Scope: [ticket 04](04-review-forms-and-membership.md), [Phase 8 sections 5–6](../../09-phase-8-forms-and-membership-refinement.md). Review PR: [Draft PR #58](https://github.com/CaelanRT/bandos/pull/58). Implementation prerequisites: merged PRs [#55](https://github.com/CaelanRT/bandos/pull/55), [#56](https://github.com/CaelanRT/bandos/pull/56), and [#57](https://github.com/CaelanRT/bandos/pull/57).
 
 **Combined browser review: PASS.** No demonstrated in-scope defect or unresolved acceptance failure was found. This ticket records verification and handoff; no application changes, dependencies, or duplicate tests were needed. Independent `review-ticket` review: **PASS**, all three acceptance criteria passed with no blocking or non-blocking findings. Phase 9 must wait for this review ticket's acceptance.
 
