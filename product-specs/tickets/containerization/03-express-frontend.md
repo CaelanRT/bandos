@@ -1,6 +1,6 @@
 # Serve the built frontend and same-origin API through Express
 
-> **Status:** Implemented — independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #65](https://github.com/CaelanRT/bandos/pull/65)
 
 > **Dependencies:** No implementation dependency; agree middleware boundaries with 01–02. Can proceed alongside runtime work.
 
@@ -66,7 +66,7 @@ Express currently ends all unmatched requests with JSON not-found and has global
 - [x] Existing relevant tests pass; no known regression exists in touched behavior.
 - [x] Run frontend `npm test`, `npm run lint`, and `npm run build` with documented nonsecret configuration; run focused backend checks for middleware changes and `git diff --check`. No separate typecheck script currently exists.
 - [x] No unnecessary out-of-scope work is introduced.
-- [ ] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
+- [x] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
 
 ## Follow-up Work
 
