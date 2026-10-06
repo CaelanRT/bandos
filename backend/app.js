@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
 const connectPgSimple = require('connect-pg-simple');
+const { mountFrontend } = require('./frontend');
 
 const db = require('./db');
 const { pool } = db;
@@ -24,7 +25,12 @@ const PostgresStore = connectPgSimple(session);
 
 app.set('trust proxy', config.trustProxy);
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: { directives: {
+    // Local API/static development uses HTTP; production keeps HTTPS upgrading.
+    upgradeInsecureRequests: isProduction ? [] : null,
+  } },
+}));
 
 // Exact GET only: do not use a router mount (which also matches HEAD/trailing slashes).
 app.use((req, res, next) => {
@@ -42,12 +48,13 @@ app.use((req, res, next) => {
   });
 });
 
-app.use(cors({
+const api = express.Router();
+api.use(cors({
   origin: config.clientOrigin,
   credentials: true,
 }));
-app.use(express.json());
-app.use(session({
+api.use(express.json());
+api.use(session({
   name: 'bandos.sid',
   secret: config.sessionSecret,
   store: new PostgresStore({
@@ -66,10 +73,14 @@ app.use(session({
   },
 }));
 
-app.use('/api/v1/health', healthRouter);
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/users', userRouter);
-app.use('/api/v1/bands', bandRouter);
+api.use('/health', healthRouter);
+api.use('/auth', authRouter);
+api.use('/users', userRouter);
+api.use('/bands', bandRouter);
+api.use(notFound);
+app.use('/api/v1', api);
+
+mountFrontend(app, { required: isProduction });
 app.use(notFound);
 app.use(errorHandler);
 
