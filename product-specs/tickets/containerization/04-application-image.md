@@ -1,6 +1,6 @@
 # Build one non-root application image from clean lockfiles
 
-> **Status:** For Review — [Draft PR #66](https://github.com/CaelanRT/bandos/pull/66)
+> **Status:** Completed — [merged PR #66](https://github.com/CaelanRT/bandos/pull/66)
 
 > **Dependencies:** [01](01-runtime-configuration-security.md), [02](02-readiness-shutdown.md), and [03](03-express-frontend.md).
 
