@@ -1,6 +1,6 @@
 # Simplify event details and management controls
 
-> **Status:** For Review — [Draft PR #60](https://github.com/CaelanRT/bandos/pull/60); implementation, verification, and independent review passed
+> **Status:** Completed — [merged PR #60](https://github.com/CaelanRT/bandos/pull/60); merged and completion confirmed 2026-10-06
 > **Dependencies:** [Phase 8 review](../phase-8/04-review-forms-and-membership.md) passed, including the reviewed Phase 7 menu conventions.
 
 ## Objective
