@@ -1,0 +1,45 @@
+# Allow only build inputs. Repository metadata, credentials, specs, logs and
+# smoke-test artifacts outside these paths never enter the context.
+**
+!Dockerfile
+!backend
+backend/**
+!backend/package.json
+!backend/package-lock.json
+!backend/app.js
+!backend/config.js
+!backend/frontend.js
+!backend/shutdown.js
+!backend/controllers/**
+!backend/middleware/**
+!backend/routes/**
+!backend/utils/**
+!backend/db
+backend/db/**
+!backend/db/index.js
+!frontend
+frontend/**
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.js
+!frontend/src/**
+
+# Also exclude sensitive/host/generated files within allowed source folders.
+**/.env*
+**/.git
+**/node_modules
+**/dist
+**/coverage
+**/__tests__
+**/*.test.*
+**/*.log
+**/.aws
+**/.ssh
+**/.agents
+**/.codex
+**/.npmrc
+**/*.pem
+**/*.key
+**/*cookie*
+**/*smoke*
