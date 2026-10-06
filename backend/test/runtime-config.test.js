@@ -15,6 +15,9 @@ const valid = {
 test('defaults and explicit runtime settings', () => {
   const config = loadConfig(valid);
   assert.equal(config.port, 3000);
+  assert.equal(config.database.connectionTimeoutMillis, 2000);
+  assert.equal(config.healthQueryTimeoutMs, 2000);
+  assert.equal(config.shutdownTimeoutMs, 10000);
   assert.equal(config.database.port, 5432);
   assert.equal(config.bcryptRounds, 12);
   assert.equal(config.database.ssl, false);
@@ -36,6 +39,9 @@ test('required values and invalid settings fail with secret-safe diagnostics', (
     }
   }
   const invalid = {
+    DB_CONNECTION_TIMEOUT_MS: ['', '0', '60001', '1.5'],
+    HEALTH_QUERY_TIMEOUT_MS: ['', '0', '60001'],
+    SHUTDOWN_TIMEOUT_MS: ['', '0', '120001'],
     PORT: ['', '0', '65536', '3.5', '3e3', '-1'], DB_PORT: ['', '0', '65536', 'NaN'],
     BCRYPT_ROUNDS: ['', '3', '32', '12.5', 'NaN'], DB_SSL: ['', 'yes', 'FALSE'],
     TRUST_PROXY: ['', 'true', '1', 'loopback', '0.0.0.0/0', '::/0', '10.0.0.1/33', '::1/129', '127.0.0.1,'],

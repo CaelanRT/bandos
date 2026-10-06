@@ -7,7 +7,10 @@ const helmet = require('helmet');
 const session = require('express-session');
 const connectPgSimple = require('connect-pg-simple');
 
-const { pool } = require('./db');
+const db = require('./db');
+const { pool } = db;
+const { installShutdown } = require('./shutdown');
+const { getHealth } = require('./controllers/health.controller');
 const healthRouter = require('./routes/health.routes');
 const authRouter = require('./routes/auth.routes');
 const userRouter = require('./routes/user.routes');
@@ -22,6 +25,14 @@ const PostgresStore = connectPgSimple(session);
 app.set('trust proxy', config.trustProxy);
 
 app.use(helmet());
+
+// Exact GET only: do not use a router mount (which also matches HEAD/trailing slashes).
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.path === '/api/v1/health') {
+    return cors({ origin: config.clientOrigin, credentials: true })(req, res, () => getHealth(req, res));
+  }
+  return next();
+});
 
 app.use((req, res, next) => {
   if (!isProduction || req.secure) return next();
@@ -62,6 +73,8 @@ app.use('/api/v1/bands', bandRouter);
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Bandos API listening on port ${PORT}`);
 });
+
+installShutdown(server, db.close, config.shutdownTimeoutMs);

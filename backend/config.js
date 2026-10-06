@@ -40,8 +40,11 @@ function loadConfig(env) {
     password: required('DB_PASSWORD'),
     port: integer('DB_PORT', 5432, 1, 65535),
     ssl: false,
+    connectionTimeoutMillis: integer('DB_CONNECTION_TIMEOUT_MS', 2000, 1, 60000),
   };
   const port = integer('PORT', 3000, 1, 65535);
+  const healthQueryTimeoutMs = integer('HEALTH_QUERY_TIMEOUT_MS', 2000, 1, 60000);
+  const shutdownTimeoutMs = integer('SHUTDOWN_TIMEOUT_MS', 10000, 1, 120000);
   const bcryptRounds = integer('BCRYPT_ROUNDS', 12, 4, 31);
   const ssl = env.DB_SSL ?? 'false';
   if (!['true', 'false'].includes(ssl)) errors.push('DB_SSL: must be true or false');
@@ -80,7 +83,7 @@ function loadConfig(env) {
     else trustProxy = entries;
   }
   if (errors.length) throw new Error(`Invalid runtime configuration:\n${errors.join('\n')}`);
-  return { port, isProduction: nodeEnv === 'production', clientOrigin, sessionSecret, bcryptRounds, database, trustProxy };
+  return { port, isProduction: nodeEnv === 'production', clientOrigin, sessionSecret, bcryptRounds, database, trustProxy, healthQueryTimeoutMs, shutdownTimeoutMs };
 }
 
 let cached;

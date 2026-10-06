@@ -77,14 +77,14 @@ test('production rejects HTTP and preserves CORS, default-cost authentication an
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     assert.match(output, /listening/);
-    assert.equal((await request(port, '/api/v1/health')).status, 426);
+    assert.equal((await request(port, '/api/v1/users/me')).status, 426);
     const headers = { 'X-Forwarded-Proto': 'https', Origin: env.CLIENT_ORIGIN };
-    assert.equal((await request(port, '/api/v1/health', { headers, localAddress: '127.0.0.2' })).status, 426);
-    const health = await request(port, '/api/v1/health', { headers });
-    assert.equal(health.status, 200);
-    assert.equal(health.headers['access-control-allow-origin'], env.CLIENT_ORIGIN);
-    assert.equal(health.headers['access-control-allow-credentials'], 'true');
-    const other = await request(port, '/api/v1/health', { headers: { ...headers, Origin: 'https://untrusted.example.test' } });
+    assert.equal((await request(port, '/api/v1/users/me', { headers, localAddress: '127.0.0.2' })).status, 426);
+    const unauthenticated = await request(port, '/api/v1/users/me', { headers });
+    assert.equal(unauthenticated.status, 401);
+    assert.equal(unauthenticated.headers['access-control-allow-origin'], env.CLIENT_ORIGIN);
+    assert.equal(unauthenticated.headers['access-control-allow-credentials'], 'true');
+    const other = await request(port, '/api/v1/users/me', { headers: { ...headers, Origin: 'https://untrusted.example.test' } });
     assert.notEqual(other.headers['access-control-allow-origin'], 'https://untrusted.example.test');
     const username = `runtime_${Date.now()}`;
     const body = { username, firstName: 'Runtime', lastName: 'Test', email: `${username}@example.test`, password: 'DisposablePassword123!' };
