@@ -1,8 +1,8 @@
 # Verify containerized product flows, persistence, and failure recovery
 
-> **Status:** For Review
+> **Status:** Completed (2026-10-06)
 
-> **Pull Request:** [Draft PR #68](https://github.com/CaelanRT/bandos/pull/68)
+> **Pull Request:** [Merged PR #68](https://github.com/CaelanRT/bandos/pull/68)
 
 > **Verification:** [Commands, topology and results](06-verification-results.md)
 

@@ -1,6 +1,6 @@
 # Containerization Ticket Sequence
 
-> **Status:** Tickets 01–05 completed; ticket 06 For Review (Draft PR #68); later deployment inputs remain pending
+> **Status:** Tickets 01–06 completed (PR #68 merged); later deployment inputs remain pending
 > **Specification:** [Approved containerization plan](../../01-containerization-plan.md)
 > **Tracking:** Repository Markdown tickets and this sequence are the tracking records, following the existing frontend ticket convention. No application implementation is included.
 
@@ -51,6 +51,6 @@ The user-approved baseline retains separate PostgreSQL containers. The plan’s 
 
 Each ticket includes goal, inherited scope/constraints, exclusions, source/code references, acceptance criteria, proportionate automated/manual checks and definition of done. Tickets 01–06 deliver a verified reference container stack. Tickets 07–08 prepare and demonstrate manual AWS release/recovery; production operational checks gate production use. Tickets 09–10 add later automation. A deployment-input-dependent ticket must retain its pending status until its inputs and acceptance evidence are complete.
 
-Ticket 06 is [For Review in Draft PR #68](https://github.com/CaelanRT/bandos/pull/68). Evidence is recorded in [container verification results](06-verification-results.md).
+Ticket 06 is [Completed in merged PR #68](https://github.com/CaelanRT/bandos/pull/68). Evidence is recorded in [container verification results](06-verification-results.md).
 
 Implementation follows AGENTS.md, including independent review before a Draft PR and For Review status; creation of these tickets does not mark work implemented or verified. The plan’s completion criteria map to 04 (clean artifact), 05 (bootstrap), 01–03/06/08 (security/product/routing), 02/05–06 (lifecycle/persistence), 08 (restore/rollback/same digest), and 09–10 (eventual Actions). No application tests or container/deployment runs are claimed during ticket creation.
