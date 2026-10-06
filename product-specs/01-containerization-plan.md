@@ -1,6 +1,6 @@
 # bandOS containerization audit and implementation plan
 
-Status: Approved architecture; [ticket 01 implementation](tickets/containerization/01-runtime-configuration-security.md) is under review. Later containerization/deployment work remains pending.
+Status: Approved architecture; [ticket 01 implementation](tickets/containerization/01-runtime-configuration-security.md) is For Review in [Draft PR #63](https://github.com/CaelanRT/bandos/pull/63). Later containerization/deployment work remains pending.
 
 Audit date: 2026-10-06. Repository baseline: `3dd419a` on `main`.
 

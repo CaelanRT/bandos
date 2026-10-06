@@ -1,6 +1,6 @@
 # Validate backend runtime configuration and deployment security
 
-> **Status:** Implemented — independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #63](https://github.com/CaelanRT/bandos/pull/63)
 
 > **Dependencies:** None. Owns the runtime configuration/security contract used by tickets 02–05.
 
@@ -67,7 +67,7 @@ Provide a documented, validated runtime configuration contract for the backend, 
 - [x] Existing relevant tests pass; no known regression exists in touched behavior.
 - [x] Run new focused backend checks and relevant existing smoke checks against disposable data; run `node --check` on changed JavaScript and `git diff --check`. Backend currently has no npm test, lint, or typecheck script; document the exact new check command.
 - [x] No unnecessary out-of-scope work is introduced.
-- [ ] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
+- [x] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
 
 ## Follow-up Work
 
