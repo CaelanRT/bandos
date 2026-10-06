@@ -1,6 +1,6 @@
 # Orchestrate the application and fresh persistent PostgreSQL with Compose
 
-> **Status:** Implementation and independent review passed — Draft PR pending
+> **Status:** For Review — [Draft PR #67](https://github.com/CaelanRT/bandos/pull/67)
 
 > **Dependencies:** [04 — Application image](04-application-image.md).
 
@@ -67,7 +67,7 @@ The existing schema creates non-idempotent enums/tables, including session; sess
 - [x] Existing relevant tests pass; no known regression exists in touched behavior.
 - [x] Run frontend `npm test`, `npm run lint`, and `npm run build`; run relevant focused backend checks, Docker/Compose checks described above, `bash -n` on changed shell scripts, and `git diff --check`. Use clean lockfile installs and disposable databases.
 - [x] No unnecessary out-of-scope work is introduced.
-- [ ] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
+- [x] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
 
 ## Follow-up Work
 
