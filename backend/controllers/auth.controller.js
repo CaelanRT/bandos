@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const db = require('../db');
 const HttpError = require('../utils/http-error');
+const { bcryptRounds } = require('../config').getConfig();
 
 const userColumns = `
   user_id, username, first_name, last_name, email, plan, is_active, created_at
@@ -20,7 +21,7 @@ function destroySession(req) {
 
 async function register(req, res) {
   const { username, firstName, lastName, email, password } = req.body;
-  const passwordHash = await bcrypt.hash(password, Number(process.env.BCRYPT_ROUNDS));
+  const passwordHash = await bcrypt.hash(password, bcryptRounds);
   const result = await db.query(
     `INSERT INTO users (username, first_name, last_name, email, password_hash)
      VALUES ($1, $2, $3, $4, $5)

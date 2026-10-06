@@ -1,4 +1,5 @@
 require('dotenv').config();
+const config = require('./config').getConfig();
 
 const express = require('express');
 const cors = require('cors');
@@ -14,13 +15,11 @@ const bandRouter = require('./routes/band.routes');
 const { notFound, errorHandler } = require('./middleware/errors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const isProduction = process.env.NODE_ENV === 'production';
+const PORT = config.port;
+const isProduction = config.isProduction;
 const PostgresStore = connectPgSimple(session);
 
-if (isProduction) {
-  app.set('trust proxy', 1);
-}
+app.set('trust proxy', config.trustProxy);
 
 app.use(helmet());
 
@@ -33,13 +32,13 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN,
+  origin: config.clientOrigin,
   credentials: true,
 }));
 app.use(express.json());
 app.use(session({
   name: 'bandos.sid',
-  secret: process.env.SESSION_SECRET,
+  secret: config.sessionSecret,
   store: new PostgresStore({
     pool,
     tableName: 'session',
