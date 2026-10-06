@@ -1,6 +1,6 @@
 # Make Schedule event rows clearly clickable
 
-> **Status:** For Review — [Draft PR #59](https://github.com/CaelanRT/bandos/pull/59); implementation, verification, and independent review passed
+> **Status:** Completed — [merged PR #59](https://github.com/CaelanRT/bandos/pull/59); merged and completion confirmed 2026-10-06
 > **Dependencies:** [Phase 8 review](../phase-8/04-review-forms-and-membership.md) passed.
 
 ## Objective
