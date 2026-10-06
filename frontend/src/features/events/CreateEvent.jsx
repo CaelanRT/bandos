@@ -7,15 +7,17 @@ import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
 import { bandKeys, checkBand, checkBands, removeBandAccess } from '../bands/queries.js'
 import { createEvent } from './api.js'
 import { cacheCreatedEvent } from './queries.js'
-import { emptyEventValues, eventFieldNames, eventTimezoneOptions, normalizeEventValues, timezoneLabel, validateEventValues } from './eventForm.js'
+import { detectBrowserTimezone, emptyEventValues, eventFieldNames, normalizeEventValues, validateEventValues } from './eventForm.js'
 
-const timezoneOptions = eventTimezoneOptions()
+const visibleFieldNames = eventFieldNames.filter((field) => field !== 'timezone')
+const detectionError = 'We couldn’t detect a supported browser timezone. Your details are still here. Retry timezone detection before creating the event.'
 
 export function CreateEvent({ band }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
-  const [values, setValues] = useState(emptyEventValues)
+  const [values, setValues] = useState(() => ({ ...emptyEventValues, timezone: detectBrowserTimezone() }))
+  const [timezoneError, setTimezoneError] = useState(() => values.timezone ? null : detectionError)
   const [touched, setTouched] = useState({})
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -25,9 +27,10 @@ export function CreateEvent({ band }) {
   const [permissionFailed, setPermissionFailed] = useState(() => Boolean(band.managementDenied))
   const fields = useRef({})
   const notice = useRef(null)
+  const timezoneNotice = useRef(null)
   const submitting = useRef(false)
   const lifetime = useRef(null)
-  const dirty = JSON.stringify(normalizeEventValues(values)) !== JSON.stringify(normalizeEventValues(emptyEventValues))
+  const dirty = JSON.stringify(normalizeEventValues({ ...values, timezone: '' })) !== JSON.stringify(normalizeEventValues(emptyEventValues))
   const { blocker, allowNavigation } = useUnsavedNavigation(dirty)
 
   useEffect(() => {
@@ -36,6 +39,15 @@ export function CreateEvent({ band }) {
     return () => controller.abort()
   }, [])
   useEffect(() => { if (formError) notice.current?.focus() }, [formError])
+  useEffect(() => { if (timezoneError) timezoneNotice.current?.focus() }, [timezoneError])
+
+  function retryTimezone() {
+    const timezone = detectBrowserTimezone()
+    setValues((current) => ({ ...current, timezone }))
+    setTimezoneError(timezone ? null : detectionError)
+    if (timezone) fields.current.date?.focus()
+    else timezoneNotice.current?.focus()
+  }
 
   function validate(nextValues, changed) {
     const next = validateEventValues(nextValues)
@@ -75,10 +87,16 @@ export function CreateEvent({ band }) {
   async function submit(event) {
     event.preventDefault()
     if (submitting.current || permissionChecking || permissionFailed) return
+    if (timezoneError) { timezoneNotice.current?.focus(); return }
     const nextErrors = validateEventValues(values)
     setTouched(Object.fromEntries(eventFieldNames.map((field) => [field, true])))
     setErrors(nextErrors); setFormError(null)
-    const invalid = eventFieldNames.find((field) => nextErrors[field])
+    if (nextErrors.timezone) {
+      setTimezoneError(detectionError)
+      timezoneNotice.current?.focus()
+      return
+    }
+    const invalid = visibleFieldNames.find((field) => nextErrors[field])
     if (invalid) { fields.current[invalid]?.focus(); return }
     submitting.current = true; setPending(true); setUncertain(false)
     const signal = lifetime.current.signal
@@ -98,11 +116,13 @@ export function CreateEvent({ band }) {
         await refreshPermission(signal)
       } else if (error.code === 'VALIDATION_ERROR') {
         const details = error.details ?? []
-        const mapped = Object.fromEntries(details.filter((detail) => eventFieldNames.includes(detail.field)).map((detail) => [detail.field, detail.message]))
+        const mapped = Object.fromEntries(details.filter((detail) => visibleFieldNames.includes(detail.field)).map((detail) => [detail.field, detail.message]))
+        const rejectedTimezone = details.filter((detail) => detail.field === 'timezone').map((detail) => detail.message).join(' ')
+        if (rejectedTimezone) setTimezoneError(`${rejectedTimezone} Retry timezone detection before creating the event.`)
         setErrors((current) => ({ ...current, ...mapped }))
         setFormError(details.filter((detail) => !eventFieldNames.includes(detail.field)).map((detail) => detail.message).join(' ') ||
           (details.length ? null : 'Check the event details and try again.'))
-        fields.current[eventFieldNames.find((field) => mapped[field])]?.focus()
+        if (!rejectedTimezone) fields.current[visibleFieldNames.find((field) => mapped[field])]?.focus()
       } else {
         setUncertain(true)
         setFormError('We couldn’t confirm whether this event was created. Your details are still here.')
@@ -125,6 +145,10 @@ export function CreateEvent({ band }) {
       {permissionFailed && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
     </div> : <form className="band-form event-form" onSubmit={submit} noValidate>
       {formError && <p className="event-notice" ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+      {timezoneError && <div className="event-notice" ref={timezoneNotice} role="alert" tabIndex="-1">
+        <p>{timezoneError}</p>
+        <button type="button" disabled={locked} onClick={retryTimezone}>Retry timezone detection</button>
+      </div>}
       <label htmlFor="event-name">Name</label>
       <input id="event-name" {...fieldProps('name')} />{errors.name && <p id="name-error">{errors.name}</p>}
       <label htmlFor="event-type">Type</label>
@@ -135,17 +159,13 @@ export function CreateEvent({ band }) {
       <input id="event-start-time" type="time" step="60" {...fieldProps('startTime')} />{errors.startTime && <p id="startTime-error">{errors.startTime}</p>}
       <label htmlFor="event-end-time">End time</label>
       <input id="event-end-time" type="time" step="60" {...fieldProps('endTime')} />{errors.endTime && <p id="endTime-error">{errors.endTime}</p>}
-      <label htmlFor="event-timezone">Timezone</label>
-      <input id="event-timezone" list="event-timezones" autoComplete="off" {...fieldProps('timezone')} />
-      <datalist id="event-timezones">{timezoneOptions.map((timezone) => <option key={timezone} value={timezone} label={timezoneLabel(timezone)} />)}</datalist>
-      <p className="event-field-hint" id="event-timezone-hint">Search for a timezone and select its IANA name.</p>{errors.timezone && <p id="timezone-error">{errors.timezone}</p>}
       <label htmlFor="event-location">Location</label>
       <input id="event-location" {...fieldProps('location')} />{errors.location && <p id="location-error">{errors.location}</p>}
       <label htmlFor="event-description">Description (optional)</label>
       <textarea id="event-description" {...fieldProps('description')} />{errors.description && <p id="description-error">{errors.description}</p>}
       {uncertain && <p className="event-notice" role="status">Creating again may create a duplicate event.</p>}
       <div className="form-actions">
-        <button type="submit" disabled={locked}>{pending ? 'Creating event…' : uncertain ? 'Create again' : 'Create event'}</button>
+        <button type="submit" disabled={locked || Boolean(timezoneError)}>{pending ? 'Creating event…' : uncertain ? 'Create again' : 'Create event'}</button>
         <button type="button" disabled={locked} onClick={() => navigate(`/bands/${band.bandId}`)}>Cancel</button>
       </div>
       {pending && <p className="event-notice" role="status">Creating event…</p>}
