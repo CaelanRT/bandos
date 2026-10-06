@@ -1,6 +1,8 @@
 # Verify containerized product flows, persistence, and failure recovery
 
-> **Status:** In Progress
+> **Status:** For Review
+
+> **Pull Request:** [Draft PR #68](https://github.com/CaelanRT/bandos/pull/68)
 
 > **Verification:** [Commands, topology and results](06-verification-results.md)
 
@@ -70,7 +72,7 @@ Backend band/event smoke suites use different default ports, create seven users 
 - [x] Existing relevant tests pass; no known regression exists in touched behavior.
 - [x] Run frontend `npm test`, `npm run lint`, and `npm run build`; run relevant focused backend checks, Docker/Compose checks described above, `bash -n` on changed shell scripts, and `git diff --check`. Use clean lockfile installs and disposable databases.
 - [x] No unnecessary out-of-scope work is introduced.
-- [ ] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
+- [x] Follow AGENTS.md: isolated feature work, required independent review-ticket review, pushed commit, Draft PR, and ticket status For Review.
 
 ## Follow-up Work
 
