@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSession } from '../../app/sessionContext.js'
 import { bandKeys, checkBand, checkBands, removeBandAccess } from '../bands/queries.js'
 import { deleteEvent } from './api.js'
 import { cacheDeletedEvent } from './queries.js'
 
-export function DeleteEvent({ bandId, eventId, event, disabled = false }) {
+export function DeleteEvent({ bandId, eventId, event, disabled = false, editHref = null }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuId = useId()
+  const menu = useRef(null)
+  const firstItem = useRef(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -36,6 +40,26 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false }) {
       if (previous?.isConnected) previous.focus()
     }
   }, [open])
+
+  useLayoutEffect(() => {
+    if (menuOpen) firstItem.current?.focus()
+  }, [menuOpen, editHref])
+  useEffect(() => {
+    if (!menuOpen) return
+    function dismiss(event) {
+      if (event.type === 'keydown' && event.key !== 'Escape') return
+      if (event.type === 'pointerdown' && menu.current?.contains(event.target)) return
+      if (event.type === 'keydown') event.preventDefault()
+      setMenuOpen(false)
+      trigger.current?.focus()
+    }
+    document.addEventListener('pointerdown', dismiss)
+    document.addEventListener('keydown', dismiss)
+    return () => {
+      document.removeEventListener('pointerdown', dismiss)
+      document.removeEventListener('keydown', dismiss)
+    }
+  }, [menuOpen])
 
   async function refreshPermission(signal = lifetime.current.signal) {
     setPermissionState('checking')
@@ -97,8 +121,29 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false }) {
       <p>{permissionState === 'checking' ? 'Checking your permissions…' : 'We couldn’t confirm leader access.'}</p>
       {permissionState === 'failed' && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
     </div>}
-    <button ref={trigger} className="event-delete-trigger" type="button" disabled={disabled || busy || Boolean(permissionState)}
-      onClick={() => { setError(null); setOpen(true) }}>Delete event</button>
+    <div ref={menu} className="event-menu" onBlur={(event) => {
+      if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false)
+    }}>
+      <button ref={trigger} className="event-menu-trigger" type="button" aria-label="Event settings"
+        aria-expanded={menuOpen} aria-controls={menuId} disabled={disabled || busy || Boolean(permissionState)}
+        onClick={() => setMenuOpen(!menuOpen)} onKeyDown={(event) => {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            if (menuOpen) firstItem.current?.focus()
+            else setMenuOpen(true)
+          }
+        }}>
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path d="m9 3-.6 2.4-2 .9L4.2 6 2 10l1.8 1.6v.8L2 14l2.2 4 2.2-.3 2 .9L9 21h6l.6-2.4 2-.9 2.2.3 2.2-4-1.8-1.6v-.8L22 10l-2.2-4-2.2.3-2-.9L15 3Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
+      <div id={menuId} className="event-menu-panel" hidden={!menuOpen}>
+        {editHref && <Link ref={firstItem} to={editHref} onClick={() => setMenuOpen(false)}>Edit Event</Link>}
+        <button ref={editHref ? undefined : firstItem} className="event-delete-trigger" type="button"
+          onClick={() => { setMenuOpen(false); setError(null); setOpen(true) }}>Delete Event</button>
+      </div>
+    </div>
     {open && <dialog ref={dialog} className="event-delete-dialog" aria-labelledby="delete-event-title" aria-describedby="delete-event-description"
       onKeyDown={(keyEvent) => { if (keyEvent.key === 'Escape') keyEvent.stopPropagation() }}
       onCancel={(cancelEvent) => { cancelEvent.preventDefault(); if (!submitting.current) setOpen(false) }}>

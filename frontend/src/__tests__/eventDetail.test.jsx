@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider, focusManager } from '@tanstack/react-query'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -33,10 +33,13 @@ beforeEach(() => {
     if (path === '/users/me') return json({ user })
     if (path === '/bands') return json({ bands: listedBands })
     if (path === '/bands/2') return json({ band: band(role) })
+    if (path === '/bands/2/events') return json({ events: detail instanceof Response ? [] : [detail] })
     if (path === '/bands/2/events/8') return detail instanceof Response ? detail.clone() : json({ event: detail })
     throw new Error(`Unexpected request ${path}`)
   })
   vi.stubGlobal('fetch', fetchMock)
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') }
 })
 afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); focusManager.setFocused(undefined); vi.unstubAllGlobals() })
 
@@ -44,16 +47,16 @@ it.each(['member', 'leader'])('shows the same complete local event detail for a 
   role = currentRole; mount()
   await screen.findByRole('heading', { name: 'Long rehearsal' })
   expect(screen.getByText('Rehearsal')).toBeInTheDocument()
-  expect(screen.getByText('2026-09-19')).toBeInTheDocument()
+  expect(screen.getByText('19 September 2026')).toHaveAttribute('datetime', '2026-09-19')
   expect(screen.getByText(/9:05/)).toBeInTheDocument()
   expect(screen.getByText(/10:35/)).toBeInTheDocument()
   expect(screen.getByText('America/New_York')).toBeInTheDocument()
   expect(screen.getByText('A very long rehearsal room location')).toBeInTheDocument()
   expect(screen.getByText('Bring charts.')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Back to Schedule' })).toHaveAttribute('href', '/bands/2')
+  expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/bands/2')
   expect(screen.queryByText('createdAt')).not.toBeInTheDocument()
-  if (currentRole === 'member') expect(screen.queryByRole('button', { name: /Edit|Delete/ })).not.toBeInTheDocument()
-  else expect(screen.getByRole('button', { name: 'Delete event' })).toBeInTheDocument()
+  if (currentRole === 'member') expect(screen.queryByRole('button', { name: 'Event settings' })).not.toBeInTheDocument()
+  else expect(screen.getByRole('button', { name: 'Event settings' })).toBeInTheDocument()
 })
 
 it('omits an empty description and does not request malformed event IDs', async () => {
@@ -110,4 +113,77 @@ it('redirects an expired event read through the existing protected-session bound
   const { router } = mount('/bands/2/events/8?from=mail#detail')
   await screen.findByRole('heading', { name: 'Login' })
   await waitFor(() => expect(router.state.location.state.destination).toBe('/bands/2/events/8?from=mail#detail'))
+})
+
+it.each(['/bands/2/events/8', '/bands/2/events/8?from=datebook'])('keeps band tabs above title, Back, and facts for %s', async (entry) => {
+  const { router } = mount(entry)
+  const title = await screen.findByRole('heading', { name: 'Long rehearsal' })
+  const tabs = screen.getByRole('navigation', { name: 'Band workspace' })
+  expect(within(tabs).getByRole('link', { name: 'Schedule' })).toHaveAttribute('href', '/bands/2')
+  expect(within(tabs).getByRole('link', { name: 'Members' })).toHaveAttribute('href', '/bands/2/members')
+  expect(within(tabs).queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument()
+  const back = screen.getByRole('link', { name: 'Back' })
+  expect(tabs.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(title.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(back.compareDocumentPosition(screen.getByText('19 September 2026')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  await userEvent.click(back)
+  expect(router.state.location.pathname).toBe('/bands/2')
+})
+
+it('opens the leader menu by keyboard, dismisses it, and hands confirmation focus back to the cog', async () => {
+  role = 'leader'; detail = event({ date: '2099-10-01' }); mount()
+  await screen.findByRole('heading', { name: 'Long rehearsal' })
+  expect(within(screen.getByRole('navigation', { name: 'Band workspace' })).getByRole('link', { name: 'Settings' })).toBeInTheDocument()
+  const cog = screen.getByRole('button', { name: 'Event settings' })
+  expect(screen.queryByRole('link', { name: 'Edit Event' })).not.toBeInTheDocument()
+  cog.focus()
+  await userEvent.keyboard('{ArrowDown}')
+  expect(screen.getByRole('link', { name: 'Edit Event' })).toHaveFocus()
+  expect(screen.getByRole('link', { name: 'Edit Event' })).toHaveAttribute('href', '/bands/2/events/8/edit')
+  await userEvent.tab()
+  expect(screen.getByRole('button', { name: 'Delete Event' })).toHaveFocus()
+  await userEvent.keyboard('{Escape}')
+  expect(cog).toHaveFocus()
+  expect(cog).toHaveAttribute('aria-expanded', 'false')
+  await userEvent.keyboard('{Enter}')
+  fireEvent.pointerDown(document.body)
+  expect(cog).toHaveFocus()
+  expect(cog).toHaveAttribute('aria-expanded', 'false')
+  await userEvent.click(cog)
+  await userEvent.click(screen.getByRole('button', { name: 'Delete Event' }))
+  const dialog = await screen.findByRole('dialog')
+  expect(cog).toHaveAttribute('aria-expanded', 'false')
+  expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
+  expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'DELETE')).toBe(false)
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+  expect(cog).toHaveFocus()
+  await userEvent.click(cog)
+  await userEvent.click(screen.getByRole('link', { name: 'Edit Event' }))
+  await screen.findByRole('heading', { name: 'Edit event' })
+})
+
+it('removes Edit at the live start cutoff while keeping Delete reachable in the open menu', async () => {
+  role = 'leader'; detail = event({ date: '2099-10-01' })
+  const { client } = mount()
+  await screen.findByRole('heading', { name: 'Long rehearsal' })
+  vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
+  vi.setSystemTime(new Date('2026-10-01T09:59:59Z'))
+  try {
+    act(() => client.setQueryData(eventKeys.detail(2, 8), event({ date: '2026-10-01', startTime: '10:00', endTime: '11:00', timezone: 'UTC' })))
+    await act(async () => { await vi.advanceTimersByTimeAsync(0) })
+    fireEvent.click(screen.getByRole('button', { name: 'Event settings' }))
+    expect(screen.getByRole('link', { name: 'Edit Event' })).toHaveFocus()
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
+    expect(screen.queryByRole('link', { name: 'Edit Event' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete Event' })).toHaveFocus()
+  } finally { vi.useRealTimers() }
+})
+
+it('returns to band Schedule after entering detail from Datebook', async () => {
+  detail = event({ date: '2099-10-01' })
+  const { router } = mount('/')
+  await userEvent.click(await screen.findByRole('link', { name: /Long rehearsal/ }))
+  await screen.findByRole('heading', { name: 'Long rehearsal' })
+  await userEvent.click(screen.getByRole('link', { name: 'Back' }))
+  expect(router.state.location.pathname).toBe('/bands/2')
 })

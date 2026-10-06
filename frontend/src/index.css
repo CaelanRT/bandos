@@ -587,16 +587,12 @@ main {
 .event-description { max-width: 70ch; padding-block: 2rem 1rem; }
 .event-description h2 { margin-block-end: 0.75rem; }
 .event-description p { white-space: pre-wrap; }
-.event-detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1.5rem;
-  margin-block-start: 2rem;
-  padding-block-start: 1rem;
-  border-top: 1px solid var(--rule);
-}
-.event-detail-actions > a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.event-detail-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 1rem; }
+.event-detail-title h1 { min-width: 0; }
+.event-detail-title > .event-management { display: contents; }
+.event-detail-title .event-menu { grid-column: 2; grid-row: 1; }
+.event-detail-title .event-notice { grid-column: 1 / -1; }
+.event-detail-back { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; margin-block: 0.75rem; }
 .event-management { min-width: 0; }
 .event-delete-trigger { color: var(--error-ink); }
 .event-delete-trigger:hover:not(:disabled) { border-color: var(--error-ink); }
@@ -653,7 +649,6 @@ main {
 @media (max-width: 36rem) {
   .event-detail-facts { grid-template-columns: minmax(0, 1fr); }
   .event-detail-facts > div:first-child { grid-column: auto; }
-  .event-detail-actions { align-items: flex-start; flex-direction: column; }
   .event-editor > h2 { margin-block-end: 1.5rem; }
 }
 
@@ -844,10 +839,10 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
   .auth-page h1 { margin-block-end: 1.5rem; }
 }
 
-/* Shared account disclosure; logout state stays mounted across dismissal. */
-.account-menu { position: relative; flex: none; margin-inline-start: auto; }
-.account-menu-trigger { display: grid; place-items: center; width: 2.75rem; padding: 0; }
-.account-menu-panel {
+/* Shared account and event disclosure styling. */
+.account-menu, .event-menu { position: relative; flex: none; margin-inline-start: auto; }
+.account-menu-trigger, .event-menu-trigger { display: grid; place-items: center; width: 2.75rem; padding: 0; }
+.account-menu-panel, .event-menu-panel {
   position: absolute;
   inset-block-start: calc(100% + 0.5rem);
   inset-inline-end: 0;
@@ -858,7 +853,7 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
   border-radius: 6px;
   background: var(--surface);
 }
-.account-menu-panel > a, .account-menu-panel button {
+.account-menu-panel > a, .account-menu-panel button, .event-menu-panel > a, .event-menu-panel button {
   display: flex;
   align-items: center;
   width: 100%;
@@ -869,7 +864,7 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
   border: 0;
   border-radius: 4px;
 }
-.account-menu-panel > a:hover, .account-menu-panel button:hover:not(:disabled) { background: var(--paper); }
+.account-menu-panel > a:hover, .account-menu-panel button:hover:not(:disabled), .event-menu-panel > a:hover, .event-menu-panel button:hover:not(:disabled) { background: var(--paper); }
 .account-menu-panel > a[aria-current='page'] { font-weight: 600; text-decoration: underline; }
 .account-menu-panel :is([role='alert'], [role='status']) { display: block; margin: 0.5rem 0.75rem; }
 .band-index > .create-band-action {
@@ -933,3 +928,5 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
 @media (prefers-reduced-motion: reduce) {
   .navigation-drawer { animation: none; }
 }
+
+.event-menu-panel .event-delete-trigger { color: var(--error-ink); }
