@@ -1,6 +1,6 @@
 # Simplify event details and management controls
 
-> **Status:** In Progress — implementation, verification, and independent review passed; preparing Draft PR
+> **Status:** For Review — [Draft PR #60](https://github.com/CaelanRT/bandos/pull/60); implementation, verification, and independent review passed
 > **Dependencies:** [Phase 8 review](../phase-8/04-review-forms-and-membership.md) passed, including the reviewed Phase 7 menu conventions.
 
 ## Objective
