@@ -40,15 +40,13 @@ jobs:
         run: npm run lint
 
       - name: Build frontend
+        env:
+          VITE_API_ORIGIN: /
         run: npm run build
 
   backend:
     name: Backend Tests
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - name: Checkout repository
@@ -59,11 +57,24 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
+        working-directory: frontend
         run: npm ci
 
-      - name: Run backend configuration tests
-        run: node --test test/runtime-config.test.js test/frontend.integration.test.js
+      - name: Build frontend for integration tests
+        working-directory: frontend
+        env:
+          VITE_API_ORIGIN: /
+        run: npm run build
 
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: backend
+        run: node --test test/runtime-config.test.js test/frontend.integration.test.js
