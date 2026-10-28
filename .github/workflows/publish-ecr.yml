@@ -2,9 +2,6 @@
 name: Publish BandOS to ECR
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
