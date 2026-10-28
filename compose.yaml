@@ -62,10 +62,39 @@ services:
     deploy:
       replicas: 1
     logging: *logging
+  caddy:
+    image: caddy:2.11.7
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      public: {}
+      edge:
+        ipv4_address: 172.19.0.10
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *logging
 networks:
   database:
     internal: true
+
   edge:
     internal: true
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+          gateway: 172.19.0.1
+
+  public:
+    driver: bridge
+
 volumes:
   database:
+  caddy_data:
+  caddy_config:
