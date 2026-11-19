@@ -1,6 +1,6 @@
 # BE-V2-02 — Enforce bounded sessions, verification access and browser Origin
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #73](https://github.com/CaelanRT/bandos/pull/73))
 > **Dependencies:** [01](01-relational-storage.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 6–7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 9
@@ -33,3 +33,12 @@ Use a deterministic clock to test independent deadlines, boundary renewal, passi
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation verification — 19 November 2026
+
+- `node --test test/bounded-sessions.integration.test.js test/relational-storage.integration.test.js`: 21 tests passed on isolated disposable PostgreSQL databases. The session suite was rerun after final changes: 8 tests passed.
+- `node --test test/runtime-config.test.js test/runtime-security.integration.test.js test/frontend.integration.test.js`: 9 tests passed, including production cookies, Origin/CORS, trusted/untrusted database TLS and frontend serving.
+- `git diff --cached --check`: passed. No npm test/lint/build scripts are defined.
+- Independent `review-ticket` review: PASS, no remaining findings.
+- Existing band/event smoke scripts were attempted unchanged in separate disposable API processes. Band setup stops at the required verification gate after registration; event setup generates a username exceeding the existing 50-character maximum. Neither legacy script passed. Verified band CRUD is covered by the session integration suite.
+- Verification delivery, confirmation and registration-session promotion remain assigned to ticket 05.
