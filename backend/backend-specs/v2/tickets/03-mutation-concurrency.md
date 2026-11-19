@@ -1,6 +1,6 @@
 # BE-V2-03 — Add transactional versions and safe idempotent mutations
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #76](https://github.com/CaelanRT/bandos/pull/76))
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–4, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3

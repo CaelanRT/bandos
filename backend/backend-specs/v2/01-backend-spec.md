@@ -1,6 +1,6 @@
 # bandOS v2 — Backend implementation specification
 
-Status: Specification review complete; aligned with the approved shared contract. Backend tickets BE-V2-01 and BE-V2-02 are completed; BE-V2-03–18 have not started.
+Status: Specification review complete; aligned with the approved shared contract. Backend tickets BE-V2-01 and BE-V2-02 are completed; BE-V2-03 is For Review; BE-V2-04–18 have not started.
 Updated: 19 November 2026.
 
 ## Implementation status
@@ -12,7 +12,7 @@ Updated after confirming the implementation PRs merged into `main` on 19 Novembe
 | [BE-V2-01](tickets/01-relational-storage.md) — Completed | Fresh v2 relational schema and integrity constraints. | [Merged PR #70](https://github.com/CaelanRT/bandos/pull/70); completion recorded in [PR #72](https://github.com/CaelanRT/bandos/pull/72). |
 | [BE-V2-02](tickets/02-bounded-sessions.md) — Completed | Current-account/generation checks; 24-hour idle and seven-day absolute deadlines; qualifying activity; full/restricted user/session envelopes; browser Origin checks; protected-write account locks and commit-boundary rechecks. | [Merged PR #73](https://github.com/CaelanRT/bandos/pull/73). |
 
-[BE-V2-03](tickets/03-mutation-concurrency.md) is next; tickets 03–18 remain unstarted. See the [ticket sequence](tickets/00-ticket-sequence.md). The requirements below describe the complete target, not an assertion that all v2 endpoints are available. Registration verification delivery and session promotion remain assigned to ticket 05; the frontend v2 specification remains unimplemented.
+[BE-V2-03](tickets/03-mutation-concurrency.md) is For Review in [Draft PR #76](https://github.com/CaelanRT/bandos/pull/76), with the shared transaction/version/idempotency helpers and 41 passing tests. Endpoint integration remains assigned to later domain tickets. Tickets 04–18 remain unstarted; see the [ticket sequence](tickets/00-ticket-sequence.md). The requirements below describe the complete target, not an assertion that all v2 endpoints are available. Registration verification delivery and session promotion remain assigned to ticket 05; the frontend v2 specification remains unimplemented.
 
 Verification recorded for BE-V2-02 includes 21 passing session/storage tests and nine passing configuration, runtime-security and frontend-serving tests, followed by an independent review with no remaining findings. Legacy smoke scripts were attempted but did not pass: band setup encountered the required verification gate; event setup generated a username over the existing maximum. See the ticket for details. This documentation update does not claim a new runtime test run.
 
