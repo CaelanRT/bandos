@@ -41,4 +41,11 @@ const validateLogin = validate(loginSchema);
 const validateResend = validate(z.strictObject({ email: z.string().trim().email().max(254).toLowerCase() }));
 // Missing/empty tokens intentionally reach the same generic token failure path.
 const validateConfirm = validate(z.strictObject({ token: z.string().max(512).optional().default('') }));
-module.exports = { validateRegister, validateLogin, validateResend, validateConfirm, newPasswordSchema };
+const validateReset = validate(z.strictObject({
+  token: z.string().max(512).optional().default(''), newPassword: newPasswordSchema,
+}));
+const validatePasswordChange = validate(z.strictObject({
+  expectedVersion: require('./validate-mutation').versionSchema,
+  currentPassword: z.string().min(1), newPassword: newPasswordSchema,
+}));
+module.exports = { validateRegister, validateLogin, validateResend, validateConfirm, validateReset, validatePasswordChange, newPasswordSchema };
