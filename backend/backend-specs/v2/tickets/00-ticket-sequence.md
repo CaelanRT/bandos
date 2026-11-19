@@ -1,10 +1,10 @@
 # Backend v2 ticket sequence
 
-> **Status:** BE-V2-01 Completed ([implementation PR #70](https://github.com/CaelanRT/bandos/pull/70), [completion PR #72](https://github.com/CaelanRT/bandos/pull/72)); BE-V2-02 Completed ([implementation PR #73](https://github.com/CaelanRT/bandos/pull/73)); BE-V2-03 For Review ([Draft PR #76](https://github.com/CaelanRT/bandos/pull/76)); remaining 15 tickets not started.
+> **Status:** BE-V2-01 Completed ([implementation PR #70](https://github.com/CaelanRT/bandos/pull/70), [completion PR #72](https://github.com/CaelanRT/bandos/pull/72)); BE-V2-02 Completed ([implementation PR #73](https://github.com/CaelanRT/bandos/pull/73)); BE-V2-03 Completed ([implementation PR #76](https://github.com/CaelanRT/bandos/pull/76)); remaining 15 tickets not started.
 > **Created:** 19 November 2026
 > **Authority:** [Global product specification](../../../../artifacts/feature-planning/v2/v2-spec.md), [shared contract](../00-shared-contract.md), [backend implementation specification](../01-backend-spec.md)
 
-Implement tickets in numeric order. Dependencies below identify actual prerequisites; the order also keeps shared security/delivery foundations ahead of their domain consumers. A prerequisite's dependencies are transitive. Each implementation includes its own meaningful tests; ticket 18 verifies integrated behavior and records release-readiness evidence. This is a repository backlog, not a set of GitHub issues. Tickets 01–02 have merged with verification recorded in their ticket documents; ticket 03 is For Review in Draft PR #76. Tickets 04–18 remain planned; BE-V2-04 follows after 03 merges.
+Implement tickets in numeric order. Dependencies below identify actual prerequisites; the order also keeps shared security/delivery foundations ahead of their domain consumers. A prerequisite's dependencies are transitive. Each implementation includes its own meaningful tests; ticket 18 verifies integrated behavior and records release-readiness evidence. This is a repository backlog, not a set of GitHub issues. Tickets 01–03 have merged with verification recorded in their ticket documents. Tickets 04–18 remain planned; BE-V2-04 is next.
 
 | Ticket and outcome | Blocked by |
 | --- | --- |
