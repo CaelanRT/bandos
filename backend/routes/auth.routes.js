@@ -5,6 +5,8 @@ const { validateRegister, validateLogin, validateResend, validateConfirm } = req
 const { forgotPassword, resetPassword } = require('../controllers/password.controller');
 const { validateReset } = require('../middleware/validate-auth');
 
+const { confirmEmailChange } = require('../controllers/email-change.controller');
+
 const router = express.Router();
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -36,5 +38,6 @@ router.post('/verification/resend', validateResend, resendVerification);
 router.post('/verification/confirm', validateConfirm, confirmVerification);
 router.post('/password/forgot', validateResend, forgotPassword);
 router.post('/password/reset', validateReset, resetPassword);
+router.post('/email-change/confirm', validateConfirm, confirmEmailChange);
 
 module.exports = router;
