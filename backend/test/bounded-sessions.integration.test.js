@@ -126,7 +126,7 @@ test('bounded PostgreSQL sessions, access, Origin and commit checks', async (t) 
       const rejected = await request('/bands', { method: 'POST', cookie: s.cookie, body: {} });
       assert.equal(rejected.status, 400);
       assert.notEqual((await stored(s)).sess.lastActivityAt, new Date(time).toISOString());
-      const accepted = await request('/users/me', { method: 'PATCH', cookie: s.cookie, body: { firstName: 'Updated' } });
+      const accepted = await request('/users/me', { method: 'PATCH', cookie: s.cookie, headers: { 'Idempotency-Key': randomUUID() }, body: { expectedVersion: user.version, firstName: 'Updated' } });
       assert.equal(accepted.status, 200);
       assert.equal((await stored(s)).sess.lastActivityAt, new Date(time).toISOString());
       const band = await request('/bands', { method: 'POST', cookie: s.cookie, body: { name: 'Session smoke' } });

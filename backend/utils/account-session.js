@@ -98,4 +98,14 @@ async function withSessionMutation(req, work) {
   }
 }
 
-module.exports = { IDLE_MS, ABSOLUTE_MS, userColumns, loadAccount, checkSession, sessionData, boundCookie, startSession, publicUser, withSessionMutation };
+async function cleanupSessions(req, res, userId) {
+  // Generation is authoritative. Store/cookie cleanup cannot reverse a committed change.
+  try { await db.query("DELETE FROM session WHERE sess->>'userId'=$1", [String(userId)]); } catch {}
+  if (req.session?.userId === userId) {
+    try { await new Promise(resolve => req.session.destroy(() => resolve())); } catch {}
+    req.session = null;
+    res.clearCookie('bandos.sid');
+  }
+}
+
+module.exports = { cleanupSessions, IDLE_MS, ABSOLUTE_MS, userColumns, loadAccount, checkSession, sessionData, boundCookie, startSession, publicUser, withSessionMutation };

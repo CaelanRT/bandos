@@ -6,7 +6,7 @@ const { bcryptRounds } = require('../config').getConfig();
 const { accountIssuance, issueToken, lockToken, lockRate, rateWait, recordAttempt, digest } = require('../utils/account-tokens');
 const { encrypt } = require('../utils/notification-mail');
 const { enqueueNotification } = require('../utils/notification-outbox');
-const { checkSession } = require('../utils/account-session');
+const { checkSession, cleanupSessions } = require('../utils/account-session');
 const { withMutation, checkVersion } = require('../utils/mutation');
 
 const clock = req => (req.app.locals.sessionClock || Date.now)();
@@ -49,16 +49,6 @@ async function updatePassword(client, req, user, hash) {
     recipientIdentity: user.email, recipientUserId: user.user_id, securityPurpose: 'password_changed',
     securityAddress: user.email, payload: { subject: 'Your bandOS password changed',
       text: 'Your password was updated. Please log in again. If this was not you, reset your password.', path: '/login' } });
-}
-
-async function cleanupSessions(req, res, userId) {
-  // Generation is authoritative. Store/cookie cleanup cannot reverse a committed change.
-  try { await db.query("DELETE FROM session WHERE sess->>'userId'=$1", [String(userId)]); } catch {}
-  if (req.session?.userId === userId) {
-    try { await new Promise(resolve => req.session.destroy(() => resolve())); } catch {}
-    req.session = null;
-    res.clearCookie('bandos.sid');
-  }
 }
 
 async function resetPassword(req, res) {

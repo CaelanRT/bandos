@@ -1,6 +1,6 @@
 # BE-V2-07 — Validate profile edits and stage verified email-address changes
 
-> **Status:** Not started
+> **Status:** For Review — [Draft PR #84](https://github.com/CaelanRT/bandos/pull/84)
 > **Dependencies:** [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [05](05-registration-verification.md), [06](06-password-recovery.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 6–7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2, 9–10
@@ -32,3 +32,35 @@ Test profile validation, account versions, unchanged active login/delivery durin
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+
+## Implementation and verification
+
+- Profile PATCH now validates a nonempty strict subset using established field
+  bounds, account versions, semantic no-ops and idempotent replay.
+- Email-change initiation/resend stage normalized pending addresses and use the
+  existing transactional token/outbox helpers and shared issuance limits.
+  Confirmation rechecks uniqueness, clears pending state, revokes reset/change
+  credentials and all sessions, and queues security notices to both addresses.
+- Runtime behavior and verification command:
+  [account-tokens.md](../../../db/account-tokens.md#profile-and-verified-email-changes-be-v2-07).
+- `TEST_PG_ADMIN_URL=postgres://bandos_test:disposable@127.0.0.1:55439/postgres
+  node --test test/profile-email-change.integration.test.js
+  test/password-recovery.integration.test.js
+  test/registration-verification.integration.test.js
+  test/bounded-sessions.integration.test.js
+  test/mutation-concurrency.integration.test.js
+  test/notification-delivery.integration.test.js
+  test/relational-storage.integration.test.js test/mutation-validation.test.js
+  test/notification-mail.test.js test/runtime-config.test.js
+  test/frontend.integration.test.js`: **77 passed** using isolated databases,
+  deterministic account clocks and fake mail.
+- `node --test test/runtime-security.integration.test.js`: **3 passed** using
+  a disposable TLS database and fake registration mail.
+- Changed JavaScript syntax checks and `git diff --check` passed. No backend npm
+  test/lint/build/typecheck scripts are defined.
+- Independent `review-ticket` review: **PASS** on all six acceptance criteria,
+  with no blocking findings. Reviewer independently reran 25 account/session
+  tests successfully. Its non-blocking opt-out fixture finding was corrected;
+  the profile/email-change suite then passed **8/8** with notifications disabled.
+- Final independent review confirmed **PASS**, with no remaining findings.

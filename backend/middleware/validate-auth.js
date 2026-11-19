@@ -48,4 +48,17 @@ const validatePasswordChange = validate(z.strictObject({
   expectedVersion: require('./validate-mutation').versionSchema,
   currentPassword: z.string().min(1), newPassword: newPasswordSchema,
 }));
-module.exports = { validateRegister, validateLogin, validateResend, validateConfirm, validateReset, validatePasswordChange, newPasswordSchema };
+const { validateBody } = require('./validate-mutation');
+const validateProfile = validateBody(z.strictObject({
+  expectedVersion: require('./validate-mutation').versionSchema,
+  username: registerSchema.shape.username.optional(),
+  firstName: registerSchema.shape.firstName.optional(),
+  lastName: registerSchema.shape.lastName.optional(),
+}).refine(body => ['username', 'firstName', 'lastName'].some(field => body[field] !== undefined),
+  'At least one profile field is required'));
+const validateEmailChange = validateBody(z.strictObject({
+  expectedVersion: require('./validate-mutation').versionSchema,
+  currentPassword: z.string().min(1), newEmail: registerSchema.shape.email,
+}));
+const validateEmailResend = validateBody(z.strictObject({}));
+module.exports = { validateProfile, validateEmailChange, validateEmailResend, validateRegister, validateLogin, validateResend, validateConfirm, validateReset, validatePasswordChange, newPasswordSchema };

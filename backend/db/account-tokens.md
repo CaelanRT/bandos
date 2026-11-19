@@ -30,7 +30,7 @@ outbox enqueueing for registration, recovery and pending-email tickets. Domain
 rows contain SHA-256 lookup digests of 32 random bytes encoded as base64url;
 raw tokens exist only in encrypted temporary mail payloads. Each caller must
 hold the account lock and commit accounting, token changes and effects together.
-Password recovery is documented below; email-change endpoints remain assigned to ticket 07.
+Password recovery and verified email changes are documented below.
 
 Issuance accounting is shared across purposes and includes initial requests,
 resends and unknown addresses: 60-second normalized-address cooldown, five per
@@ -82,4 +82,46 @@ error. A caller signed into another account retains that unrelated session.
 Fresh login is required after success. An unverified account stays unverified.
 
 Run `node --test test/password-recovery.integration.test.js` with the disposable
-`TEST_PG_ADMIN_URL` above. Email-change endpoints remain assigned to ticket 07.
+`TEST_PG_ADMIN_URL` above.
+
+
+## Profile and verified email changes (BE-V2-07)
+
+These authenticated writes require a full session and UUID `Idempotency-Key`.
+Replay checks precede version validation and create no new account/mail effects.
+
+- `PATCH /users/me`, `{expectedVersion,username?,firstName?,lastName?}`:
+  nonempty strict subset with registration field bounds. Names are trimmed;
+  email, password and unknown keys are rejected. Returns `200 {data:{user}}`
+  with snake_case user fields. Semantic changes increment account version;
+  unchanged saves do not. Stale writes return `409 STALE_VERSION`.
+- `POST /users/me/email-change`, `{expectedVersion,currentPassword,newEmail}`:
+  returns `202 {data:{user}}`. Checks password and address uniqueness under the
+  account lock; wrong password returns the field-level
+  `403 CURRENT_PASSWORD_INCORRECT` and preserves the session. Stages the trimmed,
+  lowercase pending address, increments version and queues a 24-hour verification
+  link there plus a security notice to the old address. The active email still
+  controls login and ordinary mail. Saving the existing active/pending address
+  is a no-op; use resend for another link. Replacement revokes the former token.
+- `POST /users/me/email-change/resend`, `{}`: `202 {data:{message}}`.
+  Requires a pending address; accepts no caller-selected address. Shares the
+  address/IP issuance limits with verification and recovery. Does not change
+  account version; a rejected issuance preserves the existing link.
+- `POST /auth/email-change/confirm`, `{token}`: `200 {data:{message}}`.
+  Public purpose-bound, single-use confirmation rechecks uniqueness and swaps
+  the active address atomically. Clears pending state, increments account version
+  and session generation, invalidates unused reset/change credentials and queues
+  security notices to old/new addresses. `409 ACCOUNT_CONFLICT` preserves the old
+  active address. Invalid/expired/reused/wrong-purpose tokens share
+  `400 TOKEN_INVALID_OR_EXPIRED`; ten failed submissions per fifteen minutes/IP
+  trigger `429 TOO_MANY_ATTEMPTS` with `Retry-After`.
+
+Confirmation revokes every session, including the confirming session, and clears
+its cookie when it belongs to the changed account. It grants no session; fresh
+login requires the new active email. Security notices bypass all opt-outs.
+Stored-session cleanup is best effort after commit; generation remains authoritative.
+
+Run `node --test test/profile-email-change.integration.test.js` with the disposable
+`TEST_PG_ADMIN_URL` above. This covers profile validation, retry/no-op/stale
+behavior, pending login/delivery, replacement/resend and shared limits, concurrent
+address claims/token consumption, rollback, revocation, and security delivery.
