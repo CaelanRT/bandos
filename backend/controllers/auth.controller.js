@@ -3,15 +3,7 @@ const db = require('../db');
 const HttpError = require('../utils/http-error');
 const { bcryptRounds } = require('../config').getConfig();
 
-const userColumns = `
-  user_id, username, first_name, last_name, email, plan, is_active, created_at
-`;
-
-function regenerateSession(req) {
-  return new Promise((resolve, reject) => req.session.regenerate((error) => (
-    error ? reject(error) : resolve()
-  )));
-}
+const { userColumns, startSession, publicUser, sessionData } = require('../utils/account-session');
 
 function destroySession(req) {
   return new Promise((resolve, reject) => req.session.destroy((error) => (
@@ -25,20 +17,19 @@ async function register(req, res) {
   const result = await db.query(
     `INSERT INTO users (username, first_name, last_name, email, password_hash)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING ${userColumns}`,
+     RETURNING ${userColumns}, session_generation`,
     [username, firstName, lastName, email, passwordHash],
   );
 
-  await regenerateSession(req);
-  req.session.userId = result.rows[0].user_id;
+  await startSession(req, result.rows[0], true);
 
-  return res.status(201).json({ message: `user: ${result.rows[0].user_id} logged in` });
+  return res.status(201).json({ data: { user: publicUser(result.rows[0]), session: sessionData(req) } });
 }
 
 async function login(req, res) {
   const { email, password } = req.body;
   const result = await db.query(
-    `SELECT ${userColumns}, password_hash
+    `SELECT ${userColumns}, session_generation, password_hash
      FROM users
      WHERE LOWER(email) = LOWER($1)
      LIMIT 1`,
@@ -51,10 +42,9 @@ async function login(req, res) {
     throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
   }
 
-  await regenerateSession(req);
-  req.session.userId = user.user_id;
+  await startSession(req, user);
 
-  return res.status(200).json({ message: `user: ${user.user_id} logged in` });
+  return res.status(200).json({ data: { user: publicUser(user), session: sessionData(req) } });
 }
 
 async function logout(req, res) {
