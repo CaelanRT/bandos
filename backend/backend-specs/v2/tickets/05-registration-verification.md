@@ -1,6 +1,6 @@
 # BE-V2-05 — Verify registration and safely continue the original session
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #80](https://github.com/CaelanRT/bandos/pull/80))
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [04](04-notification-delivery.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4–7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 9–10
