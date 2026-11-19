@@ -18,6 +18,8 @@ const authRouter = require('./routes/auth.routes');
 const userRouter = require('./routes/user.routes');
 const bandRouter = require('./routes/band.routes');
 const { notFound, errorHandler } = require('./middleware/errors');
+const { createDispatcher } = require('./utils/notification-outbox');
+const { createResendAdapter } = require('./utils/notification-mail');
 
 const app = express();
 const PORT = config.port;
@@ -102,6 +104,13 @@ const server = app.listen(PORT, () => {
   console.log(`Bandos API listening on port ${PORT}`);
 });
 
-installShutdown(server, db.close, config.shutdownTimeoutMs);
+const dispatcher = config.mail && createDispatcher({ pool, origin: config.clientOrigin,
+  from: config.mail.from, encryptionKey: config.mail.encryptionKey,
+  adapter: createResendAdapter(config.mail.apiKey) });
+if (dispatcher) dispatcher.start();
+installShutdown(server, async () => {
+  if (dispatcher) await dispatcher.stop();
+  await db.close();
+}, config.shutdownTimeoutMs);
 
 module.exports = { app, server };

@@ -1,6 +1,6 @@
 # BE-V2-04 — Deliver preference-controlled email through a recoverable outbox
 
-> **Status:** Not started
+> **Status:** In progress
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3, 5–6
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 7, 9
@@ -33,3 +33,30 @@ Run focused table-driven preference/category cases and fake-provider tests for s
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation evidence
+
+- Added verified-session versioned GET/PUT preference endpoints with strict boolean
+  payloads, all-on defaults, stale rejection and no-op preservation.
+- Added transactional deduplicated enqueueing and an in-process PostgreSQL leased
+  dispatcher, frozen provider requests/keys, bounded retries and terminal unknown
+  delivery handling. Resend failures are independent of committed domain work.
+- Added escaped trusted-origin templates and AES-256-GCM protection for raw tokens
+  and frozen security requests, obsolete-token suppression and terminal/expiry
+  clearing. Runtime configuration and integration guidance are in
+  [db/notifications.md](../../../db/notifications.md).
+- `TEST_PG_ADMIN_URL=... node --test test/notification-delivery.integration.test.js test/notification-mail.test.js test/mutation-concurrency.integration.test.js test/mutation-validation.test.js test/bounded-sessions.integration.test.js test/relational-storage.integration.test.js test/runtime-config.test.js test/frontend.integration.test.js`:
+  51 tests passed using disposable PostgreSQL databases and fake delivery.
+- Focused notification suite rerun after final security-token handling changes:
+  13 tests passed.
+- `node --test test/runtime-security.integration.test.js`: three tests passed
+  against a separate disposable TLS-enabled database, including production
+  authentication/cookies, CORS, proxy handling and certificate validation.
+- `git diff --check` and syntax checks on changed/new JavaScript passed. No npm
+  test/lint/build scripts exist. Later tickets own domain/account mail triggers.
+- `node --test test/readiness-shutdown.integration.test.js`: four smoke checks
+  passed against the dedicated disposable readiness container with dispatcher
+  polling enabled and an empty outbox, including outage/recovery and bounded
+  graceful/forced shutdown.
+- Independent `review-ticket` review: PASS, no findings. The reviewer separately
+  ran the 13 notification tests and `git diff --check` successfully.
