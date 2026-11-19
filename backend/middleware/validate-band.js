@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const HttpError = require('../utils/http-error');
+const { idSchema, versionSchema, validateBody: validateMutationBody } = require('./validate-mutation');
 
 const bandNameSchema = z.strictObject({
   name: z.string().trim().min(1).max(50),
@@ -60,11 +61,31 @@ function validateBandId(req, res, next) {
   return next();
 }
 
-const validateCreateBand = validateBody(bandNameSchema);
-const validateUpdateBand = validateBody(bandNameSchema);
+const text = z.string().trim().min(1).max(50);
+const creationSlot = z.strictObject({
+  instrumentId: idSchema.optional(), instrumentName: text.optional(), label: text,
+}).refine(slot => (slot.instrumentId !== undefined) !== (slot.instrumentName !== undefined), {
+  message: 'Provide either instrumentId or instrumentName', path: ['instrumentId'],
+});
+const uniqueIds = z.array(idSchema).refine(ids => new Set(ids).size === ids.length, 'Duplicate instrument IDs');
+const validateCreateBand = validateMutationBody(z.strictObject({
+  name: text, instrumentation: z.array(creationSlot).min(1).max(50), leaderInstrumentIds: uniqueIds.optional(),
+}));
+const validateUpdateBand = validateMutationBody(bandNameSchema.extend({ expectedVersion: versionSchema }));
+const validateAddInstrument = validateMutationBody(z.strictObject({ name: text, expectedVersion: versionSchema }));
+const validateInstrumentation = validateMutationBody(z.strictObject({
+  expectedVersion: versionSchema,
+  slots: z.array(z.strictObject({ slotId: idSchema.optional(), instrumentId: idSchema, label: text })).min(1).max(50)
+    .refine(slots => {
+      const ids = slots.flatMap(slot => slot.slotId === undefined ? [] : [slot.slotId]);
+      return new Set(ids).size === ids.length;
+    }, 'Duplicate slot IDs'),
+}));
 const validateAddBandMember = validateBody(addMemberSchema);
 
 module.exports = {
+  validateAddInstrument,
+  validateInstrumentation,
   validateCreateBand,
   validateUpdateBand,
   validateAddBandMember,
