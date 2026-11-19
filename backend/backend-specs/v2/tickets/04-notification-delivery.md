@@ -1,6 +1,6 @@
 # BE-V2-04 — Deliver preference-controlled email through a recoverable outbox
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #78](https://github.com/CaelanRT/bandos/pull/78))
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3, 5–6
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 7, 9
