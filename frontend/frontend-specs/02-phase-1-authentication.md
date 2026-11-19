@@ -4,7 +4,7 @@
 > **Phase outcome:** Users can register, log in, restore sessions, follow protected links, and log out.
 > **Discovery source:** Phase 1 Grill Me session, 2026-09-03
 > **Governing plan:** [`00-frontend-implementation-plan.md`](00-frontend-implementation-plan.md)
-> **Backend contract:** [`../../backend/backend-specs/00-api-contract.md`](../../backend/backend-specs/00-api-contract.md)
+> **Backend contract:** [`../../backend/backend-specs/v1/00-api-contract.md`](../../backend/backend-specs/v1/00-api-contract.md)
 
 ## 1. Goal
 

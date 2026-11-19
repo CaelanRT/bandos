@@ -2,7 +2,7 @@
 
 > **Status:** Approved implementation baseline; feature-level discovery remains required
 > **Frontend:** React 19, Vite, vanilla JavaScript and JSX
-> **Backend source of truth:** [`../../backend/backend-specs/00-api-contract.md`](../../backend/backend-specs/00-api-contract.md)
+> **Backend source of truth:** [`../../backend/backend-specs/v1/00-api-contract.md`](../../backend/backend-specs/v1/00-api-contract.md)
 > **Design direction:** [`../../artifacts/design-language.md`](../../artifacts/design-language.md)
 > **Last reviewed:** 2026-09-02
 

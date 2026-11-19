@@ -5,7 +5,7 @@
 > **Verification:** Lint, 57 Vitest tests, and the production build pass. Browser checks confirmed the root, unknown-route handling, and mobile layout.
 > **Discovery source:** Phase 0 Grill Me session, 2026-09-02
 > **Governing plan:** [`00-frontend-implementation-plan.md`](00-frontend-implementation-plan.md)
-> **Backend contract:** [`../../backend/backend-specs/00-api-contract.md`](../../backend/backend-specs/00-api-contract.md)
+> **Backend contract:** [`../../backend/backend-specs/v1/00-api-contract.md`](../../backend/backend-specs/v1/00-api-contract.md)
 
 ## 1. Goal
 

@@ -4,7 +4,7 @@
 > **Phase outcome:** Users navigate their bands, create a band, inspect members, and perform supported leader-only management.
 > **Discovery source:** Phase 2 Grill Me session, decisions finalized 2026-09-09
 > **Governing plan:** [Frontend implementation plan](00-frontend-implementation-plan.md)
-> **Backend authority:** [API contract](../../backend/backend-specs/00-api-contract.md), checked against band routes, validation, access middleware, and controller for this specification.
+> **Backend authority:** [API contract](../../backend/backend-specs/v1/00-api-contract.md), checked against band routes, validation, access middleware, and controller for this specification.
 > **Tickets:** [Phase 2 sequence](tickets/phase-2/00-ticket-sequence.md)
 
 ## 1. Goal and boundaries

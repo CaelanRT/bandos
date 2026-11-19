@@ -10,8 +10,8 @@ The agreed refinements can use the current frontend routes and API contract. No 
 
 | Feedback concern | Existing support | Decision |
 | --- | --- | --- |
-| Remove manual creation timezone | [API contract §9.1–9.2](../../backend/backend-specs/00-api-contract.md) accepts a required `timezone` alongside local date/time fields; the frontend already supplies it | Derive the value in the browser and keep the same payload. No endpoint, schema, or database change. |
-| Login validation/copy and silent expiration | [API contract §6.2](../../backend/backend-specs/00-api-contract.md) and the existing frontend session boundary support authentication and safe invalid-credential feedback | Change presentation and validation timing locally; retain destination restoration and private-state cleanup. |
+| Remove manual creation timezone | [API contract §9.1–9.2](../../backend/backend-specs/v1/00-api-contract.md) accepts a required `timezone` alongside local date/time fields; the frontend already supplies it | Derive the value in the browser and keep the same payload. No endpoint, schema, or database change. |
+| Login validation/copy and silent expiration | [API contract §6.2](../../backend/backend-specs/v1/00-api-contract.md) and the existing frontend session boundary support authentication and safe invalid-credential feedback | Change presentation and validation timing locally; retain destination restoration and private-state cleanup. |
 | Always-visible member addition | Existing username-based member addition and frontend permission/reconciliation flow | Change the form's visibility and layout, retaining the same authorized mutation and recovery. |
 | Drawer, account menu, active states, scrolling, row hover, event date/Back/cog | Existing routes, stored event fields, edit/delete operations, and permission rules | Recompose frontend controls without changing capabilities or stored data. |
 

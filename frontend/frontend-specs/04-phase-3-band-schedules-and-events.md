@@ -4,7 +4,7 @@
 > **Phase outcome:** Band members use upcoming and past schedules, and leaders manage the supported event lifecycle.
 > **Planning source:** Approved frontend implementation plan, reconciled with the implemented backend and finalized through a focused Grill Me session on 2026-09-15
 > **Governing plan:** [Frontend implementation plan](00-frontend-implementation-plan.md)
-> **Backend authority:** [API contract](../../backend/backend-specs/00-api-contract.md), checked against the event routes, validation, access middleware, schedule utility, controller, and schema for this specification.
+> **Backend authority:** [API contract](../../backend/backend-specs/v1/00-api-contract.md), checked against the event routes, validation, access middleware, schedule utility, controller, and schema for this specification.
 > **Current frontend baseline:** Phase 2 band workspace, authenticated request boundary, TanStack Query cache conventions, and shared unsaved-navigation behavior.
 
 ## 1. Goal and boundaries
@@ -286,8 +286,8 @@ The frontend should use the documented earlier-occurrence rule conservatively, a
 
 - Product, route, presentation, permission, form, and phase boundaries: [`00-frontend-implementation-plan.md`](00-frontend-implementation-plan.md), especially sections 2–7 and Phase 3.
 - Existing frontend integration and cache conventions: [`../src/app/routes.jsx`](../src/app/routes.jsx), [`../src/features/bands/BandViews.jsx`](../src/features/bands/BandViews.jsx), [`../src/features/bands/queries.js`](../src/features/bands/queries.js), [`../src/features/bands/api.js`](../src/features/bands/api.js), and [`03-phase-2-bands-and-membership.md`](03-phase-2-bands-and-membership.md).
-- Event endpoints, models, ordering, validation, errors, and frontend guidance: [`../../backend/backend-specs/00-api-contract.md`](../../backend/backend-specs/00-api-contract.md), sections 2.5, 3.5, 4, and 9–13.
-- Original event domain and persistence decisions: [`../../backend/backend-specs/03-event-management.md`](../../backend/backend-specs/03-event-management.md).
+- Event endpoints, models, ordering, validation, errors, and frontend guidance: [`../../backend/backend-specs/v1/00-api-contract.md`](../../backend/backend-specs/v1/00-api-contract.md), sections 2.5, 3.5, 4, and 9–13.
+- Original event domain and persistence decisions: [`../../backend/backend-specs/v1/03-event-management.md`](../../backend/backend-specs/v1/03-event-management.md).
 - Implemented route and authorization order: [`../../backend/routes/band.routes.js`](../../backend/routes/band.routes.js), [`../../backend/routes/event.routes.js`](../../backend/routes/event.routes.js), [`../../backend/middleware/band-access.js`](../../backend/middleware/band-access.js), and [`../../backend/middleware/event-access.js`](../../backend/middleware/event-access.js).
 - Implemented shapes, list ordering, lifecycle checks, and mutation behavior: [`../../backend/controllers/event.controller.js`](../../backend/controllers/event.controller.js) and [`../../backend/middleware/validate-event.js`](../../backend/middleware/validate-event.js).
 - Local-time and timezone resolution: [`../../backend/utils/event-schedule.js`](../../backend/utils/event-schedule.js).

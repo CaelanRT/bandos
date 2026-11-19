@@ -57,7 +57,7 @@ Provide a documented, validated runtime configuration contract for the backend, 
 ## Implementation Notes
 
 - Code: [app.js](../../../backend/app.js), [db/index.js](../../../backend/db/index.js), [auth.controller.js](../../../backend/controllers/auth.controller.js), [auth.routes.js](../../../backend/routes/auth.routes.js).
-- Contracts: [API transport/authentication](../../../backend/backend-specs/00-api-contract.md), [backend scaffold](../../../backend/backend-specs/01-backend-scaffold.md). The plan explicitly overrides stale scaffold assertions about app exports and the currently missing cost default.
+- Contracts: [API transport/authentication](../../../backend/backend-specs/v1/00-api-contract.md), [backend scaffold](../../../backend/backend-specs/v1/01-backend-scaffold.md). The plan explicitly overrides stale scaffold assertions about app exports and the currently missing cost default.
 - Choose CA setting names and explicit proxy configuration syntax during implementation and document them. A test topology can establish the contract; ticket 07 selects actual AWS hops. Never trust all callers or globally forge HTTPS.
 
 ## Definition of Done
