@@ -1,7 +1,7 @@
 # BE-V2-01 — Establish v2 relational storage and integrity
 
-> **Status:** For Review
-> **Draft PR:** https://github.com/CaelanRT/bandos/pull/70
+> **Status:** Completed
+> **Merged PR:** https://github.com/CaelanRT/bandos/pull/70
 > **Dependencies:** None.
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 2–3
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–10
@@ -36,9 +36,9 @@ Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementa
 
 ## Implementation verification — 19 November 2026
 
-- Draft PR: [#70](https://github.com/CaelanRT/bandos/pull/70).
+- Merged PR: [#70](https://github.com/CaelanRT/bandos/pull/70).
 - Initialized fresh isolated PostgreSQL 16 and 18 databases; no existing database reset.
 - Final command: `TEST_PG_ADMIN_URL=postgres://bandos_test:disposable@127.0.0.1:55439/postgres node --test test/relational-storage.integration.test.js test/runtime-config.test.js test/frontend.integration.test.js` — 19 tests passed.
 - `node --check test/relational-storage.integration.test.js` and diff whitespace checks passed.
 - Independent `review-ticket` review: PASS on all five criteria; inactive-band owner-membership finding corrected and independently re-reviewed.
-- Shared GitHub Project status could not be updated: available GitHub CLI token lacks `read:project`/project access. This repository ticket is For Review; it is not completed.
+- Shared GitHub Project status could not be updated: available GitHub CLI token lacks `read:project`/project access. This repository ticket is Completed after confirming PR #70 merged into `main` on 19 November 2026.
