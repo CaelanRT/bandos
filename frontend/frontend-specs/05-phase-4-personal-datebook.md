@@ -2,7 +2,7 @@
 
 > **Status:** Ready for implementation
 > **Planning source:** [Frontend implementation plan](00-frontend-implementation-plan.md), Phase 4, and the focused Grill Me session on 2026-09-26
-> **Backend authority:** [API contract](../../backend/backend-specs/00-api-contract.md), sections 8.2 and 9.3
+> **Backend authority:** [API contract](../../backend/backend-specs/v1/00-api-contract.md), sections 8.2 and 9.3
 > **Existing baseline:** Phase 3 event models, schedule resolution, band/event query keys, protected home route, and band navigation
 
 ## 1. Goal and boundaries

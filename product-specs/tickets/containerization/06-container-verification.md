@@ -63,7 +63,7 @@ Backend band/event smoke suites use different default ports, create seven users 
 ## Implementation Notes
 
 - Code: [band suite](../../../backend/test-scripts/band-smoke-test.sh), [event suite](../../../backend/test-scripts/event-smoke-test.sh), [band teardown](../../../backend/test-scripts/teardown-band-smoke-test.sh), [event teardown](../../../backend/test-scripts/teardown-event-smoke-test.sh).
-- Contracts: [API](../../../backend/backend-specs/00-api-contract.md) and [frontend foundations](../../../frontend/frontend-specs/01-phase-0-foundations.md). A local HTTP development override cannot prove Secure production authentication; use a trusted HTTPS test edge without globally forging HTTPS. Preserve teardown safeguards.
+- Contracts: [API](../../../backend/backend-specs/v1/00-api-contract.md) and [frontend foundations](../../../frontend/frontend-specs/01-phase-0-foundations.md). A local HTTP development override cannot prove Secure production authentication; use a trusted HTTPS test edge without globally forging HTTPS. Preserve teardown safeguards.
 
 ## Definition of Done
 

@@ -39,7 +39,7 @@ The implementation is the source of truth where older specifications differ.
 | Persistent files and dependencies | Backend controllers persist data through PostgreSQL; no upload store, file persistence, queue, Redis, or external API client was found in backend application code. | Only PostgreSQL needs an application-data volume in the initial topology; certificates may need separate persistence depending on TLS ownership. |
 | Verification | Frontend has test/lint/build scripts. Backend has band/event Bash smoke suites and guarded SQL teardown, but no npm test or lint script. No tracked Dockerfiles, Compose configuration, or CI workflows were found. | Add focused deployment verification, reusing existing suites rather than inventing a broad test platform. |
 
-Relevant specifications: [current API contract](../backend/backend-specs/00-api-contract.md), [backend scaffold](../backend/backend-specs/01-backend-scaffold.md), and [frontend foundations](../frontend/frontend-specs/01-phase-0-foundations.md).
+Relevant specifications: [current API contract](../backend/backend-specs/v1/00-api-contract.md), [backend scaffold](../backend/backend-specs/v1/01-backend-scaffold.md), and [frontend foundations](../frontend/frontend-specs/01-phase-0-foundations.md).
 
 Two scaffold statements do not match current code: `app.js` does not export an app with a direct-execution guard, and the bcrypt cost has no default. Containerization does not require changing the export structure; address configuration and lifecycle directly.
 

@@ -60,7 +60,7 @@ Create Event currently starts with an empty timezone, presents an input/datalist
 
 ## Implementation Notes
 
-Inspect `CreateEvent.jsx`, `eventForm.js`, `schedule.js`, and `EditEvent.jsx`. [Phase 3](../../04-phase-3-band-schedules-and-events.md) remains the behavioral baseline except for Create-only manual selection and nondefaulted timezone. [API contract §9.1–9.2](../../../../backend/backend-specs/00-api-contract.md) still requires local date/time plus UTC or a supported IANA-style zone. Device timezone while travelling is explicitly accepted; no location inference is needed. Keep creation pristine-baseline and hidden-field error handling separate from Edit behavior where necessary.
+Inspect `CreateEvent.jsx`, `eventForm.js`, `schedule.js`, and `EditEvent.jsx`. [Phase 3](../../04-phase-3-band-schedules-and-events.md) remains the behavioral baseline except for Create-only manual selection and nondefaulted timezone. [API contract §9.1–9.2](../../../../backend/backend-specs/v1/00-api-contract.md) still requires local date/time plus UTC or a supported IANA-style zone. Device timezone while travelling is explicitly accepted; no location inference is needed. Keep creation pristine-baseline and hidden-field error handling separate from Edit behavior where necessary.
 
 ## Definition of Done
 

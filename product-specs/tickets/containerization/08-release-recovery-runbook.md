@@ -56,7 +56,7 @@ An image digest is the release artifact; staging begins fresh and production nev
 
 ## Implementation Notes
 
-- Inputs: artifacts/results from 04–07; [schema.sql](../../../backend/db/schemas/schema.sql), [smoke suites](../../../backend/test-scripts/), [API contract](../../../backend/backend-specs/00-api-contract.md).
+- Inputs: artifacts/results from 04–07; [schema.sql](../../../backend/db/schemas/schema.sql), [smoke suites](../../../backend/test-scripts/), [API contract](../../../backend/backend-specs/v1/00-api-contract.md).
 - A staging-only milestone may proceed before production inputs, but do not mark the whole ticket complete until required production/separate-environment and recovery evidence exists. Restore onto isolated storage, never overwrite live production merely to test the runbook.
 
 ### Deployment Inputs to Resolve

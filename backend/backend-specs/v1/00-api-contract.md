@@ -1,15 +1,17 @@
 # Bandos Backend API Contract
 
-> **Status:** Master frontend integration reference for the backend implementation currently in this repository.  
+> **Status:** Historical v1 frontend integration reference, captured before v2 implementation.
 > **API base path:** `/api/v1`  
 > **Last verified:** 2026-08-30  
 > **Authority:** Runtime source code. Where an older feature specification disagrees with the implementation, this document describes the implementation and calls out the difference.
+
+> **V2 progress:** Relational storage and bounded sessions have since landed. See the [backend implementation status](../v2/01-backend-spec.md#implementation-status) for delivered slices; the remaining v2 contract is planned. Source links below point to current files and may differ from this historical snapshot.
 
 ## 1. Purpose and source of truth
 
 This document gives frontend developers and coding agents one place to understand every currently mounted HTTP endpoint, its access rules, inputs, response data, errors, and important lifecycle behavior. It describes the code that actually runs, not planned routes.
 
-The runtime entry point is [`app.js`](../app.js), which mounts the routers listed below. Request and response details come from the corresponding route, middleware, controller, scheduling utility, and database-schema files. Earlier design context remains in [`01-backend-scaffold.md`](01-backend-scaffold.md), [`02-band-management.md`](02-band-management.md), and [`03-event-management.md`](03-event-management.md).
+The runtime entry point is [`app.js`](../../app.js), which mounts the routers listed below. Request and response details come from the corresponding route, middleware, controller, scheduling utility, and database-schema files. Earlier design context remains in [`01-backend-scaffold.md`](01-backend-scaffold.md), [`02-band-management.md`](02-band-management.md), and [`03-event-management.md`](03-event-management.md).
 
 ## 2. Frontend integration essentials
 
@@ -21,7 +23,7 @@ The runtime entry point is [`app.js`](../app.js), which mounts the routers liste
 - The API enables CORS for exactly the origin configured by `CLIENT_ORIGIN` and allows credentials.
 - There is no pagination on any current collection endpoint.
 
-Source: [`app.js`](../app.js), lines 17–39 and 59–64.
+Source: [`app.js`](../../app.js), lines 17–39 and 59–64.
 
 ### 2.2 Cookie session authentication
 
@@ -47,7 +49,7 @@ Cookie properties are:
 
 There is no bearer token or token refresh endpoint. The frontend should treat `401 AUTHENTICATION_REQUIRED` as a signed-out/expired-session state.
 
-Source: [`app.js`](../app.js), lines 40–57; [`authenticate.js`](../middleware/authenticate.js); [`auth.controller.js`](../controllers/auth.controller.js), lines 9–19 and 31–62.
+Source: [`app.js`](../../app.js), lines 40–57; [`authenticate.js`](../../middleware/authenticate.js); [`auth.controller.js`](../../controllers/auth.controller.js), lines 9–19 and 31–62.
 
 ### 2.3 Success envelopes
 
@@ -69,7 +71,7 @@ Two implemented endpoints are exceptions: registration and login currently retur
 
 Do not depend on the message text to obtain the user ID. It is presentation text, not a stable structured user object. After registration or login, call `GET /users/me` to retrieve the current user.
 
-Source: [`auth.controller.js`](../controllers/auth.controller.js), lines 21–57.
+Source: [`auth.controller.js`](../../controllers/auth.controller.js), lines 21–57.
 
 ### 2.4 Error envelope
 
@@ -94,7 +96,7 @@ All handled failures use:
 
 The unmatched-route response is `404 NOT_FOUND` / `Route not found`. A malformed JSON body is also handled globally, but it is not translated to the standard validation contract. Express parser errors normally retain status `400`, receive the misleading code `INTERNAL_ERROR`, and expose the parser's message because only status `500` messages are masked.
 
-Source: [`errors.js`](../middleware/errors.js); validation middleware in [`validate-auth.js`](../middleware/validate-auth.js), [`validate-band.js`](../middleware/validate-band.js), and [`validate-event.js`](../middleware/validate-event.js).
+Source: [`errors.js`](../../middleware/errors.js); validation middleware in [`validate-auth.js`](../../middleware/validate-auth.js), [`validate-band.js`](../../middleware/validate-band.js), and [`validate-event.js`](../../middleware/validate-event.js).
 
 ### 2.5 Identifier, date, time, and timestamp formats
 
@@ -106,7 +108,7 @@ Source: [`errors.js`](../middleware/errors.js); validation middleware in [`valid
 | `timezone` | `UTC` or a runtime-supported IANA-style name containing `/`, e.g. `America/New_York`. Abbreviations such as `EST` are rejected. |
 | `createdAt`, `updatedAt` | PostgreSQL timestamps serialized by `pg`; event timestamps are explicitly converted to ISO 8601. Treat all timestamp fields as opaque ISO date-time strings. |
 
-Source: [`validate-band.js`](../middleware/validate-band.js), lines 12–16; [`validate-event.js`](../middleware/validate-event.js), lines 11–22 and 68–72; [`event-schedule.js`](../utils/event-schedule.js); [`event.controller.js`](../controllers/event.controller.js), lines 9–35.
+Source: [`validate-band.js`](../../middleware/validate-band.js), lines 12–16; [`validate-event.js`](../../middleware/validate-event.js), lines 11–22 and 68–72; [`event-schedule.js`](../../utils/event-schedule.js); [`event.controller.js`](../../controllers/event.controller.js), lines 9–35.
 
 ## 3. Shared data models
 
@@ -142,7 +144,7 @@ Password hashes are never returned.
 
 **Frontend warning:** the older scaffold spec proposed camelCase user fields and an `id` field. The implementation returns the snake_case shape above. Normalize this at the frontend API boundary if the UI uses camelCase.
 
-Source: [`user.controller.js`](../controllers/user.controller.js), lines 5–21 and 24–36; [`schema.sql`](../db/schemas/schema.sql), lines 7–20.
+Source: [`user.controller.js`](../../controllers/user.controller.js), lines 5–21 and 24–36; [`schema.sql`](../../db/schemas/schema.sql), lines 7–20.
 
 ### 3.2 Band member
 
@@ -158,7 +160,7 @@ Source: [`user.controller.js`](../controllers/user.controller.js), lines 5–21 
 
 `role` is `leader` or `member`. Member objects intentionally omit email, plan, active state, timestamps, and credentials.
 
-Source: [`band.controller.js`](../controllers/band.controller.js), lines 4–12; [`schema.sql`](../db/schemas/schema.sql), lines 1–4 and 38–51.
+Source: [`band.controller.js`](../../controllers/band.controller.js), lines 4–12; [`schema.sql`](../../db/schemas/schema.sql), lines 1–4 and 38–51.
 
 ### 3.3 Band summary
 
@@ -174,7 +176,7 @@ Source: [`band.controller.js`](../controllers/band.controller.js), lines 4–12;
 
 A summary does not include `members`. It is used only in the band list.
 
-Source: [`band.controller.js`](../controllers/band.controller.js), lines 25–33 and 105–126.
+Source: [`band.controller.js`](../../controllers/band.controller.js), lines 25–33 and 105–126.
 
 ### 3.4 Full band
 
@@ -199,7 +201,7 @@ Source: [`band.controller.js`](../controllers/band.controller.js), lines 25–33
 
 Only active users appear in `members`. The leader sorts first, followed by members ordered by case-insensitive username and then `userId`.
 
-Source: [`band.controller.js`](../controllers/band.controller.js), lines 14–23 and 35–55.
+Source: [`band.controller.js`](../../controllers/band.controller.js), lines 14–23 and 35–55.
 
 ### 3.5 Event
 
@@ -241,7 +243,7 @@ Source: [`band.controller.js`](../controllers/band.controller.js), lines 14–23
 
 Events are visible to the band's current members; there is no attendee/RSVP model.
 
-Source: [`event.controller.js`](../controllers/event.controller.js), lines 19–35; [`validate-event.js`](../middleware/validate-event.js), lines 11–39; [`schema.sql`](../db/schemas/schema.sql), lines 53–76.
+Source: [`event.controller.js`](../../controllers/event.controller.js), lines 19–35; [`validate-event.js`](../../middleware/validate-event.js), lines 11–39; [`schema.sql`](../../db/schemas/schema.sql), lines 53–76.
 
 ## 4. Complete route index
 
@@ -266,7 +268,7 @@ Source: [`event.controller.js`](../controllers/event.controller.js), lines 19–
 | PATCH | `/bands/:bandId/events/:eventId` | Band leader | `updateEvent` | `200`, event |
 | DELETE | `/bands/:bandId/events/:eventId` | Band leader | `deleteEvent` | `200`, soft deleted |
 
-Source: [`app.js`](../app.js), lines 59–64; all files in [`routes/`](../routes/).
+Source: [`app.js`](../../app.js), lines 59–64; all files in [`routes/`](../../routes/).
 
 ## 5. Health
 
@@ -295,11 +297,11 @@ Database failure — `503`:
 }
 ```
 
-Source: [`health.routes.js`](../routes/health.routes.js); [`health.controller.js`](../controllers/health.controller.js).
+Source: [`health.routes.js`](../../routes/health.routes.js); [`health.controller.js`](../../controllers/health.controller.js).
 
 ## 6. Authentication
 
-Source for routing, rate limits, and middleware order: [`auth.routes.js`](../routes/auth.routes.js). Source for body validation: [`validate-auth.js`](../middleware/validate-auth.js). Source for session/database behavior: [`auth.controller.js`](../controllers/auth.controller.js).
+Source for routing, rate limits, and middleware order: [`auth.routes.js`](../../routes/auth.routes.js). Source for body validation: [`validate-auth.js`](../../middleware/validate-auth.js). Source for session/database behavior: [`auth.controller.js`](../../controllers/auth.controller.js).
 
 ### 6.1 `POST /auth/register`
 
@@ -401,7 +403,7 @@ Calling logout while already signed out normally has the same successful respons
 
 All routes in this section require a session containing `userId`. They also verify the targeted user is still active when reading or mutating the row.
 
-Source: [`user.routes.js`](../routes/user.routes.js); [`authenticate.js`](../middleware/authenticate.js); [`user.controller.js`](../controllers/user.controller.js).
+Source: [`user.routes.js`](../../routes/user.routes.js); [`authenticate.js`](../../middleware/authenticate.js); [`user.controller.js`](../../controllers/user.controller.js).
 
 ### 7.1 `GET /users/me`
 
@@ -513,7 +515,7 @@ Deactivation does not delete the user, their band memberships, bands, or events.
 
 Every band route requires authentication. Routes targeting `:bandId` first validate a positive integer ID, then load an active band only if the current user belongs to it. Consequently, an unknown band, inactive band, or band belonging to someone else all return the same `404 BAND_NOT_FOUND` response.
 
-Source for middleware order: [`band.routes.js`](../routes/band.routes.js). Source for access rules: [`band-access.js`](../middleware/band-access.js). Source for validation: [`validate-band.js`](../middleware/validate-band.js). Source for behavior and mappings: [`band.controller.js`](../controllers/band.controller.js).
+Source for middleware order: [`band.routes.js`](../../routes/band.routes.js). Source for access rules: [`band-access.js`](../../middleware/band-access.js). Source for validation: [`validate-band.js`](../../middleware/validate-band.js). Source for behavior and mappings: [`band.controller.js`](../../controllers/band.controller.js).
 
 ### 8.1 `POST /bands`
 
@@ -663,7 +665,7 @@ Information hiding is deliberate:
 - inaccessible or inactive band → `404 BAND_NOT_FOUND`;
 - accessible band, but event is unknown, inactive, or owned by another band → `404 EVENT_NOT_FOUND`.
 
-Source for route/middleware order: [`band.routes.js`](../routes/band.routes.js), lines 25–33; [`event.routes.js`](../routes/event.routes.js). Source for access: [`band-access.js`](../middleware/band-access.js); [`event-access.js`](../middleware/event-access.js). Source for validation and schedules: [`validate-event.js`](../middleware/validate-event.js); [`event-schedule.js`](../utils/event-schedule.js). Source for controller behavior: [`event.controller.js`](../controllers/event.controller.js).
+Source for route/middleware order: [`band.routes.js`](../../routes/band.routes.js), lines 25–33; [`event.routes.js`](../../routes/event.routes.js). Source for access: [`band-access.js`](../../middleware/band-access.js); [`event-access.js`](../../middleware/event-access.js). Source for validation and schedules: [`validate-event.js`](../../middleware/validate-event.js); [`event-schedule.js`](../../utils/event-schedule.js). Source for controller behavior: [`event.controller.js`](../../controllers/event.controller.js).
 
 ### 9.1 Event request fields
 
@@ -831,7 +833,7 @@ After deletion, the event disappears from lists and direct reads, edits, and rep
 | 500 | `INTERNAL_ERROR` | Unexpected backend failure. Do not assume retry is safe for mutations. |
 | 503 | `DATABASE_UNAVAILABLE` | Health check could not reach PostgreSQL. |
 
-Source: [`errors.js`](../middleware/errors.js), route/controller/middleware sources cited in each endpoint section.
+Source: [`errors.js`](../../middleware/errors.js), route/controller/middleware sources cited in each endpoint section.
 
 ## 11. Authorization and visibility matrix
 
@@ -848,7 +850,7 @@ Source: [`errors.js`](../middleware/errors.js), route/controller/middleware sour
 
 `*` On event item mutations, a missing/inactive/cross-band event returns `404 EVENT_NOT_FOUND` before the member's leader check. On collection creation, the leader check occurs immediately after band access.
 
-Source: [`band.routes.js`](../routes/band.routes.js); [`event.routes.js`](../routes/event.routes.js); [`band-access.js`](../middleware/band-access.js); [`event-access.js`](../middleware/event-access.js).
+Source: [`band.routes.js`](../../routes/band.routes.js); [`event.routes.js`](../../routes/event.routes.js); [`band-access.js`](../../middleware/band-access.js); [`event-access.js`](../../middleware/event-access.js).
 
 ## 12. Frontend implementation guidance
 
@@ -879,18 +881,18 @@ The current API has no endpoint for:
 - event/band search, filtering, sorting controls, or pagination;
 - hard deletion of users, bands, or events.
 
-These omissions follow from the complete mounted route set in [`app.js`](../app.js) and [`routes/`](../routes/).
+These omissions follow from the complete mounted route set in [`app.js`](../../app.js) and [`routes/`](../../routes/).
 
 ## 13. Known implementation gaps and contract risks
 
 These are facts the frontend must account for and backend maintainers should resolve deliberately:
 
-1. **Auth success envelope mismatch.** Register/login return `{ "message": ... }`, while other successes use `{ "data": ... }` and the earlier scaffold spec called for uniform success envelopes. Source: [`auth.controller.js`](../controllers/auth.controller.js), lines 34 and 56.
-2. **User casing mismatch.** Current-user endpoints expose raw snake_case database fields, while band/event payloads are camelCase and the scaffold spec proposed camelCase users. Source: [`user.controller.js`](../controllers/user.controller.js), lines 5–7 and 19–36.
-3. **Missing current-user mutation validation.** `PATCH` and `DELETE /users/me` have no validation middleware, so malformed inputs do not follow the intended `400 VALIDATION_ERROR` contract. Source: [`user.routes.js`](../routes/user.routes.js); [`user.controller.js`](../controllers/user.controller.js), lines 24–49.
-4. **Password length semantics.** Zod's string maximum counts JavaScript string units, while bcrypt's practical input boundary is byte-oriented; the implementation does not enforce the scaffold spec's “72 UTF-8 bytes” wording. Source: [`validate-auth.js`](../middleware/validate-auth.js), lines 4–15.
-5. **Malformed JSON mapping.** JSON parser syntax errors are not specially translated. Express parser errors normally retain status `400` but receive code `INTERNAL_ERROR` and expose the parser message instead of using `400 VALIDATION_ERROR`. Source: [`app.js`](../app.js), line 39; [`errors.js`](../middleware/errors.js), lines 7–25.
-6. **App lifecycle/testability.** `app.js` starts listening whenever required and does not export `app`, despite the earlier scaffold spec describing conditional startup/export. This affects automated integration harnesses more than browser clients. Source: [`app.js`](../app.js), lines 16 and 66–68.
+1. **Auth success envelope mismatch.** Register/login return `{ "message": ... }`, while other successes use `{ "data": ... }` and the earlier scaffold spec called for uniform success envelopes. Source: [`auth.controller.js`](../../controllers/auth.controller.js), lines 34 and 56.
+2. **User casing mismatch.** Current-user endpoints expose raw snake_case database fields, while band/event payloads are camelCase and the scaffold spec proposed camelCase users. Source: [`user.controller.js`](../../controllers/user.controller.js), lines 5–7 and 19–36.
+3. **Missing current-user mutation validation.** `PATCH` and `DELETE /users/me` have no validation middleware, so malformed inputs do not follow the intended `400 VALIDATION_ERROR` contract. Source: [`user.routes.js`](../../routes/user.routes.js); [`user.controller.js`](../../controllers/user.controller.js), lines 24–49.
+4. **Password length semantics.** Zod's string maximum counts JavaScript string units, while bcrypt's practical input boundary is byte-oriented; the implementation does not enforce the scaffold spec's “72 UTF-8 bytes” wording. Source: [`validate-auth.js`](../../middleware/validate-auth.js), lines 4–15.
+5. **Malformed JSON mapping.** JSON parser syntax errors are not specially translated. Express parser errors normally retain status `400` but receive code `INTERNAL_ERROR` and expose the parser message instead of using `400 VALIDATION_ERROR`. Source: [`app.js`](../../app.js), line 39; [`errors.js`](../../middleware/errors.js), lines 7–25.
+6. **App lifecycle/testability.** `app.js` starts listening whenever required and does not export `app`, despite the earlier scaffold spec describing conditional startup/export. This affects automated integration harnesses more than browser clients. Source: [`app.js`](../../app.js), lines 16 and 66–68.
 
 Until the backend changes, this master contract's endpoint sections describe the implemented behavior. When any route, validation schema, mapper, error translation, or response envelope changes, update this document in the same change.
 
@@ -898,11 +900,11 @@ Until the backend changes, this master contract's endpoint sections describe the
 
 Before treating a future version of this contract as current, compare it against:
 
-- router mounts in [`app.js`](../app.js);
-- every file in [`routes/`](../routes/);
-- request validation in [`middleware/`](../middleware/);
-- response mappings and status codes in [`controllers/`](../controllers/);
-- event scheduling semantics in [`event-schedule.js`](../utils/event-schedule.js);
-- persisted constraints/enums in [`schema.sql`](../db/schemas/schema.sql).
+- router mounts in [`app.js`](../../app.js);
+- every file in [`routes/`](../../routes/);
+- request validation in [`middleware/`](../../middleware/);
+- response mappings and status codes in [`controllers/`](../../controllers/);
+- event scheduling semantics in [`event-schedule.js`](../../utils/event-schedule.js);
+- persisted constraints/enums in [`schema.sql`](../../db/schemas/schema.sql).
 
 For every new or changed endpoint, record method/path, authentication and role, middleware order, exact body/query/path rules, normalization, success status/shape, error codes, ordering/pagination, side effects, and soft-delete/visibility behavior here.

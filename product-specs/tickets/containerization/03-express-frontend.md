@@ -57,7 +57,7 @@ Express currently ends all unmatched requests with JSON not-found and has global
 ## Implementation Notes
 
 - Code: [app.js](../../../backend/app.js), [errors.js](../../../backend/middleware/errors.js), [routes.jsx](../../../frontend/src/app/routes.jsx), [config.js](../../../frontend/src/config.js), [client.js](../../../frontend/src/api/client.js), [vite.config.js](../../../frontend/vite.config.js), [frontend example](../../../frontend/.env.example), [README](../../../frontend/README.md).
-- Preserve [frontend foundations sections 4–5](../../../frontend/frontend-specs/01-phase-0-foundations.md) and [API contract](../../../backend/backend-specs/00-api-contract.md). / is an origin configuration value; do not set it to /api/v1.
+- Preserve [frontend foundations sections 4–5](../../../frontend/frontend-specs/01-phase-0-foundations.md) and [API contract](../../../backend/backend-specs/v1/00-api-contract.md). / is an origin configuration value; do not set it to /api/v1.
 
 ## Definition of Done
 

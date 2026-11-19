@@ -2,7 +2,7 @@
 
 > **Status:** Ready for implementation
 > **Planning source:** [Frontend implementation plan](00-frontend-implementation-plan.md), Phase 5, and the focused Grill Me session on 2026-09-26
-> **Backend authority:** [API contract](../../backend/backend-specs/00-api-contract.md), sections 3.1 and 7
+> **Backend authority:** [API contract](../../backend/backend-specs/v1/00-api-contract.md), sections 3.1 and 7
 > **Existing baseline:** Session boundary, protected routes, band and event access recovery, shared validation, and private query cache
 
 ## 1. Goal and boundaries

@@ -1,6 +1,6 @@
 # BE-V2-02 — Enforce bounded sessions, verification access and browser Origin
 
-> **Status:** For Review ([Draft PR #73](https://github.com/CaelanRT/bandos/pull/73))
+> **Status:** Completed ([merged PR #73](https://github.com/CaelanRT/bandos/pull/73))
 > **Dependencies:** [01](01-relational-storage.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 6–7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 9

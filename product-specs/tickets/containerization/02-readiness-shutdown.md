@@ -56,7 +56,7 @@ Health only runs an unbounded SELECT 1. Production rejects it over HTTP before r
 ## Implementation Notes
 
 - Code: [app.js](../../../backend/app.js), [health.controller.js](../../../backend/controllers/health.controller.js), [health.routes.js](../../../backend/routes/health.routes.js), [db/index.js](../../../backend/db/index.js).
-- Preserve [health response envelopes](../../../backend/backend-specs/00-api-contract.md). Reuse db.close(); document timeout and drain settings in the configuration reference from 01.
+- Preserve [health response envelopes](../../../backend/backend-specs/v1/00-api-contract.md). Reuse db.close(); document timeout and drain settings in the configuration reference from 01.
 
 ## Definition of Done
 
