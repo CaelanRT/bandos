@@ -11,6 +11,7 @@ const { mountFrontend } = require('./frontend');
 const db = require('./db');
 const { pool } = db;
 const { installShutdown } = require('./shutdown');
+const { boundCookie } = require('./utils/account-session');
 const { getHealth } = require('./controllers/health.controller');
 const healthRouter = require('./routes/health.routes');
 const authRouter = require('./routes/auth.routes');
@@ -53,6 +54,14 @@ api.use(cors({
   origin: config.clientOrigin,
   credentials: true,
 }));
+api.use((req, res, next) => {
+  const origin = req.get('Origin');
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && origin && origin !== config.clientOrigin
+    && origin !== `${req.protocol}://${req.get('host')}`) {
+    return res.status(403).json({ error: { code: 'ORIGIN_NOT_ALLOWED', message: 'Origin is not allowed' } });
+  }
+  return next();
+});
 api.use(express.json());
 api.use(session({
   name: 'bandos.sid',
@@ -69,9 +78,14 @@ api.use(session({
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,
   },
 }));
+
+api.use((req, res, next) => {
+  if (req.session?.userId) boundCookie(req);
+  return next();
+});
 
 api.use('/health', healthRouter);
 api.use('/auth', authRouter);
@@ -89,3 +103,5 @@ const server = app.listen(PORT, () => {
 });
 
 installShutdown(server, db.close, config.shutdownTimeoutMs);
+
+module.exports = { app, server };

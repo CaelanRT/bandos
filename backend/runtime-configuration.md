@@ -42,7 +42,7 @@ The probe runs without session middleware, even with an expired session cookie.
 Keep this HTTP probe private: later Compose/edge configuration must restrict
 backend network access and must not publicly expose or forward this HTTP exception. No global HTTPS spoof
 is used. The session cookie remains `bandos.sid`, Secure in production,
-HttpOnly, SameSite=Lax, with rolling seven-day expiry.
+HttpOnly, SameSite=Lax, with server-enforced 24-hour inactivity and seven-day absolute deadlines. Cookie/store expiry is bounded by the earlier deadline; passive reads do not renew application activity. Successful authenticated mutations and successful GETs explicitly marked `X-bandos-activity: user` renew idle activity only. Unverified accounts have restricted access. Browser mutations require the configured client Origin or the API’s own origin; requests without Origin remain available to non-browser clients.
 
 These five `DB_*` connection variables retain their existing names. They
 configure the application connection, not PostgreSQL initialization. Later

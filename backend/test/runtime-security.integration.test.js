@@ -58,7 +58,7 @@ test('only trusted socket peers influence Express protocol and client IP', async
   } finally { await new Promise((resolve) => server.close(resolve)); }
 });
 
-test('production rejects HTTP and preserves CORS, default-cost authentication and rolling secure cookies', async () => {
+test('production rejects HTTP and preserves CORS, default-cost authentication and bounded secure cookies', async () => {
   const reservation = http.createServer().listen(0, '127.0.0.1');
   await once(reservation, 'listening');
   const port = reservation.address().port;
@@ -95,7 +95,7 @@ test('production rejects HTTP and preserves CORS, default-cost authentication an
     const cookie = registered.headers['set-cookie'][0];
     for (const property of ['bandos.sid=', 'HttpOnly', 'Secure', 'SameSite=Lax']) assert.ok(cookie.includes(property));
     const expires = new Date(cookie.match(/Expires=([^;]+)/)[1]);
-    assert.ok(Math.abs(expires.getTime() - Date.now() - 7 * 86400000) < 5000);
+    assert.ok(Math.abs(expires.getTime() - Date.now() - 86400000) < 5000);
     const authenticatedHeaders = { ...headers, Cookie: cookie.split(';')[0] };
     const me = await request(port, '/api/v1/users/me', { headers: authenticatedHeaders });
     assert.equal(me.status, 200);

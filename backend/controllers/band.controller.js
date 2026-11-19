@@ -1,3 +1,4 @@
+const { withSessionMutation } = require('../utils/account-session');
 const db = require('../db');
 const HttpError = require('../utils/http-error');
 
@@ -32,8 +33,8 @@ function mapBandSummary(row) {
   };
 }
 
-async function findActiveBandMembers(bandId) {
-  const result = await db.query(
+async function findActiveBandMembers(bandId, client = db) {
+  const result = await client.query(
     `SELECT
        u.user_id,
        u.username,
@@ -55,16 +56,12 @@ async function findActiveBandMembers(bandId) {
 }
 
 async function createBand(req, res) {
-  const client = await db.pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
+  const body = await withSessionMutation(req, async (client) => {
     const bandResult = await client.query(
-      `INSERT INTO bands (name, is_active)
-       VALUES ($1, true)
+      `INSERT INTO bands (name, owner_user_id, is_active)
+       VALUES ($1, $2, true)
        RETURNING band_id, name, is_active, created_at`,
-      [req.body.name],
+      [req.body.name, req.session.userId],
     );
     const band = bandResult.rows[0];
 
@@ -82,24 +79,18 @@ async function createBand(req, res) {
       [req.session.userId],
     );
 
-    await client.query('COMMIT');
-
     const creator = mapMember({
       ...creatorResult.rows[0],
       role: 'leader',
     });
 
-    return res.status(201).json({
+    return {
       data: {
         band: mapBand(band, 'leader', [creator]),
       },
-    });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
+    };
+  });
+  return res.status(201).json(body);
 }
 
 async function listBands(req, res) {
@@ -140,94 +131,103 @@ async function getBand(req, res) {
 }
 
 async function updateBand(req, res) {
-  const result = await db.query(
-    `UPDATE bands
-     SET name = $1
-     WHERE band_id = $2
-       AND is_active = true
-     RETURNING band_id, name, is_active, created_at`,
-    [req.body.name, req.band.bandId],
-  );
-  const updatedBand = result.rows[0];
+  const body = await withSessionMutation(req, async (client) => {
+    const result = await client.query(
+      `UPDATE bands
+       SET name = $1
+       WHERE band_id = $2
+         AND is_active = true
+       RETURNING band_id, name, is_active, created_at`,
+      [req.body.name, req.band.bandId],
+    );
+    const updatedBand = result.rows[0];
 
-  if (!updatedBand) {
-    throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
-  }
+    if (!updatedBand) {
+      throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
+    }
 
-  const members = await findActiveBandMembers(updatedBand.band_id);
+    const members = await findActiveBandMembers(updatedBand.band_id, client);
 
-  return res.status(200).json({
-    data: {
-      band: mapBand(updatedBand, req.bandRole, members),
-    },
+    return {
+      data: {
+        band: mapBand(updatedBand, req.bandRole, members),
+      },
+    };
   });
+  return res.status(200).json(body);
 }
 
 async function deleteBand(req, res) {
-  const result = await db.query(
-    `UPDATE bands
-     SET is_active = false
-     WHERE band_id = $1
-       AND is_active = true
-     RETURNING band_id`,
-    [req.band.bandId],
-  );
+  const body = await withSessionMutation(req, async (client) => {
+    const result = await client.query(
+      `UPDATE bands
+       SET is_active = false
+       WHERE band_id = $1
+         AND is_active = true
+       RETURNING band_id`,
+      [req.band.bandId],
+    );
 
-  if (!result.rows[0]) {
-    throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
-  }
+    if (!result.rows[0]) {
+      throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
+    }
 
-  return res.status(200).json({
-    data: {
-      message: 'Band deleted',
-    },
+    return {
+      data: {
+        message: 'Band deleted',
+      },
+    };
   });
+  return res.status(200).json(body);
 }
 
 async function addBandMember(req, res) {
-  const userResult = await db.query(
-    `SELECT user_id, username, first_name, last_name
-     FROM users
-     WHERE LOWER(username) = LOWER($1)
-       AND is_active = true
-     LIMIT 1`,
-    [req.body.username],
-  );
-  const user = userResult.rows[0];
-
-  if (!user) {
-    throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
-  }
-
-  try {
-    await db.query(
-      `INSERT INTO user_bands (user_id, band_id, role)
-       VALUES ($1, $2, 'member')`,
-      [user.user_id, req.band.bandId],
+  const body = await withSessionMutation(req, async (client) => {
+    const userResult = await client.query(
+      `SELECT user_id, username, first_name, last_name
+       FROM users
+       WHERE LOWER(username) = LOWER($1)
+         AND is_active = true
+       LIMIT 1`,
+      [req.body.username],
     );
-  } catch (error) {
-    if (
-      error.code === '23505'
-      && error.constraint === 'user_bands_user_band_unique'
-    ) {
-      throw new HttpError(
-        409,
-        'USER_ALREADY_IN_BAND',
-        'User is already a member of this band',
-      );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
     }
 
-    throw error;
-  }
+    try {
+      await client.query(
+        `INSERT INTO user_bands (user_id, band_id, role)
+         VALUES ($1, $2, 'member')`,
+        [user.user_id, req.band.bandId],
+      );
+    } catch (error) {
+      if (
+        error.code === '23505'
+        && error.constraint === 'user_bands_user_band_unique'
+      ) {
+        throw new HttpError(
+          409,
+          'USER_ALREADY_IN_BAND',
+          'User is already a member of this band',
+        );
+      }
 
-  return res.status(201).json({
-    data: {
-      member: mapMember({
-        ...user,
-        role: 'member',
-      }),
-    },
+      throw error;
+    }
+
+    return {
+      data: {
+        member: mapMember({
+          ...user,
+          role: 'member',
+        }),
+      },
+    };
   });
+  return res.status(201).json(body);
 }
 
 module.exports = {

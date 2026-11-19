@@ -1,3 +1,4 @@
+const { withSessionMutation } = require('../utils/account-session');
 const db = require('../db');
 const HttpError = require('../utils/http-error');
 const {
@@ -64,49 +65,8 @@ function validateMergedEventSchedule(event) {
 }
 
 async function createEvent(req, res) {
-  const {
-    name,
-    type,
-    date,
-    startTime,
-    endTime,
-    timezone,
-    location,
-    description,
-  } = req.body;
-
-  const result = await db.query(
-    `INSERT INTO events (
-       band_id,
-       created_by_user_id,
-       name,
-       type,
-       event_date,
-       start_time,
-       end_time,
-       timezone,
-       location,
-       description
-     )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     RETURNING
-       event_id,
-       band_id,
-       created_by_user_id,
-       name,
-       type,
-       event_date,
-       start_time,
-       end_time,
-       timezone,
-       location,
-       description,
-       is_active,
-       created_at,
-       updated_at`,
-    [
-      req.band.bandId,
-      req.session.userId,
+  const body = await withSessionMutation(req, async (client) => {
+    const {
       name,
       type,
       date,
@@ -115,14 +75,58 @@ async function createEvent(req, res) {
       timezone,
       location,
       description,
-    ],
-  );
+    } = req.body;
 
-  return res.status(201).json({
-    data: {
-      event: mapEvent(result.rows[0]),
-    },
+    const result = await client.query(
+      `INSERT INTO events (
+         band_id,
+         created_by_user_id,
+         name,
+         type,
+         event_date,
+         start_time,
+         end_time,
+         timezone,
+         location,
+         description
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING
+         event_id,
+         band_id,
+         created_by_user_id,
+         name,
+         type,
+         event_date,
+         start_time,
+         end_time,
+         timezone,
+         location,
+         description,
+         is_active,
+         created_at,
+         updated_at`,
+      [
+        req.band.bandId,
+        req.session.userId,
+        name,
+        type,
+        date,
+        startTime,
+        endTime,
+        timezone,
+        location,
+        description,
+      ],
+    );
+
+    return {
+      data: {
+        event: mapEvent(result.rows[0]),
+      },
+    };
   });
+  return res.status(201).json(body);
 }
 
 async function listEvents(req, res) {
@@ -179,11 +183,7 @@ function getEvent(req, res) {
 }
 
 async function updateEvent(req, res) {
-  const client = await db.pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
+  const body = await withSessionMutation(req, async (client) => {
     const lockedResult = await client.query(
       `SELECT
          event_id,
@@ -287,41 +287,38 @@ async function updateEvent(req, res) {
       throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
     }
 
-    await client.query('COMMIT');
-
-    return res.status(200).json({
+    return {
       data: {
         event: mapEvent(updatedEvent),
       },
-    });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
+    };
+  });
+  return res.status(200).json(body);
 }
 
 async function deleteEvent(req, res) {
-  const result = await db.query(
-    `UPDATE events
-     SET is_active = false
-     WHERE event_id = $1
-       AND band_id = $2
-       AND is_active = true
-     RETURNING event_id`,
-    [req.event.event_id, req.band.bandId],
-  );
+  const body = await withSessionMutation(req, async (client) => {
+    const result = await client.query(
+      `UPDATE events
+       SET is_active = false
+       WHERE event_id = $1
+         AND band_id = $2
+         AND is_active = true
+       RETURNING event_id`,
+      [req.event.event_id, req.band.bandId],
+    );
 
-  if (!result.rows[0]) {
-    throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
-  }
+    if (!result.rows[0]) {
+      throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
+    }
 
-  return res.status(200).json({
-    data: {
-      message: 'Event deleted',
-    },
+    return {
+      data: {
+        message: 'Event deleted',
+      },
+    };
   });
+  return res.status(200).json(body);
 }
 
 module.exports = {
