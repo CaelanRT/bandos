@@ -1,6 +1,6 @@
 # BE-V2-07 — Validate profile edits and stage verified email-address changes
 
-> **Status:** For Review — [Draft PR #84](https://github.com/CaelanRT/bandos/pull/84)
+> **Status:** Completed — [Merged PR #84](https://github.com/CaelanRT/bandos/pull/84)
 > **Dependencies:** [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [05](05-registration-verification.md), [06](06-password-recovery.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 6–7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2, 9–10
