@@ -5,7 +5,7 @@
 > **Last verified:** 2026-08-30  
 > **Authority:** Runtime source code. Where an older feature specification disagrees with the implementation, this document describes the implementation and calls out the difference.
 
-> **V2 progress:** Relational storage and bounded sessions have since landed. See the [backend implementation status](../v2/01-backend-spec.md#implementation-status) for delivered slices; the remaining v2 contract is planned. Source links below point to current files and may differ from this historical snapshot.
+> **V2 progress:** Relational storage and bounded sessions have since landed. See the [backend implementation status](../v2/01-backend-spec.md#implementation-status) for delivered slices; the remaining v2 contract is planned. BE-V2-05 registration/verification behavior is documented in the [current account-token reference](../../db/account-tokens.md). Source links below point to current files and may differ from this historical snapshot.
 
 ## 1. Purpose and source of truth
 

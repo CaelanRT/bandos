@@ -1,12 +1,15 @@
 const { z } = require('zod');
 const HttpError = require('../utils/http-error');
 
+const newPasswordSchema = z.string().min(8).refine(value => Buffer.byteLength(value, 'utf8') <= 72,
+  'Password must be at most 72 UTF-8 bytes');
+
 const registerSchema = z.strictObject({
   username: z.string().trim().min(3).max(50),
   firstName: z.string().trim().min(1).max(50),
   lastName: z.string().trim().min(1).max(50),
   email: z.string().trim().email().max(254).toLowerCase(),
-  password: z.string().min(8).max(72),
+  password: newPasswordSchema,
 });
 
 const loginSchema = z.strictObject({
@@ -35,4 +38,7 @@ function validate(schema) {
 const validateRegister = validate(registerSchema);
 const validateLogin = validate(loginSchema);
 
-module.exports = { validateRegister, validateLogin };
+const validateResend = validate(z.strictObject({ email: z.string().trim().email().max(254).toLowerCase() }));
+// Missing/empty tokens intentionally reach the same generic token failure path.
+const validateConfirm = validate(z.strictObject({ token: z.string().max(512).optional().default('') }));
+module.exports = { validateRegister, validateLogin, validateResend, validateConfirm, newPasswordSchema };

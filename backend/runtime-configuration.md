@@ -109,4 +109,6 @@ together to enable delivery. Omit all three for API-only operation with dispatch
 disabled; partial configuration fails startup. Preserve the encryption key across
 instances/restarts. See [notification integration and recovery](db/notifications.md)
 for enqueue usage, retry boundaries, security payload lifecycle and operational
-handling. Domain/account triggers land in subsequent tickets.
+handling. BE-V2-05 registration now requires these settings to atomically queue
+verification mail; see [registration/token behavior](db/account-tokens.md).
+Other account and domain triggers land in subsequent tickets.

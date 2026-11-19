@@ -389,6 +389,13 @@ CREATE TABLE notification_preferences (
     poll_responses BOOLEAN NOT NULL DEFAULT true
 );
 
+-- Shared address/IP issuance and failed-confirm accounting, including unknown accounts.
+CREATE TABLE account_token_attempts (
+    rate_key TEXT NOT NULL,
+    attempted_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX account_token_attempts_lookup ON account_token_attempts (rate_key, attempted_at);
+
 CREATE TABLE account_tokens (
     token_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(user_id),

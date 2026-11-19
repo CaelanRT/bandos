@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const { once } = require('node:events');
 const { spawn } = require('node:child_process');
+const { randomBytes } = require('node:crypto');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const express = require('express');
@@ -63,9 +64,10 @@ test('production rejects HTTP and preserves CORS, default-cost authentication an
   await once(reservation, 'listening');
   const port = reservation.address().port;
   await new Promise((resolve) => reservation.close(resolve));
-  const child = spawn(process.execPath, ['app.js'], {
+  const child = spawn(process.execPath, ['-e', "global.fetch = async () => ({ ok: true, json: async () => ({ id: 'fake-mail' }) }); require('./app');"], {
     cwd: require('node:path').join(__dirname, '..'),
-    env: { ...env, PORT: String(port), BCRYPT_ROUNDS: undefined, DOTENV_CONFIG_QUIET: 'true' }, stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...env, PORT: String(port), BCRYPT_ROUNDS: undefined, DOTENV_CONFIG_QUIET: 'true',
+      RESEND_API_KEY: 'fake-test-only', EMAIL_FROM: 'bandos@example.test', OUTBOX_ENCRYPTION_KEY: randomBytes(32).toString('base64') }, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk; });

@@ -99,8 +99,9 @@ request was not accepted. Resend's idempotency window is bounded; elapsed time o
 a missing local provider ID is not that evidence. Provider reconciliation is an
 operator responsibility when available, not an automatic blind resend path.
 
-The registration/password/email flows and band/event/poll triggers remain owned
-by subsequent tickets. This foundation does not claim they already enqueue mail.
+BE-V2-05 registration and verification resend enqueue security mail through this
+outbox; see [registration/token behavior](account-tokens.md). Password/email-change
+flows and band/event/poll triggers remain owned by subsequent tickets.
 
 ## Verification
 
