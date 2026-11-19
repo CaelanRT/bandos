@@ -1,6 +1,6 @@
 # BE-V2-07 — Validate profile edits and stage verified email-address changes
 
-> **Status:** In progress
+> **Status:** For Review — [Draft PR #84](https://github.com/CaelanRT/bandos/pull/84)
 > **Dependencies:** [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [05](05-registration-verification.md), [06](06-password-recovery.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 6–7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2, 9–10
@@ -63,3 +63,4 @@ Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementa
   with no blocking findings. Reviewer independently reran 25 account/session
   tests successfully. Its non-blocking opt-out fixture finding was corrected;
   the profile/email-change suite then passed **8/8** with notifications disabled.
+- Final independent review confirmed **PASS**, with no remaining findings.
