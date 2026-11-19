@@ -46,6 +46,18 @@ function loadConfig(env) {
   const healthQueryTimeoutMs = integer('HEALTH_QUERY_TIMEOUT_MS', 2000, 1, 60000);
   const shutdownTimeoutMs = integer('SHUTDOWN_TIMEOUT_MS', 10000, 1, 120000);
   const bcryptRounds = integer('BCRYPT_ROUNDS', 12, 4, 31);
+  let mail = null;
+  if (['RESEND_API_KEY', 'EMAIL_FROM', 'OUTBOX_ENCRYPTION_KEY'].some(name => env[name] !== undefined)) {
+    const apiKey = required('RESEND_API_KEY');
+    const from = required('EMAIL_FROM');
+    const encodedKey = required('OUTBOX_ENCRYPTION_KEY');
+    if (typeof encodedKey !== 'string' || !/^[A-Za-z0-9+/]{43}=$/.test(encodedKey)
+      || Buffer.from(encodedKey, 'base64').length !== 32) errors.push('OUTBOX_ENCRYPTION_KEY: must be a base64-encoded 32-byte key');
+    if (typeof from !== 'string' || /[\r\n]/.test(from) || !/^[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+$/.test(from)) {
+      errors.push('EMAIL_FROM: must be a sender email address');
+    }
+    mail = { apiKey, from, encryptionKey: Buffer.from(encodedKey || '', 'base64') };
+  }
   const ssl = env.DB_SSL ?? 'false';
   if (!['true', 'false'].includes(ssl)) errors.push('DB_SSL: must be true or false');
   if (ssl === 'true') {
@@ -83,7 +95,7 @@ function loadConfig(env) {
     else trustProxy = entries;
   }
   if (errors.length) throw new Error(`Invalid runtime configuration:\n${errors.join('\n')}`);
-  return { port, isProduction: nodeEnv === 'production', clientOrigin, sessionSecret, bcryptRounds, database, trustProxy, healthQueryTimeoutMs, shutdownTimeoutMs };
+  return { port, isProduction: nodeEnv === 'production', clientOrigin, sessionSecret, bcryptRounds, database, trustProxy, healthQueryTimeoutMs, shutdownTimeoutMs, mail };
 }
 
 let cached;

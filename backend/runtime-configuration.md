@@ -99,3 +99,14 @@ start and pause it; never use retained data. Docker access is required. They
 exercise real production processes, health up/down/timeout/recovery, idle pool
 errors, rejected protected HTTP paths/methods, both shutdown signals, duplicate
 signals, active-request drain, pool closure, and the forced deadline.
+
+### V2 notification delivery
+
+BE-V2-04 adds verified-session GET/PUT notification preferences and a PostgreSQL
+outbox dispatcher in this process. Configure `RESEND_API_KEY`, `EMAIL_FROM` (an
+authorized sender address), and `OUTBOX_ENCRYPTION_KEY` (base64 32 random bytes)
+together to enable delivery. Omit all three for API-only operation with dispatch
+disabled; partial configuration fails startup. Preserve the encryption key across
+instances/restarts. See [notification integration and recovery](db/notifications.md)
+for enqueue usage, retry boundaries, security payload lifecycle and operational
+handling. Domain/account triggers land in subsequent tickets.
