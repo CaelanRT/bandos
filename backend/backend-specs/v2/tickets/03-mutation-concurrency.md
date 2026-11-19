@@ -1,6 +1,6 @@
 # BE-V2-03 — Add transactional versions and safe idempotent mutations
 
-> **Status:** Not started
+> **Status:** For Review ([Draft PR #76](https://github.com/CaelanRT/bandos/pull/76))
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–4, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3
@@ -32,3 +32,23 @@ Use real PostgreSQL transactions to test concurrent identical keys, changed bodi
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation evidence
+
+- Added `utils/mutation.js` for ordered locks, current-access replay checks,
+  canonical request digests, atomic success records, bounded transaction retries,
+  version checks, normalized change detection, and seven-day record pruning.
+- Added strict mutation validation helpers and field details for malformed JSON.
+  Integration guidance and endpoint ownership boundaries are in
+  [db/mutations.md](../../../db/mutations.md). Later domain tickets integrate the
+  helpers into their endpoints; no downstream v2 transitions are claimed here.
+- `TEST_PG_ADMIN_URL=... node --test test/mutation-concurrency.integration.test.js test/mutation-validation.test.js test/bounded-sessions.integration.test.js test/relational-storage.integration.test.js test/runtime-config.test.js test/frontend.integration.test.js`:
+  38 tests passed against disposable PostgreSQL databases and local HTTP servers.
+- `node --test test/runtime-security.integration.test.js`: three tests passed
+  against a separate disposable TLS-enabled database, including certificate
+  validation, production authentication/cookies, CORS and proxy handling.
+- `git diff --check` and JavaScript syntax checks passed. No npm test/lint/build
+  scripts are defined. No band/event handlers were changed; the known legacy
+  smoke-script limitations remain recorded in ticket 02.
+- Independent `review-ticket` review: PASS, no findings. The reviewer separately
+  ran the 11 mutation concurrency/validation tests successfully.

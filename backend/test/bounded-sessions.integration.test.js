@@ -199,7 +199,8 @@ test('bounded PostgreSQL sessions, access, Origin and commit checks', async (t) 
         assert.equal((await request('/auth/logout', { method: 'POST', body: {}, headers: { Origin: origin } })).status, 200);
       }
       const malformed = await request('/auth/login', { method: 'POST', rawBody: '{"password":"private",' });
-      assert.deepEqual(malformed.body, { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON body' } });
+      assert.deepEqual(malformed.body, { error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON body',
+        details: [{ field: 'body', message: 'Malformed JSON' }] } });
       const cors = await request('/users/me', { headers: { Origin: process.env.CLIENT_ORIGIN } });
       assert.equal(cors.headers.get('access-control-allow-origin'), process.env.CLIENT_ORIGIN);
       assert.equal(cors.headers.get('access-control-allow-credentials'), 'true');

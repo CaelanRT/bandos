@@ -8,7 +8,8 @@ async function errorHandler(error, req, res, next) {
   if (res.headersSent) return next(error);
 
   if (error.type === 'entity.parse.failed') {
-    return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON body' } });
+    return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid JSON body',
+      details: [{ field: 'body', message: 'Malformed JSON' }] } });
   }
 
   if (error.code === 'AUTHENTICATION_REQUIRED') {
