@@ -1,6 +1,6 @@
 # bandOS v2 — Backend implementation specification
 
-Status: Specification review complete; aligned with the approved shared contract. Backend tickets BE-V2-01–05 are completed; BE-V2-06–18 have not started.
+Status: Specification review complete; aligned with the approved shared contract. Backend tickets BE-V2-01–05 are completed; BE-V2-06 is For Review ([Draft PR #82](https://github.com/CaelanRT/bandos/pull/82)); BE-V2-07–18 have not started.
 Updated: 19 November 2026.
 
 ## Implementation status

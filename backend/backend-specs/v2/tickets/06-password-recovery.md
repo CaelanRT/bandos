@@ -1,6 +1,6 @@
 # BE-V2-06 — Add generic password recovery and all-session password revocation
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #82](https://github.com/CaelanRT/bandos/pull/82))
 > **Dependencies:** [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [05](05-registration-verification.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 6–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2, 9–10
