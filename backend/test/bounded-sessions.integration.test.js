@@ -38,6 +38,7 @@ test('bounded PostgreSQL sessions, access, Origin and commit checks', async (t) 
     });
     delete process.env.DB_SSL_CA_FILE;
     const runtime = require('../app');
+    runtime.app.locals.outboxEncryptionKey = require('node:crypto').randomBytes(32);
     server = runtime.server;
     if (!server.listening) await once(server, 'listening');
     db = require('../db');

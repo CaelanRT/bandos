@@ -23,6 +23,7 @@ async function errorHandler(error, req, res, next) {
     });
   }
 
+  if (error.retryAfter) res.set('Retry-After', String(error.retryAfter));
   const status = error.status || 500;
   const body = {
     code: error.code || 'INTERNAL_ERROR',
