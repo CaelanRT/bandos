@@ -1,6 +1,6 @@
 # BE-V2-08 — Create and configure band catalogs and instrumentation
 
-> **Status:** In progress — implementation verified; independent review passed
+> **Status:** For Review — [Draft PR #86](https://github.com/CaelanRT/bandos/pull/86)
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [05](05-registration-verification.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 2–4, 7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 3–4, 10
