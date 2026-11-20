@@ -1,11 +1,10 @@
 const { z } = require('zod');
 const HttpError = require('../utils/http-error');
+const { idSchema, versionSchema, validateBody } = require('./validate-mutation');
 const {
-  EventScheduleError,
   isValidCalendarDate,
   isValidIanaTimezone,
   isValidRequestTime,
-  validateEventSchedule,
 } = require('../utils/event-schedule');
 
 const nameSchema = z.string().trim().min(1).max(100);
@@ -32,38 +31,33 @@ const eventFields = {
   description: descriptionSchema,
 };
 
-const createEventSchema = z
-  .strictObject({
-    ...eventFields,
-    description: descriptionSchema.optional().transform((value) => value ?? null),
-  })
-  .superRefine((event, context) => {
-    try {
-      validateEventSchedule(event);
-    } catch (error) {
-      if (!(error instanceof EventScheduleError)) throw error;
-      context.addIssue({
-        code: 'custom',
-        path: [error.field],
-        message: error.message,
-      });
-    }
-  });
+const slotSchema = z.strictObject({
+  slotId: idSchema.optional(),
+  clientKey: z.uuid().optional(),
+  templateSlotId: idSchema.nullable().optional(),
+  instrumentId: idSchema,
+  label: z.string().trim().min(1).max(50),
+  userId: idSchema.nullable(),
+}).refine(slot => Boolean(slot.slotId) !== Boolean(slot.clientKey), {
+  message: 'Use slotId for an existing slot or clientKey for a new slot',
+});
+const slotsSchema = z.array(slotSchema).min(1).max(50);
 
-const updateEventSchema = z
-  .strictObject({
-    name: nameSchema.optional(),
-    type: typeSchema.optional(),
-    date: dateSchema.optional(),
-    startTime: timeSchema.optional(),
-    endTime: timeSchema.optional(),
-    timezone: timezoneSchema.optional(),
-    location: locationSchema.optional(),
-    description: descriptionSchema.optional(),
-  })
-  .refine((body) => Object.keys(body).length > 0, {
-    message: 'At least one event field is required',
-  });
+// Schedule checks run against merged, locked data using the server clock.
+const createEventSchema = z.strictObject({
+  ...eventFields,
+  description: descriptionSchema.optional().transform(value => value ?? null),
+  templateVersion: versionSchema,
+  hideFromUninvited: z.boolean(),
+  slots: slotsSchema,
+});
+
+const updateEventSchema = z.strictObject({
+  ...Object.fromEntries(Object.entries(eventFields).map(([key, schema]) => [key, schema.optional()])),
+  expectedVersion: versionSchema,
+  hideFromUninvited: z.boolean().optional(),
+  slots: slotsSchema.optional(),
+});
 
 const eventIdSchema = z
   .string()
@@ -76,24 +70,6 @@ function validationDetails(error, fallbackField) {
     field: issue.path.join('.') || fallbackField,
     message: issue.message,
   }));
-}
-
-function validateBody(schema) {
-  return (req, res, next) => {
-    const result = schema.safeParse(req.body);
-
-    if (!result.success) {
-      return next(new HttpError(
-        400,
-        'VALIDATION_ERROR',
-        'Invalid request body',
-        validationDetails(result.error, 'body'),
-      ));
-    }
-
-    req.body = result.data;
-    return next();
-  };
 }
 
 function validateEventId(req, res, next) {

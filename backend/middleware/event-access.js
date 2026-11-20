@@ -3,21 +3,7 @@ const HttpError = require('../utils/http-error');
 
 async function loadEvent(req, res, next) {
   const result = await db.query(
-    `SELECT
-       event_id,
-       band_id,
-       created_by_user_id,
-       name,
-       type,
-       event_date,
-       start_time,
-       end_time,
-       timezone,
-       location,
-       description,
-       is_active,
-       created_at,
-       updated_at
+    `SELECT *
      FROM events
      WHERE event_id = $1
        AND band_id = $2
