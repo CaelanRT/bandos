@@ -1,5 +1,4 @@
 const { randomUUID } = require('node:crypto');
-const { withSessionMutation } = require('../utils/account-session');
 const { withMutation, checkVersion, canonicalJson, lockRows } = require('../utils/mutation');
 const { enqueueNotification } = require('../utils/notification-outbox');
 const db = require('../db');
@@ -34,7 +33,8 @@ async function currentSlots(client, eventId) {
 }
 
 async function eventDetail(client, row, actor, now) {
-  const membership = (await client.query(`SELECT role FROM user_bands WHERE band_id=$1 AND user_id=$2`,
+  const membership = (await client.query(`SELECT ub.role FROM user_bands ub JOIN bands b USING (band_id)
+    WHERE ub.band_id=$1 AND ub.user_id=$2 AND b.is_active=true`,
     [row.band_id, actor])).rows[0];
   const slots = await currentSlots(client, row.event_id);
   const own = slots.find(s => s.invitation?.user_id === actor)?.invitation;
@@ -272,6 +272,8 @@ async function respondToInvitation(req, res) {
 
 async function listEvents(req, res) {
   const result = await db.query(`SELECT e.* FROM events e WHERE e.band_id=$1 AND e.is_active=true
+    AND EXISTS (SELECT 1 FROM user_bands ub JOIN bands b USING (band_id)
+      WHERE ub.band_id=e.band_id AND ub.user_id=$2 AND b.is_active=true)
     AND (e.hide_from_uninvited=false OR EXISTS (SELECT 1 FROM user_bands WHERE band_id=e.band_id AND user_id=$2 AND role='leader')
       OR EXISTS (SELECT 1 FROM event_invitations WHERE event_id=e.event_id AND user_id=$2 AND retired_at IS NULL))
     ORDER BY CASE WHEN starts_at > $3 THEN 0 ELSE 1 END,
@@ -288,13 +290,45 @@ async function getEvent(req, res) {
 }
 
 async function deleteEvent(req, res) {
-  const body = await withSessionMutation(req, async client => {
-    const result = await client.query(`UPDATE events SET is_active=false WHERE event_id=$1 AND band_id=$2 AND is_active=true RETURNING event_id`,
-      [req.event.event_id, req.band.bandId]);
-    if (!result.rows[0]) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
-    return { data: { message: 'Event deleted' } };
+  const bandId = req.band.bandId, eventId = req.params.eventId, actor = req.session.userId;
+  let event, now;
+  const response = await withMutation(req, {
+    discover: async () => ({ bands: [bandId], events: [eventId] }),
+    authorize: async (client, locked) => {
+      const band = locked.bands[0];
+      const member = (await client.query('SELECT role FROM user_bands WHERE band_id=$1 AND user_id=$2', [bandId, actor])).rows[0];
+      if (!band?.is_active || !member) throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
+      if (member.role !== 'leader' || band.owner_user_id !== actor) throw new HttpError(403, 'LEADER_REQUIRED', 'Band leader access required');
+      event = locked.events.find(e => e.event_id === eventId && e.band_id === bandId);
+      if (!event) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
+    },
+    validate: async () => {
+      if (!event.is_active) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
+      checkVersion(event.version, req.body.expectedVersion);
+      now = new Date((req.app.locals.sessionClock || Date.now)());
+    },
+    work: async client => {
+      const invitations = (await client.query(`UPDATE event_invitations SET retired_at=$2,retirement_cause='cancelled'
+        WHERE event_id=$1 AND retired_at IS NULL RETURNING *`, [eventId, now])).rows;
+      await client.query(`UPDATE events SET is_active=false,version=version+1,updated_at=$2 WHERE event_id=$1`, [eventId, now]);
+      if (+event.starts_at > +now) {
+        const transitionId = randomUUID();
+        for (const invitation of invitations) {
+          if (invitation.status === 'declined') continue;
+          const current = await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2', [bandId, invitation.user_id]);
+          if (!current.rowCount) continue;
+          await enqueueNotification(client, {
+            transitionId, kind: 'event_cancellation', category: 'removalsAndCancellations',
+            recipientIdentity: `user:${invitation.user_id}`, recipientUserId: invitation.user_id,
+            payload: { subject: 'bandOS event cancelled',
+              text: `${event.name}\n${serializeDate(event.event_date)} ${normalizeDatabaseTime(event.start_time)}–${normalizeDatabaseTime(event.end_time)} (${event.timezone})\n${event.location}` },
+          });
+        }
+      }
+      return { status: 200, body: { data: { message: 'Event deleted' } } };
+    },
   });
-  return res.status(200).json(body);
+  return res.status(response.status).json(response.body);
 }
 
 module.exports = { createEvent, listEvents, getEvent, updateEvent, deleteEvent, respondToInvitation, mapEvent };

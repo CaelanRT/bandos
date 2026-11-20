@@ -1,4 +1,4 @@
-# Event saves and responses (BE-V2-10–11)
+# Event reads, saves, responses and cancellation (BE-V2-10–12)
 
 `POST /api/v1/bands/:bandId/events` and
 `PATCH /api/v1/bands/:bandId/events/:eventId` require a verified cookie session,
@@ -67,4 +67,28 @@ to retained Pending/Accepted invitees, removals to retired invitees, and invitat
 to newly assigned users. All writes, history, mail effects and replay commit
 atomically; failed/stale/expired-session writes have no effects.
 
-Full read/cancellation lifecycle coverage remains BE-V2-12.
+`GET /api/v1/bands/:bandId/events` and its `/:eventId` detail route return the
+same authorized event projection. Visible events require current membership;
+hidden events additionally require current leadership or an unretired invitation,
+including Declined. Former membership grants no access. Lists retain upcoming
+ascending/past descending ordering by canonical start instant and event ID.
+Cross-band datebooks can combine these reads and sort by `startsAt`, `bandId`,
+then `eventId`. Only own Pending/Accepted invitations with `startsAt > now` qualify;
+leaders have no automatic entry. `myInvitationId` is null for absent/retired
+invitations. `canRespond` requires an own current invitation and a future start;
+Declined musicians can still change their response before start.
+
+`DELETE /api/v1/bands/:bandId/events/:eventId` takes a strict `{expectedVersion}`
+body and UUID `Idempotency-Key`, with the same session/Origin and current leader
+requirements as saves. Under band/event locks it soft deletes, increments version,
+retires all current invitations with cause `cancelled`, and queues one
+`removalsAndCancellations` effect per current Pending/Accepted invitee only when
+`startsAt > now`. Exact-start, in-progress and past events can be deleted without
+cancellation mail. The existing dispatcher honors each recipient's preferences.
+Deleted events disappear from lists/direct access and cannot accept writes.
+
+Deletion returns `200 {data:{message:'Event deleted'}}`. The same actor/key/body
+can replay this receipt after deletion while they remain the current leader;
+permission loss prevents replay. A fresh intent, or a retry after replay expiry,
+gets not-found for the deleted event and cannot resend cancellation. A stale
+version or any failed transaction leaves access, invitations and mail unchanged.

@@ -573,6 +573,138 @@ test('atomic event saves and invitations', async t => {
       } finally { await setLeader(leader.user_id); }
     });
 
+    const list = (who = memberCookie, bandId = band.bandId) => request(`/bands/${bandId}/events`, undefined, who, 'GET');
+    const remove = (current, who = cookie, key, body = {expectedVersion: current.version}) =>
+      request(`${path}/${current.eventId}`, body, who, 'DELETE', key);
+
+    await t.test('list and direct reads share visibility, private reason and own invitation semantics', async () => {
+      const uninvited = await account();
+      const uninvitedCookie = (await storedSession(uninvited)).cookie;
+      await fixture.query("INSERT INTO user_bands (band_id,user_id,role) VALUES ($1,$2,'member')", [band.bandId,uninvited.user_id]);
+      let hidden = (await create({hideFromUninvited:true})).body.data.event;
+      const visible = (await create()).body.data.event;
+      for (const status of ['pending','accepted','declined']) {
+        if (status !== 'pending') hidden = (await respond(hidden,status,status === 'declined' ? 'Private read reason' : undefined)).body.data.event;
+        for (const [who,allowed,isLeader,own] of [[cookie,true,true,false],[memberCookie,true,false,true],[uninvitedCookie,false,false,false]]) {
+          const rows = (await list(who)).body.data.events;
+          const listed = rows.find(e=>e.eventId===hidden.eventId);
+          const direct = await get(hidden,who);
+          assert.equal(direct.status,allowed?200:404);
+          assert.equal(Boolean(listed),allowed);
+          if (allowed) {
+            assert.deepEqual(listed,direct.body.data.event);
+            assert.equal(listed.myInvitationId,own?hidden.slots[0].invitation.invitationId:null);
+            assert.equal(listed.canManage,isLeader);
+            assert.equal(listed.canRespond,own);
+            assert.equal(listed.slots[0].invitation.status,status);
+          }
+          const publicView = rows.find(e=>e.eventId===visible.eventId);
+          assert.ok(publicView);
+          assert.equal(Object.hasOwn(publicView.slots[0].invitation,'declineReason'),isLeader || own);
+        }
+      }
+      const publicDeclined = (await respond(visible,'declined','Another private reason')).body.data.event;
+      for (const view of [(await get(publicDeclined,uninvitedCookie)).body.data.event,
+        (await list(uninvitedCookie)).body.data.events.find(e=>e.eventId===visible.eventId)]) {
+        assert.equal(Object.hasOwn(view.slots[0].invitation,'declineReason'),false);
+      }
+      hidden = (await patch(hidden,{slots:writeSlots(hidden).map(s=>({...s,userId:null}))})).body.data.event;
+      assert.equal((await get(hidden,memberCookie)).status,404);
+      assert.equal((await list()).body.data.events.some(e=>e.eventId===hidden.eventId),false);
+      hidden = (await patch(hidden,{hideFromUninvited:false})).body.data.event;
+      const removed = (await get(hidden,memberCookie)).body.data.event;
+      assert.equal(removed.myInvitationId,null);
+      assert.equal(removed.canRespond,false);
+      await fixture.query('DELETE FROM user_bands WHERE band_id=$1 AND user_id=$2',[band.bandId,uninvited.user_id]);
+      assert.equal((await list(uninvitedCookie)).status,404);
+      assert.equal((await get(visible,uninvitedCookie)).status,404);
+      const foreignBand = (await request('/bands',{name:'Foreign',instrumentation:[{instrumentId:2,label:'Guitar'}]},cookie)).body.data.band;
+      assert.equal((await request(`/bands/${foreignBand.bandId}/events/${visible.eventId}`,undefined,cookie,'GET')).status,404);
+    });
+
+    await t.test('cross-band reads supply UTC chronology and datebook eligibility without automatic leader entry', async () => {
+      const other = (await request('/bands',{name:'Cross band',instrumentation:[{instrumentId:2,label:'Guitar'}]},cookie)).body.data.band;
+      const instrumentId = other.instrumentation[0].instrumentId;
+      await request(`/bands/${other.bandId}/members`,{expectedVersion:other.version,username:member.username,instrumentIds:[instrumentId]},cookie);
+      const first = (await create({startTime:'18:00',endTime:'19:00',timezone:'Asia/Tokyo'})).body.data.event;
+      const second = (await request(`/bands/${other.bandId}/events`,{...base,startTime:'05:00',endTime:'06:00',timezone:'America/New_York',
+        templateVersion:other.version+1,slots:[{clientKey:randomUUID(),instrumentId,label:'Guitar',userId:member.user_id}]},cookie)).body.data.event;
+      const rows = [...(await list()).body.data.events,...(await list(memberCookie,other.bandId)).body.data.events];
+      const selected = rows.filter(e=>[first.eventId,second.eventId].includes(e.eventId));
+      const eligible = selected.filter(e=>e.startsAt>new Date(time).toISOString() && e.slots.some(s=>
+        s.invitation?.invitationId===e.myInvitationId && ['pending','accepted'].includes(s.invitation.status)));
+      eligible.sort((a,b)=>a.startsAt.localeCompare(b.startsAt)||a.bandId-b.bandId||a.eventId-b.eventId);
+      assert.deepEqual(eligible.map(e=>e.eventId),[first.eventId,second.eventId]);
+      assert.equal(first.startsAt,`${base.date}T09:00:00.000Z`);
+      assert.equal(second.startsAt,`${base.date}T10:00:00.000Z`);
+      assert.equal((await get(first)).body.data.event.myInvitationId,null);
+    });
+
+    await t.test('future cancellation retires all invitations, notifies only current Pending/Accepted and replays once', async () => {
+      let current = (await create({slots:[fresh(member.user_id),fresh(leader.user_id),fresh(outsider.user_id)]})).body.data.event;
+      current = (await respond(current,'accepted')).body.data.event;
+      current = (await respond(current,'declined','Private',outsiderCookie,current.slots[2].invitation.invitationId)).body.data.event;
+      const n = await lastMail(), key = randomUUID();
+      const [a,b] = await Promise.all([remove(current,cookie,key),remove(current,cookie,key)]);
+      assert.equal(a.status,200,JSON.stringify(a.body));
+      assert.deepEqual(a.body,{data:{message:'Event deleted'}});
+      assert.deepEqual(b.body,a.body);
+      assert.deepEqual((await mailSince(n)).map(m=>[m.kind,m.recipient_user_id]).sort((a,b)=>a[1]-b[1]),
+        [['event_cancellation',leader.user_id],['event_cancellation',member.user_id]]);
+      const retired = (await fixture.query('SELECT * FROM event_invitations WHERE event_id=$1',[current.eventId])).rows;
+      assert.ok(retired.every(i=>i.retired_at && i.retirement_cause==='cancelled'));
+      assert.equal((await fixture.query('SELECT version FROM events WHERE event_id=$1',[current.eventId])).rows[0].version,current.version+1);
+      for (const who of [cookie,memberCookie,outsiderCookie]) {
+        assert.equal((await get(current,who)).status,404);
+        assert.equal((await list(who)).body.data.events.some(e=>e.eventId===current.eventId),false);
+      }
+      const before = await counts();
+      assert.equal((await remove(current)).status,404);
+      assert.equal((await remove(current,cookie,key,{expectedVersion:current.version+1})).body.error.code,'IDEMPOTENCY_KEY_REUSED');
+      assert.equal((await patch(current,{name:'No resurrection'})).status,404);
+      assert.equal((await respond(current,'accepted')).status,404);
+      assert.deepEqual(await counts(),before);
+      await fixture.query('BEGIN');
+      await fixture.query("UPDATE user_bands SET role=CASE WHEN user_id=$2 THEN 'leader'::role_type ELSE 'member'::role_type END WHERE band_id=$1",[band.bandId,member.user_id]);
+      await fixture.query('UPDATE bands SET owner_user_id=$2 WHERE band_id=$1',[band.bandId,member.user_id]);
+      await fixture.query('COMMIT');
+      try { assert.equal((await remove(current,cookie,key)).status,403); }
+      finally {
+        await fixture.query('BEGIN');
+        await fixture.query("UPDATE user_bands SET role=CASE WHEN user_id=$2 THEN 'leader'::role_type ELSE 'member'::role_type END WHERE band_id=$1",[band.bandId,leader.user_id]);
+        await fixture.query('UPDATE bands SET owner_user_id=$2 WHERE band_id=$1',[band.bandId,leader.user_id]);
+        await fixture.query('COMMIT');
+      }
+      assert.deepEqual(await counts(),before);
+      await fixture.query("UPDATE api_idempotency SET created_at=clock_timestamp()-interval '8 days',expires_at=clock_timestamp()-interval '1 day' WHERE idempotency_key=$1",[key]);
+      assert.equal((await remove(current,cookie,key)).status,404);
+    });
+
+    await t.test('exact-start, in-progress and past deletion send no cancellation; stale/invalid/unauthorized writes do nothing', async () => {
+      for (const offset of [0,-1,-86400000]) {
+        const current = (await create()).body.data.event;
+        await fixture.query('UPDATE events SET starts_at=$2 WHERE event_id=$1',[current.eventId,new Date(time+offset)]);
+        const n = await lastMail();
+        assert.equal((await get(current,memberCookie)).body.data.event.canRespond,false);
+        assert.equal((await remove(current)).status,200);
+        assert.equal(await lastMail(),n);
+      }
+      const current = (await create()).body.data.event;
+      const before = await counts();
+      assert.equal((await remove({...current,version:current.version+1})).body.error.code,'STALE_VERSION');
+      assert.equal((await remove(current,memberCookie)).status,403);
+      for (const body of [{},{expectedVersion:0},{expectedVersion:current.version,extra:true}]) assert.equal((await remove(current,cookie,undefined,body)).status,400);
+      assert.deepEqual(await counts(),before);
+      assert.equal((await get(current)).status,200);
+      await fixture.query(`CREATE FUNCTION reject_cancellation_mail() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN RAISE EXCEPTION 'test failure'; END $$;
+        CREATE TRIGGER reject_cancellation_mail BEFORE INSERT ON email_outbox FOR EACH ROW EXECUTE FUNCTION reject_cancellation_mail()`);
+      assert.equal((await remove(current)).status,500);
+      await fixture.query('DROP TRIGGER reject_cancellation_mail ON email_outbox; DROP FUNCTION reject_cancellation_mail()');
+      assert.deepEqual(await counts(),before);
+      assert.equal((await get(current,memberCookie)).body.data.event.myInvitationId,current.slots[0].invitation.invitationId);
+    });
+
     await t.test('fake delivery outage leaves the committed invitation intact and retries one stable effect', async () => {
       time=Date.now();
       const current = (await create()).body.data.event;
