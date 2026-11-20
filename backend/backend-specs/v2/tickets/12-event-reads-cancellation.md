@@ -1,6 +1,6 @@
 # BE-V2-12 — Expose authorized event reads and cancel events safely
 
-> **Status:** For Review — [Draft PR #95](https://github.com/CaelanRT/bandos/pull/95)
+> **Status:** Completed — [merged PR #95](https://github.com/CaelanRT/bandos/pull/95)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [10](10-event-save-invitations.md), [11](11-event-response-time.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 5, 7
@@ -55,3 +55,7 @@ Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementa
   was rerun successfully with TLS fixtures. The unrelated database-outage/readiness
   suite was not rerun.
 - Independent `review-ticket` review — **PASS** on all five acceptance criteria, with no findings; reviewer independently reran all **24 event tests** successfully.
+
+## Completion
+
+Confirmed [PR #95](https://github.com/CaelanRT/bandos/pull/95) merged into remote `main` on 20 November 2026 (merge commit `6ec2846`). Completion metadata is persisted on `main`; BE-V2-13 is next.
