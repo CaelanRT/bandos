@@ -1,6 +1,6 @@
 # BE-V2-10 — Save event lineups and issue invitation changes atomically
 
-> **Status:** Not started
+> **Status:** For Review ([Draft PR #91](https://github.com/CaelanRT/bandos/pull/91))
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [08](08-band-catalog-template.md), [09](09-member-eligibility-defaults.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 2–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–5, 7, 10
@@ -33,3 +33,12 @@ Test partial save, unchanged/replaced/moved identities, explicit null/omitted co
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation verification
+
+- Added atomic, versioned and idempotent event create/PATCH saves, ordered snapshot slots, eligibility validation, invitation retirement/issuance and transactional outbox effects. Runtime details: [event saves](../../../db/event-saves.md).
+- `TEST_PG_ADMIN_URL=postgres://bandos_test:disposable@127.0.0.1:55440/postgres node --test test/event-save.integration.test.js test/member-defaults.integration.test.js test/band-catalog.integration.test.js test/mutation-concurrency.integration.test.js test/mutation-validation.test.js test/notification-delivery.integration.test.js test/notification-mail.test.js test/relational-storage.integration.test.js test/bounded-sessions.integration.test.js test/registration-verification.integration.test.js test/password-recovery.integration.test.js test/profile-email-change.integration.test.js test/runtime-config.test.js test/frontend.integration.test.js` — **111 tests passed** on a dedicated disposable PostgreSQL 16 container.
+- Actual-app v2 HTTP smoke passed: verified login, event create/replay/detail, normalized no-op, explicit empty assignment and browser Origin rejection, with a fake provider adapter.
+- Existing band/event smoke scripts were attempted against the disposable application. Their pre-existing setup incompatibilities remain: band setup stops at `EMAIL_VERIFICATION_REQUIRED`; event setup generates a username exceeding 50 characters. These failures also occurred before this ticket (recorded in BE-V2-09).
+- `node --check` for changed JavaScript files and `git diff --check` passed. No npm test/lint/build/typecheck scripts exist in this backend.
+- Independent `review-ticket` review **PASS**: all six acceptance criteria passed, with no remaining blocking or non-blocking findings. Review caught a new-slot no-op comparison error; corrected it and added lineup-only empty/assigned-slot and replay regression coverage before re-review. Response/time reconfirmation and cancellation remain assigned to BE-V2-11–12.
