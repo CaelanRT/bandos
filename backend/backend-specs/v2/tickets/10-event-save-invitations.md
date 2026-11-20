@@ -1,6 +1,6 @@
 # BE-V2-10 — Save event lineups and issue invitation changes atomically
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #91](https://github.com/CaelanRT/bandos/pull/91))
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [08](08-band-catalog-template.md), [09](09-member-eligibility-defaults.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 2–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–5, 7, 10
