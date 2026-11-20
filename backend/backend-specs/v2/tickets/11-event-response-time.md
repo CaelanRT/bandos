@@ -1,6 +1,6 @@
 # BE-V2-11 — Record invitation responses and require time-change reconfirmation
 
-> **Status:** Not started
+> **Status:** For Review ([Draft PR #93](https://github.com/CaelanRT/bandos/pull/93))
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [10](10-event-save-invitations.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 3, 5, 7, 10
@@ -32,3 +32,13 @@ Test response transitions, no-ops/reason-only edits/privacy and 1,000-character 
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation verification
+
+- Added the owner-only, versioned/idempotent invitation response endpoint with private reason normalization, actual-change history and current-leader response effects. Event saves reset only retained Accepted invitations when local date/start/end or either resolved instant changes, with separate reconfirmation history and ordinary detail-update effects. Runtime reference: [event saves and responses](../../../db/event-saves.md).
+- `TEST_PG_ADMIN_URL=postgres://bandos_test:disposable@127.0.0.1:55441/postgres node --test test/event-save.integration.test.js test/member-defaults.integration.test.js test/band-catalog.integration.test.js test/mutation-concurrency.integration.test.js test/mutation-validation.test.js test/notification-delivery.integration.test.js test/notification-mail.test.js test/relational-storage.integration.test.js test/bounded-sessions.integration.test.js test/registration-verification.integration.test.js test/password-recovery.integration.test.js test/profile-email-change.integration.test.js test/runtime-config.test.js test/frontend.integration.test.js` — **118 tests passed** using isolated databases on a dedicated disposable PostgreSQL 16 server.
+- Fixed-clock event coverage includes response transitions, no-op/reason-only history and privacy, trimmed 1,000-character boundary, active/current ownership, retired/foreign IDs and replay denial, privacy-filtered replay after leadership loss, date/start/end/instant/alias comparisons, DST gap/overlap behavior, exact-start/session/stale guards, rollback, concurrency and exact mail recipients on combined saves.
+- Actual-app HTTP smoke passed verified login, event creation, invitation response/replay, browser Origin rejection, end-time reconfirmation and history with a fake provider.
+- Existing band/event smoke scripts were attempted against the disposable app. Band setup stops at `EMAIL_VERIFICATION_REQUIRED`; event setup hits the registration rate limit after the band script's registrations. These legacy scripts do not set up verified v2 accounts.
+- `node --check` for all changed JavaScript files and `git diff --check` passed. No npm test/lint/build/typecheck scripts exist in this backend.
+- Independent `review-ticket` review **PASS**: all six acceptance criteria passed with no remaining findings. Review identified a replay privacy leak after leadership loss; the correction rechecks current permissions and filters stored private fields, with a focused regression and passing re-review. The reviewer also reran its independent privacy reproduction successfully. Cancellation remains assigned to BE-V2-12.

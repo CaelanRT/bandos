@@ -5,13 +5,16 @@ const {
   getEvent,
   updateEvent,
   deleteEvent,
+  respondToInvitation,
 } = require('../controllers/event.controller');
 const { requireBandLeader } = require('../middleware/band-access');
 const {
   validateCreateEvent,
   validateUpdateEvent,
   validateEventId,
+  validateInvitationResponse,
 } = require('../middleware/validate-event');
+const { validateRouteId } = require('../middleware/validate-mutation');
 const { loadEvent } = require('../middleware/event-access');
 
 const router = express.Router({ mergeParams: true });
@@ -23,6 +26,8 @@ router.get('/', listEvents);
 // this event lookup before their method-specific authorization and handlers.
 router.use('/:eventId', validateEventId, loadEvent);
 router.get('/:eventId', getEvent);
+router.put('/:eventId/invitations/:invitationId/response',
+  validateRouteId('invitationId'), validateInvitationResponse, respondToInvitation);
 router.patch(
   '/:eventId',
   requireBandLeader,

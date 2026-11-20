@@ -32,7 +32,7 @@ test('atomic event saves and invitations', async t => {
     const { IDLE_MS } = require('../utils/account-session');
     const bcrypt = require('bcrypt');
     const key = randomBytes(32);
-    let time = Date.now();
+    let time = Date.UTC(2026, 10, 20, 12);
     const app = express();
     app.locals.sessionClock = () => time;
     app.locals.outboxEncryptionKey = key;
@@ -95,6 +95,7 @@ test('atomic event saves and invitations', async t => {
     const counts = async () => (await fixture.query(`SELECT
       (SELECT count(*)::int FROM events) AS events,(SELECT count(*)::int FROM event_slots) AS slots,
       (SELECT count(*)::int FROM event_invitations) AS invitations,(SELECT count(*)::int FROM email_outbox) AS emails,
+      (SELECT count(*)::int FROM invitation_history) AS history,
       (SELECT count(*)::int FROM api_idempotency) AS replays`)).rows[0];
     let event;
 
@@ -342,6 +343,234 @@ test('atomic event saves and invitations', async t => {
       const results = await Promise.all([patch(a.body.data.event,{location:'One'}),patch(a.body.data.event,{location:'Two'})]);
       assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
       assert.equal(await effects(),n+2);
+    });
+
+    const respond = (event, status, reason, who = memberCookie, id = event.slots[0].invitation.invitationId, key) =>
+      request(`${path}/${event.eventId}/invitations/${id}/response`,
+        {expectedVersion:event.version,status,...(reason === undefined ? {} : {declineReason:reason})},who,'PUT',key);
+    const history = async id => (await fixture.query('SELECT * FROM invitation_history WHERE invitation_id=$1 ORDER BY history_id',[id])).rows;
+    const mailSince = async n => (await fixture.query(`SELECT kind,recipient_selector,recipient_user_id,recipient_band_id,payload
+      FROM email_outbox WHERE notification_id>$1 ORDER BY notification_id`,[n])).rows;
+    const lastMail = async () => (await fixture.query('SELECT COALESCE(max(notification_id),0)::int AS n FROM email_outbox')).rows[0].n;
+
+    await t.test('own response transitions, private reasons, normalized no-ops and replay record only actual changes', async () => {
+      let current = (await create({slots:[fresh(member.user_id),fresh(leader.user_id)]})).body.data.event;
+      const id = current.slots[0].invitation.invitationId;
+      const n = await lastMail();
+      const key = randomUUID();
+      const original = current;
+      const accepted = await respond(current,'accepted',undefined,memberCookie,id,key);
+      assert.equal(accepted.status,200,JSON.stringify(accepted.body));
+      current = accepted.body.data.event;
+      assert.equal(current.version,original.version+1);
+      assert.equal(current.slots[0].invitation.status,'accepted');
+      assert.equal(current.slots[1].invitation.status,'pending'); // Leader receives no implicit acceptance.
+      assert.equal(current.slots[0].invitation.respondedAt,new Date(time).toISOString());
+      assert.equal(current.slots[0].invitation.declineReason,null);
+      assert.deepEqual((await respond(original,'accepted',undefined,memberCookie,id,key)).body,accepted.body);
+      assert.deepEqual((await respond(current,'accepted')).body,accepted.body);
+      assert.equal((await history(id)).length,1);
+      const responseMail = await mailSince(n);
+      assert.equal(responseMail.length,1);
+      assert.equal(responseMail[0].kind,'invitation_response');
+      assert.equal(responseMail[0].recipient_selector,'current_leader');
+      assert.equal(responseMail[0].recipient_band_id,band.bandId);
+      assert.equal(responseMail[0].recipient_user_id,null);
+      current = (await respond(current,'declined','  Private  ')).body.data.event;
+      assert.equal(current.slots[0].invitation.declineReason,'Private');
+      const respondedAt = current.slots[0].invitation.respondedAt;
+      const n2 = await lastMail();
+      current = (await respond(current,'declined','  Revised  ')).body.data.event;
+      assert.equal(current.slots[0].invitation.respondedAt,respondedAt);
+      assert.equal(current.slots[0].invitation.declineReason,'Revised');
+      assert.equal(await lastMail(),n2);
+      assert.equal((await get(current)).body.data.event.slots[0].invitation.declineReason,'Revised');
+      const otherView = (await get(current,outsiderCookie)).body.data.event;
+      assert.equal(Object.hasOwn(otherView.slots[0].invitation,'declineReason'),false);
+      assert.equal(JSON.stringify(await mailSince(n)).includes('Private'),false);
+      assert.equal(JSON.stringify(await mailSince(n)).includes('Revised'),false);
+      current = (await respond(current,'declined','  ')).body.data.event;
+      assert.equal(current.slots[0].invitation.declineReason,null);
+      const version = current.version;
+      current = (await respond(current,'declined',null)).body.data.event;
+      assert.equal(current.version,version);
+      current = (await respond(current,'declined','  '+'x'.repeat(1000)+'  ')).body.data.event;
+      const before = await counts();
+      for (const [status,reason] of [['declined','x'.repeat(1001)],['accepted','no'],['accepted',''],['pending',null]]) {
+        const result = await respond(current,status,reason);
+        assert.equal(result.status,400,JSON.stringify(result.body));
+        if (status !== 'pending') assert.equal(result.body.error.details[0].field,'declineReason');
+      }
+      assert.deepEqual(await counts(),before);
+      current = (await respond(current,'accepted')).body.data.event;
+      assert.equal(current.slots[0].invitation.declineReason,null);
+      assert.deepEqual((await history(id)).map(h=>h.kind),['response','response','reason_changed','reason_changed','reason_changed','response']);
+      const ownLeader = await respond(current,'declined',undefined,cookie,current.slots[1].invitation.invitationId);
+      assert.equal(ownLeader.status,200);
+      assert.equal(ownLeader.body.data.event.slots[1].invitation.status,'declined');
+    });
+
+    await t.test('only active current owners respond; retired, foreign and malformed IDs have zero effects', async () => {
+      let current = (await create({hideFromUninvited:true})).body.data.event;
+      const id = current.slots[0].invitation.invitationId;
+      const foreign = (await create()).body.data.event;
+      const before = await counts();
+      for (const [who,invitationId] of [[cookie,id],[outsiderCookie,id],[memberCookie,foreign.slots[0].invitation.invitationId],
+        [memberCookie,'01'],[memberCookie,'1x']]) {
+        assert.ok([400,404].includes((await respond(current,'accepted',undefined,who,invitationId)).status));
+      }
+      const inactiveCookie = (await storedSession(member)).cookie;
+      await fixture.query('UPDATE users SET is_active=false WHERE user_id=$1',[member.user_id]);
+      assert.equal((await respond(current,'accepted',undefined,inactiveCookie)).status,401);
+      await fixture.query('UPDATE users SET is_active=true WHERE user_id=$1',[member.user_id]);
+      await fixture.query('DELETE FROM user_bands WHERE band_id=$1 AND user_id=$2',[band.bandId,member.user_id]);
+      assert.equal((await respond(current,'accepted')).status,404);
+      await fixture.query("INSERT INTO user_bands (band_id,user_id,role) VALUES ($1,$2,'member')",[band.bandId,member.user_id]);
+      // Restore cascaded eligibility for later event fixtures.
+      await fixture.query('INSERT INTO member_instruments (band_id,user_id,instrument_id) VALUES ($1,$2,$3),($1,$2,$4)',[band.bandId,member.user_id,guitar,vocals]);
+      assert.deepEqual(await counts(),before);
+      const replayKey = randomUUID();
+      const accepted = await respond(current,'accepted',undefined,memberCookie,id,replayKey);
+      assert.equal(accepted.status,200);
+      current = accepted.body.data.event;
+      current = (await patch(current,{slots:writeSlots(current).map(s=>({...s,userId:null}))})).body.data.event;
+      const retiredCounts = await counts();
+      assert.equal((await respond(current,'accepted',undefined,memberCookie,id)).status,404);
+      assert.equal((await respond({...current,version:1},'accepted',undefined,memberCookie,id,replayKey)).status,404);
+      assert.deepEqual(await counts(),retiredCounts);
+    });
+
+    await t.test('schedule reconfirmation compares local fields and both instants, preserving Pending/Declined and alias-only responses', async () => {
+      for (const edit of [{date:'2026-11-22'},{startTime:'19:00'},{endTime:'21:00'},
+        {timezone:'Europe/Paris'}, {startTime:'19:00',endTime:'21:00',timezone:'Europe/Paris'}, {date:'2026-11-22',startTime:'19:00',endTime:'21:00',timezone:'Europe/Paris'}]) {
+        let current = (await create({slots:[fresh(member.user_id),fresh(leader.user_id),fresh(outsider.user_id)]})).body.data.event;
+        current = (await respond(current,'accepted')).body.data.event;
+        current = (await respond(current,'declined','Retain me',outsiderCookie,current.slots[2].invitation.invitationId)).body.data.event;
+        const id = current.slots[0].invitation.invitationId;
+        const n = await lastMail();
+        const result = await patch(current,edit);
+        assert.equal(result.status,200,JSON.stringify(result.body));
+        current = result.body.data.event;
+        assert.deepEqual(current.slots.map(s=>s.invitation.status),['pending','pending','declined']);
+        assert.equal(current.slots[0].invitation.respondedAt,null);
+        assert.equal(current.slots[2].invitation.declineReason,'Retain me');
+        const h = await history(id);
+        assert.deepEqual(h.map(row=>row.kind),['response','reconfirmation']);
+        assert.equal(h[1].actor_user_id,leader.user_id);
+        assert.equal(h[1].status,'pending');
+        assert.deepEqual((await mailSince(n)).map(m=>[m.kind,m.recipient_user_id]),
+          [['event_update',member.user_id],['event_update',leader.user_id]]);
+      }
+      let current = (await create({slots:[fresh(member.user_id)]})).body.data.event;
+      current = (await respond(current,'accepted')).body.data.event;
+      const n = await lastMail();
+      const id = current.slots[0].invitation.invitationId;
+      current = (await patch(current,{timezone:'Etc/UTC'})).body.data.event;
+      assert.equal(current.slots[0].invitation.status,'accepted');
+      assert.equal((await history(id)).length,1);
+      assert.deepEqual((await mailSince(n)).map(m=>[m.kind,m.recipient_user_id]),[['event_update',member.user_id]]);
+      const beforeGap = await counts();
+      assert.equal((await patch(current,{date:'2027-03-14',startTime:'02:30',endTime:'04:00',timezone:'America/New_York'})).status,400);
+      assert.deepEqual(await counts(),beforeGap);
+      assert.equal((await get(current)).body.data.event.slots[0].invitation.status,'accepted');
+      // Resolved instants alone also require reconfirmation, even with identical local fields.
+      await fixture.query("UPDATE events SET ends_at=ends_at-interval '1 hour' WHERE event_id=$1",[current.eventId]);
+      current = (await patch(current,{})).body.data.event;
+      assert.equal(current.slots[0].invitation.status,'pending');
+      assert.equal((await history(id)).length,2);
+    });
+
+    await t.test('combined detail/reassignment saves send only retained updates, removals and new invitations', async () => {
+      let current = (await create({slots:[fresh(member.user_id),fresh(leader.user_id),fresh(outsider.user_id)]})).body.data.event;
+      current = (await respond(current,'accepted')).body.data.event;
+      current = (await respond(current,'declined',null,outsiderCookie,current.slots[2].invitation.invitationId)).body.data.event;
+      current = (await respond(current,'accepted',undefined,cookie,current.slots[1].invitation.invitationId)).body.data.event;
+      const n = await lastMail();
+      const removedAcceptedId = current.slots[1].invitation.invitationId;
+      const removedId = current.slots[2].invitation.invitationId;
+      const result = await patch(current,{endTime:'21:00',location:'Other hall',slots:[
+        writeSlots(current)[0],{...writeSlots(current)[1],userId:null},fresh(outsider.user_id)]});
+      assert.equal(result.status,200,JSON.stringify(result.body));
+      const saved = result.body.data.event;
+      assert.equal(saved.slots[0].invitation.status,'pending');
+      assert.equal(saved.slots[2].invitation.status,'pending');
+      assert.notEqual(saved.slots[2].invitation.invitationId,removedId);
+      assert.deepEqual((await mailSince(n)).map(m=>[m.kind,m.recipient_user_id]),[
+        ['event_update',member.user_id],['event_removal',leader.user_id],['event_removal',outsider.user_id],['event_invitation',outsider.user_id]]);
+      assert.equal((await history(removedAcceptedId)).length,1);
+      assert.equal((await history(removedId)).length,1); // No reset on a retired Declined invitation.
+      const n2 = await lastMail();
+      const label = await patch(saved,{slots:writeSlots(saved).reverse().map(s=>({...s,label:'Label only'}))});
+      assert.equal(label.status,200);
+      assert.equal(await lastMail(),n2);
+    });
+
+    await t.test('stale, exact-start and expired-session response writes leave status/history/mail untouched', async () => {
+      const current = (await create()).body.data.event;
+      const before = await counts();
+      assert.equal((await respond({...current,version:current.version+1},'accepted')).body.error.code,'STALE_VERSION');
+      const originalTime = time;
+      await fixture.query('UPDATE events SET starts_at=$2 WHERE event_id=$1',[current.eventId,new Date(time)]);
+      assert.equal((await respond(current,'accepted')).body.error.code,'EVENT_STARTED');
+      time++;
+      assert.equal((await respond(current,'declined')).body.error.code,'EVENT_STARTED');
+      time=originalTime;
+      await fixture.query('UPDATE events SET starts_at=$2 WHERE event_id=$1',[current.eventId,current.startsAt]);
+      const expired = await storedSession(member);
+      time+=IDLE_MS;
+      assert.equal((await respond(current,'accepted',null,expired.cookie)).status,401);
+      time=originalTime;
+      assert.deepEqual(await counts(),before);
+      assert.equal((await get(current)).body.data.event.slots[0].invitation.status,'pending');
+    });
+
+    await t.test('response failures roll back, concurrent retries commit once and distinct responses reject stale versions', async () => {
+      const current = (await create()).body.data.event;
+      const before = await counts();
+      await fixture.query(`CREATE FUNCTION reject_response_mail() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN RAISE EXCEPTION 'test failure'; END $$;
+        CREATE TRIGGER reject_response_mail BEFORE INSERT ON email_outbox FOR EACH ROW EXECUTE FUNCTION reject_response_mail()`);
+      assert.equal((await respond(current,'accepted')).status,500);
+      assert.deepEqual(await counts(),before);
+      await fixture.query('DROP TRIGGER reject_response_mail ON email_outbox; DROP FUNCTION reject_response_mail()');
+      const key = randomUUID();
+      const [a,b] = await Promise.all([respond(current,'accepted',undefined,memberCookie,undefined,key),respond(current,'accepted',undefined,memberCookie,undefined,key)]);
+      assert.equal(a.status,200);
+      assert.deepEqual(a.body,b.body);
+      assert.equal((await history(current.slots[0].invitation.invitationId)).length,1);
+      const saved = a.body.data.event;
+      const results = await Promise.all([respond(saved,'declined','One'),respond(saved,'declined','Two')]);
+      assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
+      assert.equal((await history(current.slots[0].invitation.invitationId)).length,2);
+    });
+
+    await t.test('response replay filters private reasons after leadership loss while preserving own reason and effects', async () => {
+      let current = (await create({slots:[fresh(member.user_id),fresh(leader.user_id)]})).body.data.event;
+      current = (await respond(current,'declined','Private member reason')).body.data.event;
+      const id = current.slots[1].invitation.invitationId;
+      const original = current, key = randomUUID();
+      const saved = await respond(original,'declined','Own reason',cookie,id,key);
+      assert.equal(saved.status,200);
+      assert.equal(saved.body.data.event.slots[0].invitation.declineReason,'Private member reason');
+      async function setLeader(userId) {
+        await fixture.query('BEGIN');
+        await fixture.query("UPDATE user_bands SET role=CASE WHEN user_id=$2 THEN 'leader'::role_type ELSE 'member'::role_type END WHERE band_id=$1",[band.bandId,userId]);
+        await fixture.query('UPDATE bands SET owner_user_id=$2 WHERE band_id=$1',[band.bandId,userId]);
+        await fixture.query('COMMIT');
+      }
+      await setLeader(member.user_id);
+      try {
+        const before = await counts();
+        const view = (await get(current,cookie)).body.data.event;
+        assert.equal(Object.hasOwn(view.slots[0].invitation,'declineReason'),false);
+        const replay = await respond(original,'declined','Own reason',cookie,id,key);
+        assert.equal(replay.status,200);
+        assert.equal(Object.hasOwn(replay.body.data.event.slots[0].invitation,'declineReason'),false);
+        assert.equal(replay.body.data.event.slots[1].invitation.declineReason,'Own reason');
+        assert.equal(replay.body.data.event.canManage,false);
+        assert.equal(replay.body.data.event.version,saved.body.data.event.version);
+        assert.deepEqual(await counts(),before);
+      } finally { await setLeader(leader.user_id); }
     });
 
     await t.test('fake delivery outage leaves the committed invitation intact and retries one stable effect', async () => {
