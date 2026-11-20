@@ -6,10 +6,6 @@ const bandNameSchema = z.strictObject({
   name: z.string().trim().min(1).max(50),
 });
 
-const addMemberSchema = z.strictObject({
-  username: z.string().trim().min(3).max(50),
-});
-
 const bandIdSchema = z
   .string()
   .regex(/^[1-9]\d*$/)
@@ -21,26 +17,6 @@ function validationDetails(error, fallbackField) {
     field: issue.path.join('.') || fallbackField,
     message: issue.message,
   }));
-}
-
-function validateBody(schema) {
-  return (req, res, next) => {
-    const result = schema.safeParse(req.body);
-
-    if (!result.success) {
-      return next(
-        new HttpError(
-          400,
-          'VALIDATION_ERROR',
-          'Invalid request body',
-          validationDetails(result.error, 'body'),
-        ),
-      );
-    }
-
-    req.body = result.data;
-    return next();
-  };
 }
 
 function validateBandId(req, res, next) {
@@ -81,9 +57,23 @@ const validateInstrumentation = validateMutationBody(z.strictObject({
       return new Set(ids).size === ids.length;
     }, 'Duplicate slot IDs'),
 }));
-const validateAddBandMember = validateBody(addMemberSchema);
+const validateAddBandMember = validateMutationBody(z.strictObject({
+  username: z.string().trim().min(3).max(50), instrumentIds: uniqueIds.pipe(z.array(idSchema).min(1)),
+  expectedVersion: versionSchema,
+}));
+const validateMemberEligibility = validateMutationBody(z.strictObject({
+  instrumentIds: uniqueIds, expectedVersion: versionSchema,
+}));
+const validateDefaultLineup = validateMutationBody(z.strictObject({
+  expectedVersion: versionSchema,
+  assignments: z.array(z.strictObject({ slotId: idSchema, userId: idSchema })).min(1).max(50),
+}));
+const validateClearDefaultLineup = validateMutationBody(z.strictObject({ expectedVersion: versionSchema }));
 
 module.exports = {
+  validateMemberEligibility,
+  validateDefaultLineup,
+  validateClearDefaultLineup,
   validateAddInstrument,
   validateInstrumentation,
   validateCreateBand,

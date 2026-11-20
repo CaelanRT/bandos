@@ -73,8 +73,17 @@ async function bandDetail(client, bandId, userId) {
     WHERE band_id=$1 ORDER BY instrument_id`, [bandId])).rows;
   const instrumentation = (await client.query(`SELECT slot_id AS "slotId", instrument_id AS "instrumentId", label, position
     FROM template_slots WHERE band_id=$1 ORDER BY position`, [bandId])).rows;
-  return { ...mapBand(band, band.role, await findActiveBandMembers(bandId, client)),
-    instruments, instrumentation, defaultLineup: null };
+  const members = await findActiveBandMembers(bandId, client);
+  const saved = (await client.query('SELECT version FROM default_lineups WHERE band_id=$1', [bandId])).rows[0];
+  let defaultLineup = null;
+  if (saved) {
+    const assignments = (await client.query(`SELECT a.slot_id AS "slotId", a.user_id AS "userId"
+      FROM default_assignments a JOIN template_slots s USING (band_id,slot_id)
+      WHERE a.band_id=$1 ORDER BY s.position`, [bandId])).rows;
+    const invalidReasons = defaultInvalidReasons(instrumentation, assignments, members);
+    defaultLineup = { version: saved.version, assignments, isApplicable: invalidReasons.length === 0, invalidReasons };
+  }
+  return { ...mapBand(band, band.role, members), instruments, instrumentation, defaultLineup };
 }
 
 async function getInstruments(req, res) {
@@ -130,9 +139,9 @@ async function createBand(req, res) {
 
 // Membership and authoritative ownership are read again under the band lock,
 // including for replays; preflight middleware alone cannot authorize a commit.
-async function configureBand(req, res, work) {
+async function configureBand(req, res, work, discoverUsers = async () => []) {
   const response = await withMutation(req, {
-    discover: async () => ({ bands: [req.params.bandId] }),
+    discover: async client => ({ users: await discoverUsers(client), bands: [req.params.bandId] }),
     authorize: async (client, locked) => {
       const band = locked.bands[0];
       const member = (await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2',
@@ -142,7 +151,7 @@ async function configureBand(req, res, work) {
     },
     validate: async (client, locked) => checkVersion(locked.bands[0].version, req.body.expectedVersion),
     work: async (client, locked) => {
-      const result = await work(client, locked.bands[0]);
+      const result = await work(client, locked.bands[0], locked);
       return { status: result?.status || 200, body: { data: { ...result?.data,
         band: await bandDetail(client, req.params.bandId, req.session.userId) } } };
     },
@@ -249,53 +258,100 @@ async function deleteBand(req, res) {
   return res.status(200).json(body);
 }
 
-async function addBandMember(req, res) {
-  const body = await withSessionMutation(req, async (client) => {
-    const userResult = await client.query(
-      `SELECT user_id, username, first_name, last_name
-       FROM users
-       WHERE LOWER(username) = LOWER($1)
-         AND is_active = true
-       LIMIT 1`,
-      [req.body.username],
-    );
-    const user = userResult.rows[0];
-
-    if (!user) {
-      throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+function defaultInvalidReasons(slots, assignments, members) {
+  const reasons = [];
+  for (const slot of slots) {
+    const assignment = assignments.find(row => row.slotId === slot.slotId);
+    if (!assignment) {
+      reasons.push({ code: 'MISSING_SLOT', slotId: slot.slotId });
+      continue;
     }
-
-    try {
-      await client.query(
-        `INSERT INTO user_bands (user_id, band_id, role)
-         VALUES ($1, $2, 'member')`,
-        [user.user_id, req.band.bandId],
-      );
-    } catch (error) {
-      if (
-        error.code === '23505'
-        && error.constraint === 'user_bands_user_band_unique'
-      ) {
-        throw new HttpError(
-          409,
-          'USER_ALREADY_IN_BAND',
-          'User is already a member of this band',
-        );
-      }
-
-      throw error;
+    const member = members.find(row => row.userId === assignment.userId);
+    if (!member) reasons.push({ code: 'MEMBER_UNAVAILABLE', ...assignment });
+    else if (!member.instrumentIds.includes(slot.instrumentId)) {
+      reasons.push({ code: 'INSTRUMENT_INELIGIBLE', ...assignment });
     }
+  }
+  return reasons;
+}
 
-    return {
-      data: {
-        member: mapMember({
-          ...user,
-          role: 'member',
-        }),
-      },
-    };
+async function validateInstrumentIds(client, bandId, ids) {
+  const catalog = (await client.query('SELECT instrument_id FROM instruments WHERE band_id=$1', [bandId])).rows;
+  ids.forEach((id, index) => {
+    if (!catalog.some(row => row.instrument_id === id)) invalid(`instrumentIds.${index}`, 'Instrument does not belong to this band');
   });
-  return res.status(201).json(body);
+}
+
+async function replaceEligibility(client, bandId, userId, ids) {
+  await client.query('DELETE FROM member_instruments WHERE band_id=$1 AND user_id=$2', [bandId, userId]);
+  for (const id of ids) {
+    await client.query('INSERT INTO member_instruments (band_id,user_id,instrument_id) VALUES ($1,$2,$3)', [bandId, userId, id]);
+  }
+  await client.query('UPDATE bands SET version=version+1 WHERE band_id=$1', [bandId]);
+}
+
+async function addBandMember(req, res) {
+  return configureBand(req, res, async (client, band, locked) => {
+    const user = locked.users.find(row => row.username.toLowerCase() === req.body.username.toLowerCase());
+    if (!user?.is_active || !user.email_verified_at) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+    const exists = (await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2', [band.band_id, user.user_id])).rowCount;
+    if (exists) throw new HttpError(409, 'MEMBER_ALREADY_EXISTS', 'User is already a member of this band');
+    await validateInstrumentIds(client, band.band_id, req.body.instrumentIds);
+    await client.query("INSERT INTO user_bands (user_id,band_id,role) VALUES ($1,$2,'member')", [user.user_id, band.band_id]);
+    await replaceEligibility(client, band.band_id, user.user_id, req.body.instrumentIds);
+    const member = (await findActiveBandMembers(band.band_id, client)).find(row => row.userId === user.user_id);
+    return { status: 201, data: { member } };
+  }, async client => (await client.query('SELECT user_id FROM users WHERE lower(username)=lower($1)', [req.body.username])).rows.map(row => row.user_id));
+}
+
+async function updateMemberEligibility(req, res) {
+  return configureBand(req, res, async (client, band) => {
+    let member = (await findActiveBandMembers(band.band_id, client)).find(row => row.userId === req.params.userId);
+    if (!member) throw new HttpError(404, 'USER_NOT_FOUND', 'Band member not found');
+    await validateInstrumentIds(client, band.band_id, req.body.instrumentIds);
+    const ids = [...req.body.instrumentIds].sort((a,b) => a-b);
+    if (canonicalJson(member.instrumentIds) !== canonicalJson(ids)) {
+      await replaceEligibility(client, band.band_id, member.userId, ids);
+      member = { ...member, instrumentIds: ids };
+    }
+    return { data: { member } };
+  }, async () => [req.params.userId]);
+}
+
+async function saveDefaultLineup(req, res) {
+  return configureBand(req, res, async (client, band) => {
+    const detail = await bandDetail(client, band.band_id, req.session.userId);
+    const { assignments } = req.body;
+    const slots = new Set(), users = new Set();
+    assignments.forEach((assignment, index) => {
+      if (!detail.instrumentation.some(slot => slot.slotId === assignment.slotId)) invalid(`assignments.${index}.slotId`, 'Slot does not belong to this band');
+      if (slots.has(assignment.slotId)) invalid(`assignments.${index}.slotId`, 'Slot already assigned');
+      if (users.has(assignment.userId)) invalid(`assignments.${index}.userId`, 'Musician already occupies another slot');
+      slots.add(assignment.slotId);
+      users.add(assignment.userId);
+    });
+    if (slots.size !== detail.instrumentation.length) invalid('assignments', 'Assign every current template slot');
+    const reasons = defaultInvalidReasons(detail.instrumentation, assignments, detail.members);
+    if (reasons.length) throw new HttpError(409, 'DEFAULT_LINEUP_INVALID', 'Default lineup requires current eligible band members', reasons);
+    const ordered = [...assignments].sort((a,b) => a.slotId-b.slotId);
+    const before = detail.defaultLineup?.assignments.slice().sort((a,b) => a.slotId-b.slotId);
+    if (canonicalJson(before || null) !== canonicalJson(ordered)) {
+      await client.query(`INSERT INTO default_lineups (band_id) VALUES ($1)
+        ON CONFLICT (band_id) DO UPDATE SET version=default_lineups.version+1`, [band.band_id]);
+      await client.query('DELETE FROM default_assignments WHERE band_id=$1', [band.band_id]);
+      for (const assignment of ordered) {
+        await client.query('INSERT INTO default_assignments (band_id,slot_id,user_id) VALUES ($1,$2,$3)', [band.band_id, assignment.slotId, assignment.userId]);
+      }
+      await client.query('UPDATE bands SET version=version+1 WHERE band_id=$1', [band.band_id]);
+    }
+  }, async () => req.body.assignments.map(row => row.userId));
+}
+
+async function clearDefaultLineup(req, res) {
+  return configureBand(req, res, async (client, band) => {
+    const removed = await client.query('DELETE FROM default_lineups WHERE band_id=$1', [band.band_id]);
+    if (removed.rowCount) await client.query('UPDATE bands SET version=version+1 WHERE band_id=$1', [band.band_id]);
+  });
 }
 
 module.exports = {
@@ -308,4 +364,7 @@ module.exports = {
   updateBand,
   deleteBand,
   addBandMember,
+  updateMemberEligibility,
+  saveDefaultLineup,
+  clearDefaultLineup,
 };

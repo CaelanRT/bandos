@@ -8,6 +8,9 @@ const {
   updateBand,
   deleteBand,
   addBandMember,
+  updateMemberEligibility,
+  saveDefaultLineup,
+  clearDefaultLineup,
 } = require('../controllers/band.controller');
 const authenticate = require('../middleware/authenticate');
 const {
@@ -16,12 +19,16 @@ const {
   validateCreateBand,
   validateUpdateBand,
   validateAddBandMember,
+  validateMemberEligibility,
+  validateDefaultLineup,
+  validateClearDefaultLineup,
   validateBandId,
 } = require('../middleware/validate-band');
 const {
   loadBandMembership,
   requireBandLeader,
 } = require('../middleware/band-access');
+const { validateRouteId } = require('../middleware/validate-mutation');
 const eventRouter = require('./event.routes');
 
 const router = express.Router();
@@ -61,5 +68,12 @@ router.post(
   requireBandLeader,
   addBandMember,
 );
+
+router.patch('/:bandId/members/:userId', validateBandId, validateRouteId('userId'),
+  validateMemberEligibility, loadBandMembership, requireBandLeader, updateMemberEligibility);
+router.put('/:bandId/default-lineup', validateBandId, validateDefaultLineup,
+  loadBandMembership, requireBandLeader, saveDefaultLineup);
+router.delete('/:bandId/default-lineup', validateBandId, validateClearDefaultLineup,
+  loadBandMembership, requireBandLeader, clearDefaultLineup);
 
 module.exports = router;
