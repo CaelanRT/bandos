@@ -47,7 +47,7 @@ async function eventDetail(client, row, actor, now) {
     return { slotId: s.slot_id, templateSlotId: s.template_slot_id, instrumentId: s.instrument_id,
       instrumentName: s.instrument_name, label: s.label, position: s.position,
       invitation: i ? { invitationId: i.invitation_id, userId: i.user_id, username: i.username,
-        firstName: i.first_name, lastName: i.last_name, status: i.status, respondedAt: i.responded_at,
+        firstName: i.first_name, lastName: i.last_name, status: i.status, respondedAt: i.responded_at ? new Date(i.responded_at).toISOString() : null,
         ...(leader || i.user_id === actor ? { declineReason: i.decline_reason } : {}) } : null };
   }), myInvitationId: own?.invitation_id ?? null, canManage: leader,
   canRespond: Boolean(own && +new Date(row.starts_at) > now) };
@@ -60,6 +60,11 @@ function invalid(field, message) {
 function slotIntent(s) {
   return { slotId: s.slot_id, templateSlotId: s.template_slot_id, instrumentId: s.instrument_id,
     label: s.label, userId: s.invitation?.user_id ?? null };
+}
+
+async function recordInvitationHistory(client, invitationId, actor, kind, status, reason = null) {
+  await client.query(`INSERT INTO invitation_history (invitation_id,actor_user_id,kind,status,decline_reason)
+    VALUES ($1,$2,$3,$4,$5)`, [invitationId, actor, kind, status, reason]);
 }
 
 // Validate the entire replacement before touching invitations or the outbox.
@@ -104,7 +109,7 @@ async function saveEvent(req, res, creating) {
   const actor = req.session.userId;
   const eventId = req.event?.event_id;
   const clock = () => (req.app.locals.sessionClock || Date.now)();
-  let event, before, fields, schedule, slots, changed, detailChanged;
+  let event, before, fields, schedule, slots, changed, detailChanged, timeChanged;
   const response = await withMutation(req, {
     discover: async client => ({
       users: req.body.slots?.filter(s => s.userId !== null).map(s => s.userId) || [],
@@ -142,7 +147,9 @@ async function saveEvent(req, res, creating) {
         invalid(error.field, error.message);
       }
       slots = req.body.slots === undefined ? null : await prepareSlots(client, bandId, req.body.slots, before, creating);
-      detailChanged = creating || canonicalJson(fields) !== canonicalJson(editableEventFields(event));
+      timeChanged = !creating && (['date', 'startTime', 'endTime'].some(key => fields[key] !== editableEventFields(event)[key])
+        || +schedule.startInstant !== +event.starts_at || +schedule.endInstant !== +event.ends_at);
+      detailChanged = creating || timeChanged || canonicalJson(fields) !== canonicalJson(editableEventFields(event));
       changed = detailChanged || (slots !== null && canonicalJson(before.map(slotIntent)) !== canonicalJson(slots.map(s => ({
         slotId: s.slotId ?? null, templateSlotId: s.templateSlotId, instrumentId: s.instrumentId, label: s.label, userId: s.userId,
       }))));
@@ -173,6 +180,11 @@ async function saveEvent(req, res, creating) {
               [old.invitation.invitation_id, new Date(clock()), replacement ? 'replaced' : 'removed']);
             await notify(old.invitation, 'event_removal', 'removalsAndCancellations');
           } else if (old.invitation && detailChanged && old.invitation.status !== 'declined') {
+            if (timeChanged && old.invitation.status === 'accepted') {
+              await client.query(`UPDATE event_invitations SET status='pending',responded_at=NULL,decline_reason=NULL
+                WHERE invitation_id=$1`, [old.invitation.invitation_id]);
+              await recordInvitationHistory(client, old.invitation.invitation_id, actor, 'reconfirmation', 'pending');
+            }
             await notify(old.invitation, 'event_update', 'eventUpdates');
           }
         }
@@ -205,6 +217,59 @@ async function saveEvent(req, res, creating) {
 const createEvent = (req, res) => saveEvent(req, res, true);
 const updateEvent = (req, res) => saveEvent(req, res, false);
 
+async function respondToInvitation(req, res) {
+  const bandId = req.band.bandId, eventId = req.event.event_id;
+  const invitationId = req.params.invitationId, actor = req.session.userId;
+  const clock = () => (req.app.locals.sessionClock || Date.now)();
+  let event, invitation, isLeader;
+  const response = await withMutation(req, {
+    discover: async () => ({ bands: [bandId], events: [eventId], event_invitations: [invitationId] }),
+    authorize: async (client, locked) => {
+      const band = locked.bands[0];
+      const member = (await client.query('SELECT role FROM user_bands WHERE band_id=$1 AND user_id=$2', [bandId, actor])).rows[0];
+      isLeader = member?.role === 'leader' && band?.owner_user_id === actor;
+      event = locked.events.find(e => e.event_id === eventId && e.band_id === bandId && e.is_active);
+      invitation = locked.event_invitations.find(i => i.invitation_id === invitationId && i.event_id === eventId
+        && i.band_id === bandId && i.user_id === actor && !i.retired_at);
+      if (!band?.is_active || !member || !event || !invitation) {
+        throw new HttpError(404, 'INVITATION_NOT_FOUND', 'Invitation not found');
+      }
+    },
+    authorizeReplay: async (client, prior) => {
+      // Replays retain the committed data, subject to the actor's current privacy permissions.
+      const saved = prior.response_body.data.event;
+      saved.canManage = isLeader;
+      saved.canRespond = +event.starts_at > clock();
+      if (!isLeader) for (const slot of saved.slots) {
+        if (slot.invitation && slot.invitation.userId !== actor) delete slot.invitation.declineReason;
+      }
+    },
+    validate: async () => {
+      if (+event.starts_at <= clock()) throw new HttpError(409, 'EVENT_STARTED', 'Responses cannot change after the event has started');
+      checkVersion(event.version, req.body.expectedVersion);
+    },
+    work: async client => {
+      const { status, declineReason } = req.body;
+      const statusChanged = status !== invitation.status;
+      if (statusChanged || declineReason !== invitation.decline_reason) {
+        await client.query(`UPDATE event_invitations SET status=$2,decline_reason=$3,
+          responded_at=CASE WHEN $4 THEN $5 ELSE responded_at END WHERE invitation_id=$1`,
+        [invitationId, status, declineReason, statusChanged, new Date(clock())]);
+        await recordInvitationHistory(client, invitationId, actor, statusChanged ? 'response' : 'reason_changed', status, declineReason);
+        event = (await client.query(`UPDATE events SET version=version+1,updated_at=now() WHERE event_id=$1 RETURNING *`, [eventId])).rows[0];
+        if (statusChanged) await enqueueNotification(client, {
+          transitionId: randomUUID(), kind: 'invitation_response', category: 'invitationResponses',
+          recipientIdentity: `leader:${bandId}`, recipientBandId: bandId,
+          payload: { subject: 'bandOS invitation response', text: `${invitation.username} ${status} the invitation to ${event.name}.`,
+            path: `/bands/${bandId}/events/${eventId}` },
+        });
+      }
+      return { status: 200, body: { data: { event: await eventDetail(client, event, actor, clock()) } } };
+    },
+  });
+  return res.status(response.status).json(response.body);
+}
+
 async function listEvents(req, res) {
   const result = await db.query(`SELECT e.* FROM events e WHERE e.band_id=$1 AND e.is_active=true
     AND (e.hide_from_uninvited=false OR EXISTS (SELECT 1 FROM user_bands WHERE band_id=e.band_id AND user_id=$2 AND role='leader')
@@ -232,4 +297,4 @@ async function deleteEvent(req, res) {
   return res.status(200).json(body);
 }
 
-module.exports = { createEvent, listEvents, getEvent, updateEvent, deleteEvent, mapEvent };
+module.exports = { createEvent, listEvents, getEvent, updateEvent, deleteEvent, respondToInvitation, mapEvent };

@@ -59,6 +59,16 @@ const updateEventSchema = z.strictObject({
   slots: slotsSchema.optional(),
 });
 
+const invitationResponseSchema = z.strictObject({
+  expectedVersion: versionSchema,
+  status: z.enum(['accepted', 'declined']),
+  declineReason: z.string().trim().max(1000).nullable().optional(),
+}).superRefine((value, context) => {
+  if (value.status === 'accepted' && value.declineReason != null) {
+    context.addIssue({ code: 'custom', path: ['declineReason'], message: 'Acceptance cannot include a decline reason' });
+  }
+}).transform(value => ({ ...value, declineReason: value.declineReason || null }));
+
 const eventIdSchema = z
   .string()
   .regex(/^[1-9]\d*$/)
@@ -97,4 +107,5 @@ module.exports = {
   validateCreateEvent,
   validateUpdateEvent,
   validateEventId,
+  validateInvitationResponse: validateBody(invitationResponseSchema),
 };

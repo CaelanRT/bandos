@@ -1,4 +1,4 @@
-# Event saves (BE-V2-10)
+# Event saves and responses (BE-V2-10–11)
 
 `POST /api/v1/bands/:bandId/events` and
 `PATCH /api/v1/bands/:bandId/events/:eventId` require a verified cookie session,
@@ -40,5 +40,31 @@ Event projections include ordered saved slots, current invitations, own invitati
 ID and permission flags. Private decline reasons appear only for the current
 leader or that invitation's owner. Hidden events require leadership or a current
 invitation as well as current membership, including for list/direct access.
-Invitation response and time-change reconfirmation transitions remain BE-V2-11;
-full read/cancellation lifecycle coverage remains BE-V2-12.
+
+`PUT /api/v1/bands/:bandId/events/:eventId/invitations/:invitationId/response`
+takes `{expectedVersion,status:'accepted'|'declined',declineReason?:string|null}`
+and returns `{data:{event}}`. Only the active current invitation owner can
+respond, including an explicitly assigned leader. Retired/foreign invitations
+are unavailable. The session, membership, event, invitation, version and stored
+start boundary are checked under the shared mutation locks. Identical responses
+preserve the event version/history and send no mail; actual changes increment
+the event version. Status changes record `response` history and one
+`invitationResponses` effect addressed to the current leader at dispatch time.
+Reason-only edits record `reason_changed` without mail or changing `respondedAt`.
+Decline reasons normalize omitted/null/blank to null and trim before enforcing
+1,000 characters; non-null reasons on acceptance are rejected. Acceptance clears
+the prior reason. Private reasons are excluded from mail payloads. Response retries recheck current
+leadership and filter the committed projection so former leaders cannot retrieve
+other musicians’ reasons from a stored replay.
+
+Schedule saves compare local date/start/end and both resolved instants. Any change
+resets only retained Accepted invitations to Pending, clears `respondedAt`, and
+records `reconfirmation` history with the saving leader as actor. Pending and
+Declined stay unchanged. A timezone representation edit preserving local fields
+and instants retains all responses but sends ordinary detail updates. Reconfirmation
+sends no musician-response effect. Combined lineup/detail saves send updates only
+to retained Pending/Accepted invitees, removals to retired invitees, and invitations
+to newly assigned users. All writes, history, mail effects and replay commit
+atomically; failed/stale/expired-session writes have no effects.
+
+Full read/cancellation lifecycle coverage remains BE-V2-12.
