@@ -1,6 +1,6 @@
 # BE-V2-11 — Record invitation responses and require time-change reconfirmation
 
-> **Status:** In progress
+> **Status:** For Review ([Draft PR #93](https://github.com/CaelanRT/bandos/pull/93))
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [10](10-event-save-invitations.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 3, 5, 7, 10
