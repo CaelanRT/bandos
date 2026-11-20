@@ -1,6 +1,6 @@
 # BE-V2-13 — Create and edit rehearsal poll compositions with revisioned options
 
-> **Status:** In progress — verification and independent review passed; draft PR pending
+> **Status:** For Review — [Draft PR #98](https://github.com/CaelanRT/bandos/pull/98)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [08](08-band-catalog-template.md), [09](09-member-eligibility-defaults.md), [10](10-event-save-invitations.md), [12](12-event-reads-cancellation.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 6–7, 10
