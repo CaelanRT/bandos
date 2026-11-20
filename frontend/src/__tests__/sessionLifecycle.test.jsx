@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -33,7 +33,8 @@ function deferred() {
 }
 function Probe() {
   const session = useSession()
-  useEffect(() => { currentSession = session }, [session])
+  // Publish the committed session before DOM queries can observe the page.
+  useLayoutEffect(() => { currentSession = session }, [session])
   return null
 }
 function ProtectedPage() {
@@ -67,6 +68,7 @@ async function login() {
   await screen.findByRole('heading', { name: 'Private page' })
 }
 beforeEach(() => {
+  currentSession = undefined
   fetchMock.mockReset()
   vi.stubGlobal('fetch', (url, options) => new URL(url).pathname.endsWith('/bands')
     ? Promise.resolve(response({ data: { bands: [] } })) : fetchMock(url, options))
@@ -172,7 +174,11 @@ it('does not let an old expiration report sign out a newly authenticated session
   const old = deferred()
   fetchMock.mockReturnValueOnce(old.promise).mockResolvedValueOnce(failure())
   const oldRequest = currentSession.authenticatedRequest('/old').catch(() => {})
-  await act(async () => { await currentSession.authenticatedRequest('/current').catch(() => {}) })
+  await act(async () => {
+    await expect(currentSession.authenticatedRequest('/current')).rejects.toMatchObject({
+      status: 401, code: 'AUTHENTICATION_REQUIRED',
+    })
+  })
   await screen.findByRole('heading', { name: 'Login' })
   await login()
   await act(async () => { old.resolve(failure()); await oldRequest })
