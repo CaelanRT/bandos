@@ -1,6 +1,6 @@
 # BE-V2-13 — Create and edit rehearsal poll compositions with revisioned options
 
-> **Status:** For Review — [Draft PR #98](https://github.com/CaelanRT/bandos/pull/98)
+> **Status:** Completed — [merged PR #98](https://github.com/CaelanRT/bandos/pull/98)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [08](08-band-catalog-template.md), [09](09-member-eligibility-defaults.md), [10](10-event-save-invitations.md), [12](12-event-reads-cancellation.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 6–7, 10
@@ -64,3 +64,9 @@ Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementa
 - Independent `review-ticket` review — **PASS** on all seven acceptance criteria,
   no findings. Reviewer independently reran all **34 poll/event tests** successfully.
 - Voting, finalization and cancellation routes remain assigned to tickets 14–15.
+
+## Completion
+
+Confirmed [PR #98](https://github.com/CaelanRT/bandos/pull/98) merged into remote
+`main` on 20 November 2026 (merge commit `b8666f6`). Completion metadata is
+persisted on `main`; BE-V2-14 is next.
