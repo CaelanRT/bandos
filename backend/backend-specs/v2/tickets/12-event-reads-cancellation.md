@@ -1,6 +1,6 @@
 # BE-V2-12 — Expose authorized event reads and cancel events safely
 
-> **Status:** In progress — implementation, automated verification and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #95](https://github.com/CaelanRT/bandos/pull/95)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [10](10-event-save-invitations.md), [11](11-event-response-time.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 4, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 5, 7
