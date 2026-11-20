@@ -102,6 +102,8 @@ const validateCreateEvent = validateBody(createEventSchema);
 const validateUpdateEvent = validateBody(updateEventSchema);
 
 module.exports = {
+  eventFields,
+  slotsSchema,
   createEventSchema,
   updateEventSchema,
   validateCreateEvent,

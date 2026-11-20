@@ -42,6 +42,7 @@ router.use(
   loadBandMembership,
   eventRouter,
 );
+router.use('/:bandId/polls', validateBandId, loadBandMembership, require('./poll.routes'));
 router.post('/:bandId/instruments', validateBandId, validateAddInstrument, addInstrument);
 router.patch('/:bandId/instrumentation', validateBandId, validateInstrumentation, updateInstrumentation);
 router.get('/:bandId', validateBandId, loadBandMembership, getBand);
