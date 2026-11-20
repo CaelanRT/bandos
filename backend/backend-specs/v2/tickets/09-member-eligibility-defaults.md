@@ -1,6 +1,6 @@
 # BE-V2-09 — Manage member eligibility and repairable default lineups
 
-> **Status:** In progress
+> **Status:** For Review — [Draft PR #89](https://github.com/CaelanRT/bandos/pull/89)
 > **Dependencies:** [03](03-mutation-concurrency.md), [05](05-registration-verification.md), [08](08-band-catalog-template.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 2–4, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 3–4, 10
