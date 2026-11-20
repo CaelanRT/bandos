@@ -1,6 +1,6 @@
 # BE-V2-08 — Create and configure band catalogs and instrumentation
 
-> **Status:** Not started
+> **Status:** For Review — [Draft PR #86](https://github.com/CaelanRT/bandos/pull/86)
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [05](05-registration-verification.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 2–4, 7
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 3–4, 10
@@ -32,3 +32,37 @@ Test starter/custom-only creation, repeated normalized names/instruments, slot b
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation and verification
+
+- Starter catalog reads and atomic band creation now support repeated starter or
+  custom instruments, ordered slots, and optional leader eligibility. Creation
+  uses starter IDs for `instrumentId` and `leaderInstrumentIds`; responses return
+  the new band's instrument IDs. Omitted leader eligibility is an empty list.
+- Catalog additions, instrumentation replacement and rename use band locks,
+  current-owner checks, expected versions, semantic no-ops and idempotent replay.
+  Detail/list responses include versions; detail includes catalog, stable slots,
+  current member instrument IDs and `defaultLineup: null` until BE-V2-09.
+- Snapshot instruments/labels, issued assignments and invitation histories remain
+  unchanged by template edits. Deleting a source slot only nulls snapshot provenance.
+- `TEST_PG_ADMIN_URL=postgres://bandos_test:disposable@127.0.0.1:55448/postgres
+  node --test $(rg --files test -g '*.test.js' | rg -v 'readiness-shutdown|runtime-security')`:
+  **89 passed**, including **12** catalog/template tests with commit rollback,
+  concurrent configuration, inaccessible creation replay and waiting-write ownership
+  transfer coverage.
+- `node --test test/runtime-security.integration.test.js`: **3 passed**, using
+  a fresh disposable TLS database and fake mail.
+- `node --test test/readiness-shutdown.integration.test.js`: **4 passed**, using
+  its dedicated disposable PostgreSQL container.
+- Changed JavaScript syntax checks and `git diff --check` passed. No backend npm
+  test/lint/build/typecheck scripts are defined.
+- Legacy band/event smoke scripts were attempted against separate disposable API
+  processes with encrypted queued mail and no provider delivery. They stop during
+  setup: band creation encounters the verification gate; event registration
+  generates a username exceeding its existing 50-character bound. New HTTP
+  integration tests verify this ticket's catalog/band behavior with verified users.
+- Independent `review-ticket` review: **PASS** on all six criteria, with no
+  remaining findings. The initial review found inaccessible creation replay;
+  replay now locks the created band and rechecks current membership/access
+  before returning stored data. Both deleted-band and removed-creator
+  regressions pass; the reviewer independently confirmed the fix.

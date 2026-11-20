@@ -1,5 +1,7 @@
 const express = require('express');
 const {
+  addInstrument,
+  updateInstrumentation,
   createBand,
   listBands,
   getBand,
@@ -9,6 +11,8 @@ const {
 } = require('../controllers/band.controller');
 const authenticate = require('../middleware/authenticate');
 const {
+  validateAddInstrument,
+  validateInstrumentation,
   validateCreateBand,
   validateUpdateBand,
   validateAddBandMember,
@@ -31,6 +35,8 @@ router.use(
   loadBandMembership,
   eventRouter,
 );
+router.post('/:bandId/instruments', validateBandId, validateAddInstrument, addInstrument);
+router.patch('/:bandId/instrumentation', validateBandId, validateInstrumentation, updateInstrumentation);
 router.get('/:bandId', validateBandId, loadBandMembership, getBand);
 router.patch(
   '/:bandId',

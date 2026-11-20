@@ -62,7 +62,7 @@ async function pruneIdempotency(client = db) {
 // Each callback uses this transaction's client. discover runs on EVERY attempt;
 // authorize rechecks current access under locks, including on a replay. validate
 // owns version/time/eligibility checks for a NEW action, and runs before work.
-async function withMutation(req, { discover = async () => ({}), authorize, validate, work, allowRestricted = false }) {
+async function withMutation(req, { discover = async () => ({}), authorize, authorizeReplay = async () => {}, validate, work, allowRestricted = false }) {
   if (typeof authorize !== 'function' || typeof validate !== 'function' || typeof work !== 'function') {
     throw new TypeError('Mutation requires authorize, validate and work callbacks');
   }
@@ -97,6 +97,9 @@ async function withMutation(req, { discover = async () => ({}), authorize, valid
           AND expires_at > clock_timestamp()`, scope)).rows[0];
       let response;
       if (prior) {
+        // Creates may learn the resource ID only from the stored response.
+        // Such replay checks run under the actor lock and retain lock ordering.
+        await authorizeReplay(client, prior, locked, user);
         if (!prior.request_hash.equals(hash)) throw new HttpError(409, 'IDEMPOTENCY_KEY_REUSED', 'Idempotency key was used for a different request');
         response = { status: prior.response_status, body: prior.response_body };
       } else {

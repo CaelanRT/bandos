@@ -129,11 +129,11 @@ test('bounded PostgreSQL sessions, access, Origin and commit checks', async (t) 
       const accepted = await request('/users/me', { method: 'PATCH', cookie: s.cookie, headers: { 'Idempotency-Key': randomUUID() }, body: { expectedVersion: user.version, firstName: 'Updated' } });
       assert.equal(accepted.status, 200);
       assert.equal((await stored(s)).sess.lastActivityAt, new Date(time).toISOString());
-      const band = await request('/bands', { method: 'POST', cookie: s.cookie, body: { name: 'Session smoke' } });
+      const band = await request('/bands', { method: 'POST', cookie: s.cookie, headers: { 'Idempotency-Key': randomUUID() }, body: { name: 'Session smoke', instrumentation: [{ instrumentId: 2, label: 'Guitar' }] } });
       assert.equal(band.status, 201);
       const path = `/bands/${band.body.data.band.bandId}`;
       assert.equal((await request(path, { cookie: s.cookie })).status, 200);
-      assert.equal((await request(path, { method: 'PATCH', cookie: s.cookie, body: { name: 'Renamed' } })).status, 200);
+      assert.equal((await request(path, { method: 'PATCH', cookie: s.cookie, headers: { 'Idempotency-Key': randomUUID() }, body: { expectedVersion: 1, name: 'Renamed' } })).status, 200);
       assert.equal((await request(path, { method: 'DELETE', cookie: s.cookie })).status, 200);
     });
 

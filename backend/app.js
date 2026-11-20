@@ -93,6 +93,7 @@ api.use('/health', healthRouter);
 api.use('/auth', authRouter);
 api.use('/users', userRouter);
 api.use('/bands', bandRouter);
+api.use('/instruments', require('./routes/instrument.routes'));
 api.use(notFound);
 app.use('/api/v1', api);
 
