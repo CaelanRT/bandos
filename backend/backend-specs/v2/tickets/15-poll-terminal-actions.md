@@ -1,6 +1,6 @@
 # BE-V2-15 — Finalize one rehearsal or cancel a poll atomically
 
-> **Status:** In progress
+> **Status:** For Review — [Draft PR #102](https://github.com/CaelanRT/bandos/pull/102)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [10](10-event-save-invitations.md), [11](11-event-response-time.md), [12](12-event-reads-cancellation.md), [13](13-poll-composition.md), [14](14-poll-availability.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 6–7
