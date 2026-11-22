@@ -1,6 +1,6 @@
 # BE-V2-14 — Save complete own availability rows without respondent conflicts
 
-> **Status:** In progress
+> **Status:** For Review — [Draft PR #100](https://github.com/CaelanRT/bandos/pull/100)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [13](13-poll-composition.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 6–7
