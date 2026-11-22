@@ -32,7 +32,8 @@ test('atomic event saves and invitations', async t => {
     const { IDLE_MS } = require('../utils/account-session');
     const bcrypt = require('bcrypt');
     const key = randomBytes(32);
-    let time = Date.UTC(2026, 10, 20, 12);
+    // Keep cookie/store wall-clock expiry ahead of the real clock as in other v2 fixtures.
+    let time = Date.UTC(2030, 10, 20, 12);
     const app = express();
     app.locals.sessionClock = () => time;
     app.locals.outboxEncryptionKey = key;
@@ -280,19 +281,19 @@ test('atomic event saves and invitations', async t => {
     });
 
     await t.test('schedule resolves DST overlaps, rejects gaps/same-day errors and guards exact stored start before future edits', async () => {
-      const gap = await create({date:'2027-03-14',startTime:'02:30',endTime:'04:00',timezone:'America/New_York'});
+      const gap = await create({date:'2031-03-09',startTime:'02:30',endTime:'04:00',timezone:'America/New_York'});
       assert.equal(gap.status,400);
-      const overlap = await create({date:'2027-11-07',startTime:'01:30',endTime:'03:00',timezone:'America/New_York'});
+      const overlap = await create({date:'2031-11-02',startTime:'01:30',endTime:'03:00',timezone:'America/New_York'});
       assert.equal(overlap.status,201,JSON.stringify(overlap.body));
-      assert.equal(overlap.body.data.event.startsAt,'2027-11-07T05:30:00.000Z');
+      assert.equal(overlap.body.data.event.startsAt,'2031-11-02T05:30:00.000Z');
       assert.equal((await create({startTime:'20:00',endTime:'18:00'})).status,400);
       const current = (await create()).body.data.event;
       const originalTime = time;
       await fixture.query('UPDATE events SET starts_at=$2 WHERE event_id=$1',[current.eventId,new Date(time)]);
       const before = await counts();
-      assert.equal((await patch(current,{date:'2027-12-01'})).body.error.code,'EVENT_STARTED');
+      assert.equal((await patch(current,{date:'2031-12-01'})).body.error.code,'EVENT_STARTED');
       time++;
-      assert.equal((await patch(current,{date:'2027-12-01'})).body.error.code,'EVENT_STARTED');
+      assert.equal((await patch(current,{date:'2031-12-01'})).body.error.code,'EVENT_STARTED');
       assert.deepEqual(await counts(),before);
       time=originalTime;
     });
@@ -441,8 +442,8 @@ test('atomic event saves and invitations', async t => {
     });
 
     await t.test('schedule reconfirmation compares local fields and both instants, preserving Pending/Declined and alias-only responses', async () => {
-      for (const edit of [{date:'2026-11-22'},{startTime:'19:00'},{endTime:'21:00'},
-        {timezone:'Europe/Paris'}, {startTime:'19:00',endTime:'21:00',timezone:'Europe/Paris'}, {date:'2026-11-22',startTime:'19:00',endTime:'21:00',timezone:'Europe/Paris'}]) {
+      for (const edit of [{date:'2030-11-22'},{startTime:'19:00'},{endTime:'21:00'},
+        {timezone:'Europe/Paris'}, {startTime:'19:00',endTime:'21:00',timezone:'Europe/Paris'}, {date:'2030-11-22',startTime:'19:00',endTime:'21:00',timezone:'Europe/Paris'}]) {
         let current = (await create({slots:[fresh(member.user_id),fresh(leader.user_id),fresh(outsider.user_id)]})).body.data.event;
         current = (await respond(current,'accepted')).body.data.event;
         current = (await respond(current,'declined','Retain me',outsiderCookie,current.slots[2].invitation.invitationId)).body.data.event;
@@ -470,7 +471,7 @@ test('atomic event saves and invitations', async t => {
       assert.equal((await history(id)).length,1);
       assert.deepEqual((await mailSince(n)).map(m=>[m.kind,m.recipient_user_id]),[['event_update',member.user_id]]);
       const beforeGap = await counts();
-      assert.equal((await patch(current,{date:'2027-03-14',startTime:'02:30',endTime:'04:00',timezone:'America/New_York'})).status,400);
+      assert.equal((await patch(current,{date:'2031-03-09',startTime:'02:30',endTime:'04:00',timezone:'America/New_York'})).status,400);
       assert.deepEqual(await counts(),beforeGap);
       assert.equal((await get(current)).body.data.event.slots[0].invitation.status,'accepted');
       // Resolved instants alone also require reconfirmation, even with identical local fields.
@@ -706,9 +707,7 @@ test('atomic event saves and invitations', async t => {
     });
 
     await t.test('fake delivery outage leaves the committed invitation intact and retries one stable effect', async () => {
-      time=Date.now();
       const current = (await create()).body.data.event;
-      time=Date.now();
       const {createDispatcher} = require('../utils/notification-outbox');
       const calls=[];
       let fail=true;
