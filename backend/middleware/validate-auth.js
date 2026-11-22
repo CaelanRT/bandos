@@ -61,4 +61,8 @@ const validateEmailChange = validateBody(z.strictObject({
   currentPassword: z.string().min(1), newEmail: registerSchema.shape.email,
 }));
 const validateEmailResend = validateBody(z.strictObject({}));
-module.exports = { validateProfile, validateEmailChange, validateEmailResend, validateRegister, validateLogin, validateResend, validateConfirm, validateReset, validatePasswordChange, newPasswordSchema };
+const validateDeactivation = validateBody(z.strictObject({
+  expectedVersion: require('./validate-mutation').versionSchema,
+  password: z.string().min(1),
+}));
+module.exports = { validateDeactivation, validateProfile, validateEmailChange, validateEmailResend, validateRegister, validateLogin, validateResend, validateConfirm, validateReset, validatePasswordChange, newPasswordSchema };
