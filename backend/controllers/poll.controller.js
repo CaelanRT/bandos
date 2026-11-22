@@ -217,4 +217,63 @@ async function getPoll(req, res) {
   const row = (await db.query('SELECT * FROM polls WHERE poll_id=$1 AND band_id=$2', [req.params.pollId, req.band.bandId])).rows[0];
   return res.json({ data: { poll: await pollDetail(db, row, req.session.userId) } });
 }
-module.exports = { createPoll: (req, res) => savePoll(req, res, true), updatePoll: (req, res) => savePoll(req, res, false), listPolls, getPoll };
+
+async function saveAvailability(req, res) {
+  const bandId = req.band.bandId, pollId = req.params.pollId, actor = req.session.userId;
+  let poll, assignment, vote, answers, access;
+  const response = await withMutation(req, {
+    discover: async () => ({ bands: [bandId], polls: [pollId] }),
+    authorize: async (client, locked) => {
+      poll = locked.polls.find(p => p.poll_id === pollId && p.band_id === bandId);
+      access = await pollAccess(client, poll, actor);
+      if (!access.own) throw notFound();
+      // Composition/lifecycle writers share the poll lock. Discover the current
+      // generation beneath it, then lock the assignment and its optional row.
+      assignment = (await client.query(`SELECT * FROM poll_assignments
+        WHERE poll_id=$1 AND user_id=$2 AND retired_at IS NULL FOR UPDATE`, [pollId, actor])).rows[0];
+      vote = (await lockRows(client, 'poll_vote_rows', [assignment.assignment_id]))[0];
+    },
+    authorizeReplay: async (client, prior) => {
+      const saved = prior.response_body.data.poll;
+      saved.canManage = access.leader;
+      saved.canVote = poll.state === 'open';
+    },
+    validate: async client => {
+      if (poll.state !== 'open') throw new HttpError(409, 'POLL_CLOSED', 'Poll is closed');
+      checkVersion(poll.version, req.body.expectedVersion);
+      checkVersion(vote?.version ?? 0, req.body.expectedVoteVersion, 'expectedVoteVersion');
+      const options = await currentOptions(client, pollId);
+      const supplied = new Map(req.body.answers.map(a => [a.optionId, a]));
+      if (req.body.answers.length !== options.length || supplied.size !== options.length
+        || options.some(o => supplied.get(o.option_id)?.optionRevision !== o.current_revision)) {
+        invalid('answers', 'Supply exactly one answer for every current option and revision');
+      }
+      answers = options.map(o => supplied.get(o.option_id));
+    },
+    work: async client => {
+      const before = (await client.query(`SELECT c.option_id AS "optionId",c.option_revision AS "optionRevision",c.answer
+        FROM poll_vote_cells c JOIN poll_options o ON o.option_id=c.option_id
+          AND o.current_revision=c.option_revision AND o.deleted_at IS NULL
+        WHERE c.assignment_id=$1 ORDER BY o.position`, [assignment.assignment_id])).rows;
+      if (canonicalJson(before) !== canonicalJson(answers)) {
+        await client.query(`INSERT INTO poll_vote_rows (assignment_id,poll_id) VALUES ($1,$2)
+          ON CONFLICT (assignment_id) DO UPDATE SET version=poll_vote_rows.version+1,updated_at=now()`,
+        [assignment.assignment_id, pollId]);
+        for (const a of answers) await client.query(`INSERT INTO poll_vote_cells
+          (assignment_id,poll_id,option_id,option_revision,answer) VALUES ($1,$2,$3,$4,$5)
+          ON CONFLICT (assignment_id,option_id,option_revision) DO UPDATE SET answer=EXCLUDED.answer`,
+        [assignment.assignment_id, pollId, a.optionId, a.optionRevision, a.answer]);
+        await enqueueNotification(client, {
+          transitionId: randomUUID(), kind: 'poll_response', category: 'pollResponses',
+          recipientIdentity: `leader:${bandId}`, recipientBandId: bandId,
+          payload: { subject: 'bandOS poll availability',
+            text: `${assignment.username} saved availability for ${poll.name}: ${answers.filter(a => a.answer === 'yes').length} Yes, ${answers.filter(a => a.answer === 'no').length} No.`,
+            path: `/bands/${bandId}/polls/${pollId}` },
+        });
+      }
+      return { status: 200, body: { data: { poll: await pollDetail(client, poll, actor) } } };
+    },
+  });
+  return res.status(response.status).json(response.body);
+}
+module.exports = { createPoll: (req, res) => savePoll(req, res, true), updatePoll: (req, res) => savePoll(req, res, false), listPolls, getPoll, saveAvailability };
