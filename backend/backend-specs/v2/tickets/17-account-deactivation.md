@@ -1,6 +1,6 @@
 # BE-V2-17 — Deactivate accounts only after resolving leadership obligations
 
-> **Status:** In progress
+> **Status:** For Review — [Draft PR #107](https://github.com/CaelanRT/bandos/pull/107)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [06](06-password-recovery.md), [07](07-profile-email-change.md), [16](16-band-lifecycle.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–4, 6–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2, 8–9
