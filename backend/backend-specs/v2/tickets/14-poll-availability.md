@@ -67,5 +67,5 @@ Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementa
 ## Completion
 
 Confirmed PR #100 merged into remote `main` on 22 November 2026
-(merge commit `f1ac60a`). Completion metadata is persisted on `main`;
+(merge commit `f1ac60a`). Completion metadata is recorded here;
 BE-V2-15 is next.
