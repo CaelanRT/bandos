@@ -134,7 +134,7 @@ test('bounded PostgreSQL sessions, access, Origin and commit checks', async (t) 
       const path = `/bands/${band.body.data.band.bandId}`;
       assert.equal((await request(path, { cookie: s.cookie })).status, 200);
       assert.equal((await request(path, { method: 'PATCH', cookie: s.cookie, headers: { 'Idempotency-Key': randomUUID() }, body: { expectedVersion: 1, name: 'Renamed' } })).status, 200);
-      assert.equal((await request(path, { method: 'DELETE', cookie: s.cookie })).status, 200);
+      assert.equal((await request(path, { method: 'DELETE', cookie: s.cookie, headers: { 'Idempotency-Key': randomUUID() }, body: { expectedVersion: 2 } })).status, 200);
     });
 
     await t.test('exact idle and absolute boundaries expire before renewal or writes', async () => {

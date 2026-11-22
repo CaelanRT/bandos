@@ -7,6 +7,8 @@ const {
   getBand,
   updateBand,
   deleteBand,
+  removeBandMember,
+  transferOwnership,
   addBandMember,
   updateMemberEligibility,
   saveDefaultLineup,
@@ -22,6 +24,7 @@ const {
   validateMemberEligibility,
   validateDefaultLineup,
   validateClearDefaultLineup,
+  validateOwnership,
   validateBandId,
 } = require('../middleware/validate-band');
 const {
@@ -57,6 +60,7 @@ router.patch(
 router.delete(
   '/:bandId',
   validateBandId,
+  validateClearDefaultLineup,
   loadBandMembership,
   requireBandLeader,
   deleteBand,
@@ -72,6 +76,10 @@ router.post(
 
 router.patch('/:bandId/members/:userId', validateBandId, validateRouteId('userId'),
   validateMemberEligibility, loadBandMembership, requireBandLeader, updateMemberEligibility);
+router.delete('/:bandId/members/:userId', validateBandId, validateRouteId('userId'),
+  validateClearDefaultLineup, loadBandMembership, requireBandLeader, removeBandMember);
+router.post('/:bandId/ownership', validateBandId, validateOwnership,
+  loadBandMembership, requireBandLeader, transferOwnership);
 router.put('/:bandId/default-lineup', validateBandId, validateDefaultLineup,
   loadBandMembership, requireBandLeader, saveDefaultLineup);
 router.delete('/:bandId/default-lineup', validateBandId, validateClearDefaultLineup,
