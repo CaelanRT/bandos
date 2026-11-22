@@ -295,4 +295,4 @@ async function deleteEvent(req, res) {
   return res.status(response.status).json(response.body);
 }
 
-module.exports = { createEvent, listEvents, getEvent, updateEvent, deleteEvent, respondToInvitation, mapEvent };
+module.exports = { createEvent, listEvents, getEvent, updateEvent, deleteEvent, respondToInvitation, mapEvent, eventDetail };

@@ -1,5 +1,6 @@
 const { randomUUID } = require('node:crypto');
 const db = require('../db');
+const { eventDetail } = require('./event.controller');
 const HttpError = require('../utils/http-error');
 const { withMutation, checkVersion, canonicalJson, lockRows } = require('../utils/mutation');
 const { prepareSlots } = require('../utils/lineup-slots');
@@ -276,4 +277,107 @@ async function saveAvailability(req, res) {
   });
   return res.status(response.status).json(response.body);
 }
-module.exports = { createPoll: (req, res) => savePoll(req, res, true), updatePoll: (req, res) => savePoll(req, res, false), listPolls, getPoll, saveAvailability };
+
+async function closePoll(req, res, finalizing) {
+  const bandId = req.band.bandId, pollId = req.params.pollId, actor = req.session.userId;
+  const clock = () => (req.app.locals.sessionClock || Date.now)();
+  let poll, event, before, slots, option;
+  const response = await withMutation(req, {
+    discover: async client => ({
+      users: finalizing ? (await client.query(`SELECT user_id FROM poll_assignments
+        WHERE poll_id=$1 AND retired_at IS NULL`, [pollId])).rows.map(a => a.user_id) : [],
+      bands: [bandId], polls: [pollId],
+    }),
+    authorize: async (client, locked) => {
+      poll = locked.polls.find(p => p.poll_id === pollId && p.band_id === bandId);
+      const access = await pollAccess(client, poll, actor);
+      if (!access.leader || locked.bands[0].owner_user_id !== actor) {
+        throw new HttpError(403, 'LEADER_REQUIRED', 'Band leader access required');
+      }
+    },
+    authorizeReplay: async (client, prior) => {
+      if (finalizing) {
+        const [saved] = await lockRows(client, 'events', [prior.response_body.data.event.eventId]);
+        await eventDetail(client, saved, actor, clock());
+      }
+    },
+    validate: async (client, locked) => {
+      event = null;
+      if (poll.state !== 'open') {
+        if (finalizing && poll.state === 'finalized' && poll.finalized_option_id === req.body.optionId
+          && poll.finalized_option_revision === req.body.optionRevision) {
+          [event] = await lockRows(client, 'events', [poll.finalized_event_id]);
+          return;
+        }
+        throw new HttpError(409, 'POLL_CLOSED', 'Poll is closed');
+      }
+      checkVersion(poll.version, req.body.expectedVersion);
+      before = await currentSlots(client, pollId);
+      if (!finalizing) return;
+      if (!before.some(s => s.invitation)) invalid('slots', 'Select at least one musician');
+      // Discovery precedes user locks. If composition changed while waiting,
+      // restart in canonical lock order with the newly assigned users included.
+      if (before.some(s => s.invitation && !locked.users.some(u => u.user_id === s.invitation.user_id))) {
+        const retry = new Error('Poll lineup changed during lock discovery');
+        retry.code = '40001';
+        throw retry;
+      }
+      option = (await currentOptions(client, pollId)).find(o => o.option_id === req.body.optionId);
+      if (!option) invalid('optionId', 'Select a current poll option');
+      if (option.current_revision !== req.body.optionRevision) invalid('optionRevision', 'Select the current option revision');
+      if (+option.starts_at <= clock()) invalid('optionId', 'Poll option start must be in the future');
+      slots = await prepareSlots(client, bandId, before.map(s => ({ clientKey: randomUUID(),
+        templateSlotId: s.template_slot_id, instrumentId: s.instrument_id, label: s.label,
+        userId: s.invitation?.user_id ?? null })), [], true);
+    },
+    work: async client => {
+      if (poll.state === 'open') {
+        const transitionId = randomUUID();
+        if (finalizing) {
+          event = (await client.query(`INSERT INTO events
+            (band_id,created_by_user_id,name,type,event_date,start_time,end_time,timezone,
+             location,description,hide_from_uninvited,starts_at,ends_at)
+            VALUES ($1,$2,$3,'rehearsal',$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+          [bandId, actor, poll.name, option.option_date, option.start_time, option.end_time, poll.timezone,
+            poll.location, poll.description, poll.hide_from_uninvited, option.starts_at, option.ends_at])).rows[0];
+          for (const [position, s] of slots.entries()) {
+            const instrumentName = before[position].instrument_name;
+            const saved = (await client.query(`INSERT INTO event_slots
+              (event_id,band_id,template_slot_id,instrument_id,instrument_name,label,position)
+              VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+            [event.event_id, bandId, s.templateSlotId, s.instrumentId, instrumentName, s.label, position])).rows[0];
+            if (s.userId === null) continue;
+            await client.query(`INSERT INTO event_invitations
+              (event_id,band_id,slot_id,user_id,username,first_name,last_name,instrument_id,instrument_name,slot_label)
+              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [event.event_id, bandId, saved.slot_id, s.userId,
+              s.user.username, s.user.first_name, s.user.last_name, s.instrumentId, instrumentName, s.label]);
+            await enqueueNotification(client, { transitionId, kind: 'event_invitation', category: 'invitations',
+              recipientIdentity: `user:${s.userId}`, recipientUserId: s.userId,
+              payload: { subject: 'New bandOS event invitation',
+                text: `${poll.name}\n${date(option.option_date)} ${normalizeDatabaseTime(option.start_time)}–${normalizeDatabaseTime(option.end_time)} (${poll.timezone})\n${poll.location}`,
+                path: `/bands/${bandId}/events/${event.event_id}` } });
+          }
+        } else {
+          for (const s of before) {
+            if (!s.invitation) continue;
+            await enqueueNotification(client, { transitionId, kind: 'poll_cancellation', category: 'removalsAndCancellations',
+              recipientIdentity: `assignment:${s.invitation.assignment_id}`, recipientUserId: s.invitation.user_id,
+              payload: { subject: 'bandOS poll cancelled', text: `${poll.name}\n${poll.location}\nTimezone: ${poll.timezone}`,
+                path: `/bands/${bandId}/polls/${pollId}` } });
+          }
+        }
+        // Preserve assignments/options/votes as the authorized closing snapshot.
+        poll = (await client.query(`UPDATE polls SET state=$2,closed_at=$3,version=version+1,updated_at=now(),
+          finalized_event_id=$4,finalized_option_id=$5,finalized_option_revision=$6 WHERE poll_id=$1 RETURNING *`,
+        [pollId, finalizing ? 'finalized' : 'cancelled', new Date(clock()), event?.event_id ?? null,
+          finalizing ? option.option_id : null, finalizing ? option.current_revision : null])).rows[0];
+      }
+      return { status: 200, body: { data: { poll: await pollDetail(client, poll, actor),
+        ...(finalizing ? { event: await eventDetail(client, event, actor, clock()) } : {}) } } };
+    },
+  });
+  return res.status(response.status).json(response.body);
+}
+
+module.exports = { createPoll: (req, res) => savePoll(req, res, true), updatePoll: (req, res) => savePoll(req, res, false), listPolls, getPoll, saveAvailability,
+  finalizePoll: (req, res) => closePoll(req, res, true), cancelPoll: (req, res) => closePoll(req, res, false) };
