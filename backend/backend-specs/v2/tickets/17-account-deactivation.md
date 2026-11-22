@@ -1,6 +1,6 @@
 # BE-V2-17 — Deactivate accounts only after resolving leadership obligations
 
-> **Status:** For Review — [Draft PR #107](https://github.com/CaelanRT/bandos/pull/107)
+> **Status:** Completed — [Merged PR #107](https://github.com/CaelanRT/bandos/pull/107)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [06](06-password-recovery.md), [07](07-profile-email-change.md), [16](16-band-lifecycle.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–4, 6–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2, 8–9
@@ -72,3 +72,9 @@ Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementa
 - Independent `review-ticket` review — **PASS** on all six acceptance criteria,
   with no blocking or non-blocking findings. The reviewer independently reran
   the ticket suite (**8 passed**) and syntax/diff checks.
+
+## Completion
+
+Confirmed PR #107 merged into remote `main` on 22 November 2026
+(merge commit `9e4bf87`). Completion metadata is recorded here;
+BE-V2-18 is next.
