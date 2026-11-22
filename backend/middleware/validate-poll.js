@@ -12,6 +12,8 @@ const optionSchema = z.strictObject({
 const optionsSchema = z.array(optionSchema).min(1).max(30);
 
 module.exports = {
+  validateFinalizePoll: validateBody(z.strictObject({ expectedVersion: versionSchema, optionId: idSchema, optionRevision: versionSchema })),
+  validateCancelPoll: validateBody(z.strictObject({ expectedVersion: versionSchema })),
   validateAvailability: validateBody(z.strictObject({
     expectedVersion: versionSchema, expectedVoteVersion: voteVersionSchema,
     answers: z.array(z.strictObject({
