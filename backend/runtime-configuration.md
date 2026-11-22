@@ -111,4 +111,6 @@ instances/restarts. See [notification integration and recovery](db/notifications
 for enqueue usage, retry boundaries, security payload lifecycle and operational
 handling. BE-V2-05 registration now requires these settings to atomically queue
 verification mail; see [registration/token behavior](db/account-tokens.md).
-Other account and domain triggers land in subsequent tickets.
+Password recovery, verified email changes, event/poll triggers and lifecycle cleanup
+are delivered. See the [current runtime API reference](backend-specs/v2/02-runtime-api.md)
+and [integrated verification](backend-specs/v2/tickets/18-verification-results.md).

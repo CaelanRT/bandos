@@ -1,6 +1,6 @@
 # BE-V2-18 — Verify the complete backend contract and document delivered behavior
 
-> **Status:** Not started
+> **Status:** For Review — [Draft PR #110](https://github.com/CaelanRT/bandos/pull/110)
 > **Dependencies:** [01](01-relational-storage.md), [02](02-bounded-sessions.md), [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [05](05-registration-verification.md), [06](06-password-recovery.md), [07](07-profile-email-change.md), [08](08-band-catalog-template.md), [09](09-member-eligibility-defaults.md), [10](10-event-save-invitations.md), [11](11-event-response-time.md), [12](12-event-reads-cancellation.md), [13](13-poll-composition.md), [14](14-poll-availability.md), [15](15-poll-terminal-actions.md), [16](16-band-lifecycle.md), [17](17-account-deactivation.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–12
@@ -28,6 +28,11 @@ The integrated backend satisfies the approved v2 scenarios, and the runtime API 
 ## Verification
 
 Run the existing `node --test` backend tests as applicable after inspecting their environment requirements, affected shell smoke scripts against an isolated running stack, and available project lint/build/type checks where defined. Record exact commands, pass/fail results and environmental gaps; backend/package.json currently has dev/start only. This ticket consolidates cross-feature verification rather than deferring all tests here.
+
+## Implementation evidence
+
+See [verification results and acceptance map](18-verification-results.md) and the
+[delivered runtime API reference](../02-runtime-api.md).
 
 ## Boundaries
 

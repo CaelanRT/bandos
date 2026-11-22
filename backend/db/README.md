@@ -2,8 +2,8 @@
 
 `schemas/schema.sql` initializes a fresh PostgreSQL 15+ database. It is not a
 migration and must not be applied over an existing schema. No v1 backfill or
-compatibility layer is included. V2 controllers and session enforcement are
-implemented by subsequent tickets; the schema alone does not enable the v2 API.
+compatibility layer is included. The mounted v2 controllers and session enforcement use this schema; see the
+[current runtime reference](../backend-specs/v2/02-runtime-api.md).
 
 Run the isolated integrity checks from `backend/`:
 
@@ -34,8 +34,8 @@ response history, option revisions and votes are retained. Current poll reads mu
 join unretired assignments to current undeleted option revisions. A returning
 musician receives a new assignment ID and starts with no vote row (wire version 0).
 
-Sessions retain the existing `connect-pg-simple` JSON store. Ticket BE-V2-02 owns
-populating and enforcing generation, access and activity/deadline facts. Later
-mutation/delivery tickets own request sanitization, token encryption, expiry,
-lease/retry transitions, and clearing encrypted mail payloads at terminal delivery.
+Sessions retain the existing `connect-pg-simple` JSON store with enforced
+generation, access and activity/deadline facts. The delivered mutation/delivery
+helpers enforce request sanitization, token encryption, expiry, lease/retry
+transitions, and clearing encrypted mail payloads at terminal delivery.
 Keys and raw account tokens must never be stored in ordinary JSON payloads.

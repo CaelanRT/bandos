@@ -32,7 +32,8 @@ test('revisioned rehearsal poll composition', async t => {
     const { IDLE_MS } = require('../utils/account-session');
     const bcrypt = require('bcrypt');
     const key = randomBytes(32);
-    let time = Date.UTC(2026, 10, 20, 12);
+    // Keep cookie/store wall-clock expiry ahead of the real clock as in other v2 fixtures.
+    let time = Date.UTC(2030, 10, 20, 12);
     const app = express();
     app.locals.sessionClock = () => time;
     app.locals.outboxEncryptionKey = key;
@@ -83,7 +84,7 @@ test('revisioned rehearsal poll composition', async t => {
       instrumentIds: [guitar,vocals] }, cookie);
     let bandVersion = band.version + 1;
     const option = (day = 21, startTime = '18:00', endTime = '20:00') => ({ clientKey: randomUUID(),
-      date: `2026-11-${day}`, startTime, endTime });
+      date: `2030-11-${day}`, startTime, endTime });
     const base = { name: ' Poll ', timezone: 'UTC', location: ' Hall ', hideFromUninvited: false };
     const fresh = (userId = null, instrumentId = guitar) => ({ clientKey: randomUUID(), instrumentId, label: 'Guitar', userId });
     const path = `/bands/${band.bandId}/polls`;
@@ -121,7 +122,7 @@ test('revisioned rehearsal poll composition', async t => {
         'hideFromUninvited','slots','options','responses','finalizedEventId','createdAt','updatedAt','canManage','canVote'].sort());
       assert.equal(poll.name,'Poll'); assert.equal(poll.location,'Hall'); assert.equal(poll.state,'open');
       assert.equal(poll.finalizedEventId,null); assert.equal(poll.canManage,true); assert.equal(poll.canVote,true);
-      assert.equal(poll.options[0].startsAt,'2026-11-21T18:00:00.000Z');
+      assert.equal(poll.options[0].startsAt,'2030-11-21T18:00:00.000Z');
       assert.equal(poll.options[0].revision,1); assert.equal(poll.slots[0].templateSlotId,band.instrumentation[0].slotId);
       assert.deepEqual(poll.responses.map(r=>[r.voteVersion,r.answers,r.needsResponse]),[[0,[],true],[0,[],true]]);
       assert.equal((await get(poll,memberCookie)).body.data.poll.canManage,false);
@@ -173,7 +174,7 @@ test('revisioned rehearsal poll composition', async t => {
       const result=await patch(poll,{timezone:'America/New_York'});
       assert.equal(result.status,200,JSON.stringify(result.body)); poll=result.body.data.poll;
       assert.equal(poll.options[0].revision,before.options[0].revision+1);
-      assert.equal(poll.options[0].startsAt,'2026-11-21T23:00:00.000Z');
+      assert.equal(poll.options[0].startsAt,'2030-11-21T23:00:00.000Z');
       assert.ok(poll.responses.every(r=>r.answers.length===0 && r.needsResponse));
       assert.equal((await effects(start)).length,2);
     });
@@ -205,14 +206,14 @@ test('revisioned rehearsal poll composition', async t => {
     await t.test('option/slot boundaries and malformed or foreign IDs reject atomically', async () => {
       const foreign=(await create()).body.data.poll;
       const before=await counts();
-      const cases=[{options:[]},{options:Array.from({length:31},(_,i)=>({...option(),date:`2027-01-${String(i+1).padStart(2,'0')}`}))},
+      const cases=[{options:[]},{options:Array.from({length:31},(_,i)=>({...option(),date:`2031-01-${String(i+1).padStart(2,'0')}`}))},
         {slots:[]},{slots:Array.from({length:51},()=>fresh())},{slots:[fresh()]},
         {options:[option(),option()]},{options:[{...option(),optionId:1}]},{options:[{...writeOptions(foreign)[0]}]},
         {slots:[{...fresh(member.user_id),slotId:1}]},{slots:[{...writeSlots(foreign)[0]}]},
         {slots:[fresh(member.user_id,999999)]},{slots:[{...fresh(member.user_id),templateSlotId:999999}]},
         {slots:[fresh(outsider.user_id)]},{slots:[fresh(member.user_id),fresh(member.user_id)]},
         {options:[{...option(),extra:true}]},{extra:true},{options:[option(20,'11:00','13:00')]},
-        {timezone:'America/New_York',options:[{...option(),date:'2027-03-14',startTime:'02:30',endTime:'04:00'}]}];
+        {timezone:'America/New_York',options:[{...option(),date:'2031-03-09',startTime:'02:30',endTime:'04:00'}]}];
       for(const body of cases){const r=await create(body);assert.equal(r.status,400,JSON.stringify({body,result:r.body}));assert.equal(r.body.error.code,'VALIDATION_ERROR');}
       for(const body of [{options:[]},{slots:[]},{options:[{...writeOptions(foreign)[0]}]},
         {options:[writeOptions(poll)[0],writeOptions(poll)[0]]}, {slots:[{...writeSlots(foreign)[0]}]}]) {
@@ -220,10 +221,10 @@ test('revisioned rehearsal poll composition', async t => {
       }
       assert.deepEqual(await counts(),before);
       const valid=await create({slots:Array.from({length:50},(_,i)=>fresh(i===0?member.user_id:null)),
-        options:Array.from({length:30},(_,i)=>({...option(),date:`2027-01-${String(i+1).padStart(2,'0')}`}))});
+        options:Array.from({length:30},(_,i)=>({...option(),date:`2031-01-${String(i+1).padStart(2,'0')}`}))});
       assert.equal(valid.status,201,JSON.stringify(valid.body)); assert.equal(valid.body.data.poll.options.length,30);
-      const overlap=await create({timezone:'America/New_York',options:[{...option(),date:'2027-11-07',startTime:'01:30',endTime:'02:30'}]});
-      assert.equal(overlap.status,201);assert.equal(overlap.body.data.poll.options[0].startsAt,'2027-11-07T05:30:00.000Z');
+      const overlap=await create({timezone:'America/New_York',options:[{...option(),date:'2031-11-02',startTime:'01:30',endTime:'02:30'}]});
+      assert.equal(overlap.status,201);assert.equal(overlap.body.data.poll.options[0].startsAt,'2031-11-02T05:30:00.000Z');
     });
 
     await t.test('hidden list/detail and cross-band protection require current membership; only leaders manage', async () => {
@@ -272,7 +273,7 @@ test('revisioned rehearsal poll composition', async t => {
 
     await t.test('elapsed options remain open unchanged; changed or added elapsed options fail; closed snapshots reject edits', async () => {
       let current=(await create({options:[option(20,'13:00','14:00')]})).body.data.poll;
-      time=Date.UTC(2026,10,20,15);
+      time=Date.UTC(2030,10,20,15);
       const start=await lastEffect();
       current=(await patch(current,{name:'Elapsed'})).body.data.poll;
       assert.equal(current.state,'open');assert.deepEqual(await effects(start),[]);
@@ -287,8 +288,8 @@ test('revisioned rehearsal poll composition', async t => {
       assert.equal((await patch(current,{name:'Reopen'})).body.error.code,'POLL_CLOSED'); assert.deepEqual(await counts(),before);
       // Finalized fixtures preserve the same closing representation; finalization itself belongs to BE-V2-15.
       const event=(await fixture.query(`INSERT INTO events (band_id,created_by_user_id,name,type,event_date,start_time,end_time,timezone,
-        location,starts_at,ends_at) VALUES ($1,$2,'Final','rehearsal','2026-11-21','18:00','20:00','UTC','Hall',
-        '2026-11-21T18:00Z','2026-11-21T20:00Z') RETURNING event_id`,[band.bandId,leader.user_id])).rows[0];
+        location,starts_at,ends_at) VALUES ($1,$2,'Final','rehearsal','2030-11-21','18:00','20:00','UTC','Hall',
+        '2030-11-21T18:00Z','2030-11-21T20:00Z') RETURNING event_id`,[band.bandId,leader.user_id])).rows[0];
       await fixture.query(`UPDATE polls SET state='finalized',finalized_event_id=$2,finalized_option_id=$3,finalized_option_revision=1
         WHERE poll_id=$1`,[current.pollId,event.event_id,current.options[0].optionId]);
       assert.equal((await patch(current,{})).body.error.code,'POLL_CLOSED');
