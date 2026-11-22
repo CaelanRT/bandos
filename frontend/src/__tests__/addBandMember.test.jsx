@@ -89,6 +89,11 @@ it('focuses once from creation state, while normal visits and background refresh
   link.focus()
   await act(() => client.invalidateQueries({ queryKey: bandKeys.detail(2) }))
   expect(link).toHaveFocus()
+  // A later history replacement must not replay the consumed creation handoff.
+  await act(() => router.navigate('/bands/2/members', { replace: true, state: {} }))
+  link.focus()
+  await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+  expect(link).toHaveFocus()
   await act(() => router.navigate('/bands/2'))
   await act(() => router.navigate('/bands/2/members'))
   expect(await screen.findByLabelText('Add band member or user')).toHaveValue('')

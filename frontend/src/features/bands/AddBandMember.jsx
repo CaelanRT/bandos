@@ -29,6 +29,7 @@ export function AddBandMember({ band }) {
   const [permission, setPermission] = useState(null)
   const [retryAt, setRetryAt] = useState(null)
   const [focusRequest, setFocusRequest] = useState(0)
+  const appliedFocusRequest = useRef(null)
   const input = useRef(null)
   const notice = useRef(null)
   const submitting = useRef(false)
@@ -56,13 +57,17 @@ export function AddBandMember({ band }) {
   useEffect(() => {
     if (!permitted && blocker.state === 'blocked') blocker.reset()
   }, [permitted, blocker])
-  // The shell focuses route content first, including when creation intent is consumed.
+  // Wait for marker removal so the shell's route focus completes before the handoff.
   useEffect(() => {
-    if (permitted && !pending && (creationIntent || focusRequest)) {
-      const timer = setTimeout(() => input.current?.focus(), 0)
+    if (location.state?.openAddMember === true) return
+    if (permitted && !pending && (creationIntent || focusRequest) && appliedFocusRequest.current !== focusRequest) {
+      const timer = setTimeout(() => {
+        input.current?.focus()
+        appliedFocusRequest.current = focusRequest
+      }, 0)
       return () => clearTimeout(timer)
     }
-  }, [creationIntent, permitted, pending, focusRequest, location.key])
+  }, [creationIntent, permitted, pending, focusRequest, location.key, location.state?.openAddMember])
   useEffect(() => { if (formError) notice.current?.focus() }, [formError])
 
   function clear() {
