@@ -1,6 +1,6 @@
 # BE-V2-16 — Remove members, transfer sole ownership and delete bands atomically
 
-> **Status:** In progress — implementation, verification and independent review passed; Draft PR pending
+> **Status:** For Review — [Draft PR #105](https://github.com/CaelanRT/bandos/pull/105)
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [09](09-member-eligibility-defaults.md), [12](12-event-reads-cancellation.md), [13](13-poll-composition.md), [14](14-poll-availability.md), [15](15-poll-terminal-actions.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–4, 7–8
