@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { idSchema, versionSchema, validateBody } = require('./validate-mutation');
+const { idSchema, versionSchema, voteVersionSchema, validateBody } = require('./validate-mutation');
 const { eventFields, slotsSchema } = require('./validate-event');
 
 const { name, location, description, timezone, date, startTime, endTime } = eventFields;
@@ -12,6 +12,12 @@ const optionSchema = z.strictObject({
 const optionsSchema = z.array(optionSchema).min(1).max(30);
 
 module.exports = {
+  validateAvailability: validateBody(z.strictObject({
+    expectedVersion: versionSchema, expectedVoteVersion: voteVersionSchema,
+    answers: z.array(z.strictObject({
+      optionId: idSchema, optionRevision: versionSchema, answer: z.enum(['yes', 'no']),
+    })).min(1).max(30),
+  })),
   validateCreatePoll: validateBody(z.strictObject({
     ...fields, description: description.optional().transform(value => value ?? null),
     templateVersion: versionSchema, slots: slotsSchema, options: optionsSchema,

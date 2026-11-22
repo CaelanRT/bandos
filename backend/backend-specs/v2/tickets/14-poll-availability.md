@@ -1,6 +1,6 @@
 # BE-V2-14 — Save complete own availability rows without respondent conflicts
 
-> **Status:** Not started
+> **Status:** In progress
 > **Dependencies:** [03](03-mutation-concurrency.md), [04](04-notification-delivery.md), [13](13-poll-composition.md)
 > **Specification:** [Backend implementation specification](../01-backend-spec.md), sections 3–5, 7–8
 > **Contract:** [Shared contract](../00-shared-contract.md), sections 2–3, 6–7
@@ -31,3 +31,35 @@ Use real concurrent database saves for separate respondents and competing own-ro
 ## Boundaries
 
 Follow the [sequence-wide implementation rules](00-ticket-sequence.md#implementation-rules). Implement only this slice and its necessary tests; later tickets own their listed endpoints and transitions. Do not claim downstream behavior is complete before its ticket lands.
+
+## Implementation and verification
+
+- Added strict PUT availability validation and an actor-only transactional save.
+  Current assignment and row locks, composition/row versions, and exact current
+  option revisions protect each save. Vote changes preserve poll version and
+  timestamps; normalized answer ordering makes identical saves no-ops.
+- Changed rows enqueue one `pollResponses` summary addressed to the current
+  leader. Existing dispatch handles preferences and normal self-leader mail.
+- `TEST_PG_ADMIN_URL=<disposable PostgreSQL 16 admin URL> node --test test/poll-availability.integration.test.js`
+  — **6 passed** with normal wall-clock time. Covers complete sets, authorization,
+  revisions, generation replacement, real concurrent saves, stale conflicts,
+  idempotent retries, no-ops, elapsed/closed polls, and preference-controlled mail.
+- Both poll suites — **16 passed**. Existing composition fixtures use 20 November
+  2026 sessions; a temporary preload pinned only the session store expiry
+  comparison to that fixture date. New availability fixtures use 2030 dates.
+- Broader backend regression run — **136 passed, 2 failed** of 138 counted tests.
+  Both failures represent one unchanged event-delivery test and its parent suite:
+  `test/event-save.integration.test.js:709` resets to real `Date.now()` before
+  creating a fixed 21 November 2026 event, now in the past. This fixture issue
+  remains outside BE-V2-14. Runtime-security/readiness suites need separate
+  infrastructure and were not rerun for this endpoint change.
+- Remaining regression suites excluding that unchanged event suite — **114 passed**.
+- Independent `review-ticket` review — **PASS** on all six acceptance criteria,
+  no findings; reviewer independently reran the availability suite (**6 passed**).
+- `node --check` passed for all changed/new JavaScript; `git diff --check` passed.
+  No backend lint/build/typecheck scripts are defined.
+- Actual-app smoke passed verified login, Origin/assignment authorization,
+  complete No-row save, unchanged composition version, replay, stale rejection,
+  and no-op summary suppression using an isolated database and fake provider.
+- Poll finalization/cancellation and membership lifecycle remain assigned to
+  BE-V2-15–17.
