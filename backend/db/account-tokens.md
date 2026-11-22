@@ -125,3 +125,37 @@ Run `node --test test/profile-email-change.integration.test.js` with the disposa
 `TEST_PG_ADMIN_URL` above. This covers profile validation, retry/no-op/stale
 behavior, pending login/delivery, replacement/resend and shared limits, concurrent
 address claims/token consumption, rollback, revocation, and security delivery.
+
+
+## Account deactivation (BE-V2-17)
+
+`DELETE /users/me` requires a full active session, UUID `Idempotency-Key` and the
+strict body `{expectedVersion,password}`. The password is never trimmed. A stale
+account version returns `409 STALE_VERSION`; a wrong password returns
+`401 INVALID_CREDENTIALS` and leaves the session usable.
+
+Any active owned band blocks the entire operation with
+`409 LEADERSHIP_TRANSFER_REQUIRED` and
+`error.details.bands: [{bandId,name}]`, containing only the actor's blocking bands.
+Transfer ownership or delete those bands before retrying with a new intent key.
+Deleted bands do not block deactivation.
+
+Success returns `200 {data:{message:"Account deactivated"}}`. One transaction
+removes every current membership, retires all upcoming event invitation statuses
+and open-poll assignments (including their active answers), and queues removal
+effects using the shared membership-removal helper. Past/exact-start event and
+closed-poll records, vote history and display snapshots remain stored. Defaults
+retain their mappings and become inapplicable when their musician is unavailable.
+The account is soft-deactivated, its pending address is cleared, account version
+and session generation advance, and all unused live account tokens are revoked.
+
+Locks and candidate-set rechecks serialize this operation with membership and
+ownership changes. All-band cleanup rolls back together on failure. Old-session
+writes cannot commit after deactivation. Session-store/cookie cleanup follows
+commit and cannot reverse it. Retrying with a revoked session returns
+`AUTHENTICATION_REQUIRED`, without new retirement or mail effects. Current access
+checks also prevent idempotency replay from restoring former access. Dispatch
+suppresses ordinary mail to deactivated recipients and obsolete token messages.
+
+Run `node --test test/account-deactivation.integration.test.js` with the disposable
+`TEST_PG_ADMIN_URL` above.
