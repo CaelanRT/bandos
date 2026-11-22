@@ -1,6 +1,6 @@
 # bandOS v2 — Backend implementation specification
 
-Status: Specification review complete; aligned with the approved shared contract. Backend tickets BE-V2-01–11 are completed ([BE-V2-11 merged PR #93](https://github.com/CaelanRT/bandos/pull/93)); BE-V2-12 is **Completed** in [merged PR #95](https://github.com/CaelanRT/bandos/pull/95); BE-V2-13 is **Completed** in [merged PR #98](https://github.com/CaelanRT/bandos/pull/98); BE-V2-14 is **Completed** in [merged PR #100](https://github.com/CaelanRT/bandos/pull/100); BE-V2-15 is **Completed** in [merged PR #102](https://github.com/CaelanRT/bandos/pull/102); BE-V2-16 is **For Review** in [Draft PR #105](https://github.com/CaelanRT/bandos/pull/105); BE-V2-17–18 have not started.
+Status: Specification review complete; aligned with the approved shared contract. Backend tickets BE-V2-01–11 are completed ([BE-V2-11 merged PR #93](https://github.com/CaelanRT/bandos/pull/93)); BE-V2-12 is **Completed** in [merged PR #95](https://github.com/CaelanRT/bandos/pull/95); BE-V2-13 is **Completed** in [merged PR #98](https://github.com/CaelanRT/bandos/pull/98); BE-V2-14 is **Completed** in [merged PR #100](https://github.com/CaelanRT/bandos/pull/100); BE-V2-15 is **Completed** in [merged PR #102](https://github.com/CaelanRT/bandos/pull/102); BE-V2-16 is **Completed** in [merged PR #105](https://github.com/CaelanRT/bandos/pull/105); BE-V2-17–18 have not started.
 Updated: 22 November 2026.
 
 ## Implementation status
