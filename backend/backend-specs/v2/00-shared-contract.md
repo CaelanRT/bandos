@@ -1,6 +1,6 @@
 # bandOS v2 — Shared frontend/backend contract
 
-Status: Specification review complete; shared contract and defaults approved. Backend tickets BE-V2-01–17 are completed; BE-V2-18 integrated verification is in progress. See the [current runtime API reference](02-runtime-api.md).
+Status: Specification review complete; shared contract and defaults approved. Backend tickets BE-V2-01–17 are completed; BE-V2-18 integrated verification is For Review ([Draft PR #110](https://github.com/CaelanRT/bandos/pull/110)). See the [current runtime API reference](02-runtime-api.md).
 Updated: 22 November 2026.
 
 ## 1. Authority and reading order
