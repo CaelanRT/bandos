@@ -21,7 +21,10 @@ const DateTimeFormat = Intl.DateTimeFormat
 let clients, role, post, permissionCheckFails, browserTimezone, timezoneSpy
 
 function mount(entry = '/bands/2/events/new') {
-  const client = createBandosQueryClient(); clients.push(client)
+  const client = createBandosQueryClient()
+  // Keep query retries without racing the default one-second assertion timeout.
+  client.setDefaultOptions({ ...client.getDefaultOptions(), queries: { ...client.getDefaultOptions().queries, retryDelay: 0 } })
+  clients.push(client)
   const router = createMemoryRouter(routes, { initialEntries: [entry] })
   render(<QueryClientProvider client={client}><SessionBoundary><RouterProvider router={router} /></SessionBoundary></QueryClientProvider>)
   return { client, router }
