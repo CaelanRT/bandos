@@ -1,4 +1,4 @@
-const { withSessionMutation } = require('../utils/account-session');
+const { removeMembership, cancelBandParticipation } = require('../utils/band-lifecycle');
 const db = require('../db');
 const HttpError = require('../utils/http-error');
 const { withMutation, checkVersion, canonicalJson, lockRows } = require('../utils/mutation');
@@ -137,18 +137,19 @@ async function createBand(req, res) {
   return res.status(response.status).json(response.body);
 }
 
+async function authorizeBandLeader(client, band, req) {
+  const member = (await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2',
+    [req.params.bandId, req.session.userId])).rowCount;
+  if (!band?.is_active || !member) throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
+  if (band.owner_user_id !== req.session.userId) throw new HttpError(403, 'LEADER_REQUIRED', 'Band leader access required');
+}
+
 // Membership and authoritative ownership are read again under the band lock,
 // including for replays; preflight middleware alone cannot authorize a commit.
 async function configureBand(req, res, work, discoverUsers = async () => []) {
   const response = await withMutation(req, {
     discover: async client => ({ users: await discoverUsers(client), bands: [req.params.bandId] }),
-    authorize: async (client, locked) => {
-      const band = locked.bands[0];
-      const member = (await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2',
-        [req.params.bandId, req.session.userId])).rowCount;
-      if (!band?.is_active || !member) throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
-      if (band.owner_user_id !== req.session.userId) throw new HttpError(403, 'LEADER_REQUIRED', 'Band leader access required');
-    },
+    authorize: (client, locked) => authorizeBandLeader(client, locked.bands[0], req),
     validate: async (client, locked) => checkVersion(locked.bands[0].version, req.body.expectedVersion),
     work: async (client, locked) => {
       const result = await work(client, locked.bands[0], locked);
@@ -235,27 +236,41 @@ async function updateBand(req, res) {
 }
 
 async function deleteBand(req, res) {
-  const body = await withSessionMutation(req, async (client) => {
-    const result = await client.query(
-      `UPDATE bands
-       SET is_active = false
-       WHERE band_id = $1
-         AND is_active = true
-       RETURNING band_id`,
-      [req.band.bandId],
-    );
-
-    if (!result.rows[0]) {
-      throw new HttpError(404, 'BAND_NOT_FOUND', 'Band not found');
-    }
-
-    return {
-      data: {
-        message: 'Band deleted',
-      },
-    };
+  const response = await withMutation(req, {
+    discover: async () => ({ bands: [req.params.bandId] }),
+    authorize: (client, locked) => authorizeBandLeader(client, locked.bands[0], req),
+    validate: async (client, locked) => checkVersion(locked.bands[0].version, req.body.expectedVersion),
+    work: async client => {
+      const now = new Date((req.app.locals.sessionClock || Date.now)());
+      await cancelBandParticipation(client, req.params.bandId, now);
+      await client.query('UPDATE bands SET is_active=false,version=version+1 WHERE band_id=$1', [req.params.bandId]);
+      return { status: 200, body: { data: { message: 'Band deleted' } } };
+    },
   });
-  return res.status(200).json(body);
+  return res.status(response.status).json(response.body);
+}
+
+async function removeBandMember(req, res) {
+  return configureBand(req, res, async (client, band) => {
+    if (req.params.userId === band.owner_user_id) invalid('userId', 'Cannot remove the band owner');
+    const member = await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2', [band.band_id, req.params.userId]);
+    if (!member.rowCount) throw new HttpError(404, 'USER_NOT_FOUND', 'Band member not found');
+    await removeMembership(client, band.band_id, req.params.userId, new Date((req.app.locals.sessionClock || Date.now)()));
+  }, async () => [req.params.userId]);
+}
+
+async function transferOwnership(req, res) {
+  return configureBand(req, res, async (client, band, locked) => {
+    if (req.body.userId === band.owner_user_id) invalid('userId', 'Select another band member');
+    const target = locked.users.find(user => user.user_id === req.body.userId);
+    const member = await client.query('SELECT 1 FROM user_bands WHERE band_id=$1 AND user_id=$2', [band.band_id, req.body.userId]);
+    if (!target?.is_active || !target.email_verified_at || !member.rowCount) {
+      throw new HttpError(404, 'USER_NOT_FOUND', 'Active verified band member not found');
+    }
+    await client.query(`UPDATE user_bands SET role=CASE WHEN user_id=$2 THEN 'leader'::role_type ELSE 'member'::role_type END
+      WHERE band_id=$1 AND user_id IN ($2,$3)`, [band.band_id, req.body.userId, band.owner_user_id]);
+    await client.query('UPDATE bands SET owner_user_id=$2,version=version+1 WHERE band_id=$1', [band.band_id, req.body.userId]);
+  }, async () => [req.body.userId]);
 }
 
 function defaultInvalidReasons(slots, assignments, members) {
@@ -363,6 +378,8 @@ module.exports = {
   getBand,
   updateBand,
   deleteBand,
+  removeBandMember,
+  transferOwnership,
   addBandMember,
   updateMemberEligibility,
   saveDefaultLineup,

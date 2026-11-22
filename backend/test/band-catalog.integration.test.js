@@ -125,7 +125,7 @@ test('band catalogs and instrumentation', async t => {
         const key = randomUUID();
         const created = (await create(simple,key)).body.data.band;
         if (lostAccess === 'deleted') {
-          assert.equal((await request(`/bands/${created.bandId}`, {}, cookie, 'DELETE')).status,200);
+          assert.equal((await request(`/bands/${created.bandId}`, { expectedVersion: created.version }, cookie, 'DELETE')).status,200);
         } else {
           await fixture.query('BEGIN');
           await fixture.query("INSERT INTO user_bands (user_id,band_id,role) VALUES ($1,$2,'member')",[member.user_id,created.bandId]);

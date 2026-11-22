@@ -69,8 +69,10 @@ const validateDefaultLineup = validateMutationBody(z.strictObject({
   assignments: z.array(z.strictObject({ slotId: idSchema, userId: idSchema })).min(1).max(50),
 }));
 const validateClearDefaultLineup = validateMutationBody(z.strictObject({ expectedVersion: versionSchema }));
+const validateOwnership = validateMutationBody(z.strictObject({ userId: idSchema, expectedVersion: versionSchema }));
 
 module.exports = {
+  validateOwnership,
   validateMemberEligibility,
   validateDefaultLineup,
   validateClearDefaultLineup,
