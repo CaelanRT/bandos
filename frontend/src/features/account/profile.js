@@ -1,3 +1,4 @@
+import { mutationOptions, pick } from '../../api/boundary.js'
 import { composeValidators, maxLength, required, validateFields } from '../../utils/validation.js'
 import { normalizeCurrentUser } from '../../api/currentUser.js'
 import { invalidApiResponse } from '../../api/errors.js'
@@ -34,9 +35,15 @@ export async function readProfile(request, signal) {
   return normalizeCurrentUser(data?.user)
 }
 
-export async function saveProfile(request, changes, userId, signal) {
-  const data = await request('/users/me', { method: 'PATCH', body: changes, signal, expectedStatus: 200 })
+export async function saveProfile(request, changes, userId, signal, options) {
+  const data = await request('/users/me', { method: 'PATCH', body: pick(changes, ['expectedVersion', ...profileFields]), ...mutationOptions(signal, options), expectedStatus: 200 })
   const user = normalizeCurrentUser(data?.user)
   if (user.userId !== userId) throw invalidApiResponse(200)
   return user
+}
+
+export async function deactivateAccount(request, input, signal, options) {
+  const data = await request('/users/me', { method: 'DELETE',
+    body: pick(input, ['expectedVersion', 'password']), ...mutationOptions(signal, options), expectedStatus: 200 })
+  if (data?.message !== 'Account deactivated') throw invalidApiResponse(200)
 }

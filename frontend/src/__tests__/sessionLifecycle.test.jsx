@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { useLayoutEffect } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -17,12 +18,12 @@ import { createBandosQueryClient } from '../app/queryClient.js'
 const fetchMock = vi.fn()
 const backendUser = {
   user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true,
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null,
   created_at: '2026-09-03T10:00:00Z',
 }
 let currentSession
 function response(data, status = 200) { return new Response(JSON.stringify(data), { status }) }
-function identity() { return response({ data: { user: backendUser } }) }
+function identity() { return response({ data: { user: backendUser, session: sessionFixture } }) }
 function failure(code = 'AUTHENTICATION_REQUIRED', status = 401) {
   return response({ error: { code, message: 'Failed request' } }, status)
 }
@@ -61,7 +62,7 @@ async function open(entry) {
   return app
 }
 async function login() {
-  fetchMock.mockResolvedValueOnce(response({ message: 'Signed in' })).mockResolvedValueOnce(identity())
+  fetchMock.mockResolvedValueOnce(identity()).mockResolvedValueOnce(identity())
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'alex@example.com' } })
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } })
   await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
@@ -209,7 +210,7 @@ it('restores an expired destination through Registration and consumes the notice
   expect(screen.queryByText('Your session expired. Log in to continue.')).not.toBeInTheDocument()
   await act(() => router.navigate(1))
   expect(router.state.location.pathname).toBe('/register')
-  fetchMock.mockResolvedValueOnce(response({ message: 'Created' }, 201)).mockResolvedValueOnce(identity())
+  fetchMock.mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }, 201)).mockResolvedValueOnce(identity())
   for (const [label, value] of Object.entries({ 'First name': 'Alex', 'Last name': 'Rivera', Username: 'alex', Email: 'alex@example.com', Password: 'password' })) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } })
   }

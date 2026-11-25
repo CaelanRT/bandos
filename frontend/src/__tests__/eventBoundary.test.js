@@ -3,7 +3,7 @@ import { INVALID_API_RESPONSE } from '../api/errors.js'
 import { getEvent, getEvents, parseEventId } from '../features/events/api.js'
 import { classifyEvent, formatEventDate, formatDateHeading, formatLocalTime, groupEvents, isLaterSameDay, isRealDate, isSupportedTimezone, isTime, nextBrowserCalendarBoundary, nextStartBoundary, resolveLocalDateTime } from '../features/events/schedule.js'
 
-const event = (overrides = {}) => ({ eventId: 8, bandId: 2, name: 'Practice', type: 'rehearsal', date: '2026-09-19', startTime: '09:05', endTime: '10:05', timezone: 'America/New_York', location: 'Studio', description: null, createdByUserId: 4, isActive: true, createdAt: 'opaque', updatedAt: 'opaque', ...overrides })
+const event = (overrides = {}) => ({ eventId: 8, bandId: 2, name: 'Practice', type: 'rehearsal', date: '2026-09-19', startTime: '09:05', endTime: '10:05', timezone: 'America/New_York', location: 'Studio', description: null, version: 1, hideFromUninvited: false, startsAt: '2030-09-16T15:05:00.000Z', endsAt: '2030-09-16T16:35:00.000Z', slots: [], myInvitationId: null, canManage: false, canRespond: false, createdByUserId: 4, isActive: true, createdAt: 'opaque', updatedAt: 'opaque', ...overrides })
 const invalid = (promise) => expect(promise).rejects.toMatchObject({ code: INVALID_API_RESPONSE })
 
 it('parses only positive canonical event IDs and rejects invalid event models and identities', async () => {

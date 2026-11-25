@@ -1,3 +1,4 @@
+import { validId, text } from './boundary.js'
 import { getApiBaseUrl } from '../config.js'
 import {
   ApiError,
@@ -43,13 +44,17 @@ function parseBackendError(payload, status, retryAt) {
   const error = payload?.error
   const hasValidDetails =
     error?.details === undefined ||
-    (Array.isArray(error.details) && error.details.every(isFieldDetail))
+    (Array.isArray(error.details) && error.details.every(isFieldDetail)) ||
+    (error?.code === 'LEADERSHIP_TRANSFER_REQUIRED' &&
+      Array.isArray(error.details?.bands) && error.details.bands.every(band =>
+        band && validId(band.bandId) && text(band.name)))
 
   if (
     error === null ||
     typeof error !== 'object' ||
     typeof error.code !== 'string' ||
     typeof error.message !== 'string' ||
+    (error.reason !== undefined && typeof error.reason !== 'string') ||
     !hasValidDetails
   ) {
     throw invalidApiResponse(status)
@@ -59,6 +64,7 @@ function parseBackendError(payload, status, retryAt) {
     status,
     code: error.code,
     details: error.details,
+    reason: error.reason,
     retryAt,
   })
 }
@@ -74,14 +80,6 @@ function parseSuccess(payload, status) {
     Object.hasOwn(payload, 'data')
   ) {
     return payload.data
-  }
-
-  if (
-    payload !== null &&
-    typeof payload === 'object' &&
-    typeof payload.message === 'string'
-  ) {
-    return { message: payload.message }
   }
 
   throw invalidApiResponse(status)
