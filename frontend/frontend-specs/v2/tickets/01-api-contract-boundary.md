@@ -1,6 +1,6 @@
 # FE-V2-01 — Preserve v2 models and structured API errors
 
-> **Status:** For Review
+> **Status:** Completed
 > **Dependencies:** None; delivered backend v2 is the baseline.
 > **Created:** 25 November 2026
 
@@ -48,7 +48,7 @@ Backend feature reimplementation, infrastructure/deployment, v1 data migration, 
 
 ## Implementation verification
 
-- Draft PR: [#112](https://github.com/CaelanRT/bandos/pull/112)
+- Merged PR: [#112](https://github.com/CaelanRT/bandos/pull/112)
 - `npm test -- --reporter=dot` from `frontend/`: **PASS**, 34 files / 440 tests.
 - `npm run lint`: **PASS**, existing `EditEvent.jsx:41` warning.
 - `VITE_API_ORIGIN=/ npm run build`: **PASS**.
@@ -56,3 +56,7 @@ Backend feature reimplementation, infrastructure/deployment, v1 data migration, 
 - Independent `review-ticket` review: **PASS**, all six acceptance criteria passed; no blockers. Reviewer independently ran 42 focused tests, lint, build, and staged whitespace checks.
 
 Non-blocking follow-up for FE-V2-11: accept the backend's `DEFAULT_LINEUP_INVALID` reason-array details when implementing default-lineup repair. No backend/runtime integration or browser smoke check is claimed by this boundary ticket.
+
+## Completion
+
+PR [#112](https://github.com/CaelanRT/bandos/pull/112) merged into `main` on 25 November 2026 (merge commit `90b667952a5f03c9a2af6fb90ab3d07ff68f94ef`). FE-V2-01 is completed.
