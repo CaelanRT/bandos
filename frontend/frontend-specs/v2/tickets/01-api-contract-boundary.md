@@ -1,6 +1,6 @@
 # FE-V2-01 — Preserve v2 models and structured API errors
 
-> **Status:** In Progress
+> **Status:** For Review
 > **Dependencies:** None; delivered backend v2 is the baseline.
 > **Created:** 25 November 2026
 
@@ -29,12 +29,12 @@ Start with these implementation/contract references; paths for new poll componen
 
 ## Acceptance criteria
 
-- [ ] Normalize user snake_case once, retaining version, emailVerifiedAt and pendingEmail; retain the returned session access and all three timestamps separately from the user.
-- [ ] Preserve band version, member instrumentIds, catalog, instrumentation and nullable defaultLineup with applicability/reasons. Preserve event version, visibility, startsAt/endsAt, slots, immutable invitation IDs, myInvitationId, canManage/canRespond and conditionally present declineReason.
-- [ ] Parse poll summaries separately from details; preserve options/revisions, musician slots, row versions (including zero), answers, state, finalizedEventId and permission hints. Preserve preference version and all seven booleans.
-- [ ] Accept documented dotted-field detail arrays and LEADERSHIP_TRANSFER_REQUIRED details.bands objects; retain optional error.reason and existing Retry-After deadlines. Invalid responses remain recoverable errors.
-- [ ] Keep /api/v1, credentialed JSON, strict positive safe-integer IDs and endpoint-specific status/envelope checks. Member/default deletion consumes {band}; band/event/account deletion consumes {message}. Auth envelopes use {data:{user,session}}.
-- [ ] Provide exact endpoint-specific write shapes; do not serialize entire read models, option revisions into composition writes, invitation objects into slots, or unsupported confirmation fields.
+- [x] Normalize user snake_case once, retaining version, emailVerifiedAt and pendingEmail; retain the returned session access and all three timestamps separately from the user.
+- [x] Preserve band version, member instrumentIds, catalog, instrumentation and nullable defaultLineup with applicability/reasons. Preserve event version, visibility, startsAt/endsAt, slots, immutable invitation IDs, myInvitationId, canManage/canRespond and conditionally present declineReason.
+- [x] Parse poll summaries separately from details; preserve options/revisions, musician slots, row versions (including zero), answers, state, finalizedEventId and permission hints. Preserve preference version and all seven booleans.
+- [x] Accept documented dotted-field detail arrays and LEADERSHIP_TRANSFER_REQUIRED details.bands objects; retain optional error.reason and existing Retry-After deadlines. Invalid responses remain recoverable errors.
+- [x] Keep /api/v1, credentialed JSON, strict positive safe-integer IDs and endpoint-specific status/envelope checks. Member/default deletion consumes {band}; band/event/account deletion consumes {message}. Auth envelopes use {data:{user,session}}.
+- [x] Provide exact endpoint-specific write shapes; do not serialize entire read models, option revisions into composition writes, invitation objects into slots, or unsupported confirmation fields.
 
 ## Verification
 
@@ -45,3 +45,14 @@ Run relevant existing frontend tests, `npm run lint`, `npm run build` and `git d
 ## Out of scope
 
 Backend feature reimplementation, infrastructure/deployment, v1 data migration, framework replacement and unrelated UI redesign. See the sequence for global exclusions; report any demonstrated contract defect with evidence before expanding this ticket.
+
+## Implementation verification
+
+- Draft PR: [#112](https://github.com/CaelanRT/bandos/pull/112)
+- `npm test -- --reporter=dot` from `frontend/`: **PASS**, 34 files / 440 tests.
+- `npm run lint`: **PASS**, existing `EditEvent.jsx:41` warning.
+- `VITE_API_ORIGIN=/ npm run build`: **PASS**.
+- `git diff --check`: **PASS**.
+- Independent `review-ticket` review: **PASS**, all six acceptance criteria passed; no blockers. Reviewer independently ran 42 focused tests, lint, build, and staged whitespace checks.
+
+Non-blocking follow-up for FE-V2-11: accept the backend's `DEFAULT_LINEUP_INVALID` reason-array details when implementing default-lineup repair. No backend/runtime integration or browser smoke check is claimed by this boundary ticket.
