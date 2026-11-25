@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -11,8 +12,8 @@ import { createBandosQueryClient } from '../app/queryClient.js'
 import { bandKeys } from '../features/bands/queries.js'
 
 const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true, created_at: 'opaque' }
-const member = { userId: 17, username: 'alex', firstName: 'Alex', lastName: 'Rivera', role: 'leader' }
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null, created_at: 'opaque' }
+const member = { userId: 17, username: 'alex', firstName: 'Alex', lastName: 'Rivera', role: 'leader', instrumentIds: [1] }
 const json = (data, status = 200) => new Response(JSON.stringify({ data }), { status })
 const failure = (code, status = 400, details, headers) => new Response(JSON.stringify({ error: { code, message: 'Failed', details } }), { status, headers })
 const deferred = () => { let resolve; const promise = new Promise((done) => { resolve = done }); return { promise, resolve } }
@@ -39,18 +40,18 @@ async function confirm() {
 }
 beforeEach(() => {
   clients = []; signedIn = true
-  band = { bandId: 2, name: 'Alpha', currentUserRole: 'leader', isActive: true, createdAt: 'opaque', members: [member] }
+  band = { bandId: 2, name: 'Alpha', currentUserRole: 'leader', version: 1, instruments: [{ instrumentId: 1, name: 'Guitar' }], instrumentation: [{ slotId: 1, instrumentId: 1, label: 'Guitar', position: 0 }], defaultLineup: null, isActive: true, createdAt: 'opaque', members: [member] }
   other = { ...band, bandId: 3, name: 'Middle', currentUserRole: 'member' }
   detailRead = () => json({ band }); listRead = () => json({ bands: [band, other] })
-  remove = () => { detailRead = () => failure('BAND_NOT_FOUND', 404); listRead = () => json({ bands: [other] }); return json({ message: 'Deleted' }) }
+  remove = () => { detailRead = () => failure('BAND_NOT_FOUND', 404); listRead = () => json({ bands: [other] }); return json({ message: 'Band deleted' }) }
   fetchMock.mockReset().mockImplementation(async (url, options) => {
     const path = new URL(url).pathname.replace('/api/v1', '')
-    if (path === '/users/me') return signedIn ? json({ user }) : failure('AUTHENTICATION_REQUIRED', 401)
+    if (path === '/users/me') return signedIn ? json({ user, session: sessionFixture }) : failure('AUTHENTICATION_REQUIRED', 401)
     if (path === '/bands') return listRead()
     if (path === '/bands/2') return options.method === 'DELETE' ? remove() : detailRead()
     if (path === '/bands/3') return json({ band: other })
-    if (path === '/auth/login') { signedIn = true; return json({ message: 'OK' }) }
-    if (path === '/auth/logout') { signedIn = false; return json({ message: 'OK' }) }
+    if (path === '/auth/login') { signedIn = true; return json({ user, session: sessionFixture, message: 'OK' }) }
+    if (path === '/auth/logout') { signedIn = false; return json({ user, session: sessionFixture, message: 'OK' }) }
     throw new Error(`Unexpected request ${path}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -92,7 +93,7 @@ it('holds pending navigation, sends one bodyless delete and discards a dirty ren
   expect(await screen.findByRole('button', { name: 'Discard changes' })).toBeDisabled()
   client.setQueryData([...bandKeys.detail(2), 'events'], ['private'])
   detailRead = () => failure('BAND_NOT_FOUND', 404); listRead = () => json({ bands: [other] })
-  await act(async () => pending.resolve(json({ message: 'Deleted' })))
+  await act(async () => pending.resolve(json({ message: 'Band deleted' })))
   await screen.findByText('Band deleted.')
   expect(router.state.location.pathname).toBe('/')
   expect(router.state.historyAction).toBe('REPLACE')

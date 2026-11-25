@@ -9,13 +9,14 @@ const backendUser = {
   last_name: 'Rivera',
   email: 'alex@example.com',
   plan: 'free',
-  is_active: true,
+  is_active: true, version: 1, email_verified_at: null, pending_email: null,
   created_at: '2026-08-30T12:00:00.000Z',
 }
 
 describe('current-user normalization', () => {
   it('maps the implemented backend fields to the frontend model explicitly', () => {
     expect(normalizeCurrentUser(backendUser)).toEqual({
+      version: 1, emailVerifiedAt: null, pendingEmail: null,
       userId: 42,
       username: 'alex',
       firstName: 'Alex',

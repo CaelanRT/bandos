@@ -44,11 +44,12 @@ export function SessionBoundary({ children }) {
     }
 
     try {
-      const user = await getCurrentUser()
+      const { user, session: metadata } = await getCurrentUser()
       statusRef.current = 'authenticated'
       setSession({
         status: 'authenticated',
         user,
+        session: metadata,
         destination: afterAuthentication ? destinationRef.current : null,
         completionError: false,
       })

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -19,7 +20,7 @@ const backendUser = {
   last_name: 'Rivera',
   email: 'alex@example.com',
   plan: 'free',
-  is_active: true,
+  is_active: true, version: 1, email_verified_at: null, pending_email: null,
   created_at: '2026-09-03T10:00:00Z',
 }
 
@@ -156,8 +157,8 @@ describe('Login form', () => {
       visited.push({ ...state.location, historyAction: state.historyAction })
     })
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ message: 'logged in' }))
-      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser } }))
+      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }))
+      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }))
 
     await userEvent.type(screen.getByRole('textbox', { name: 'Email' }), '  Alex@Example.COM ')
     await userEvent.type(screen.getByLabelText('Password'), ' secret ')

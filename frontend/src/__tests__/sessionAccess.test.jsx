@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
@@ -19,7 +20,7 @@ const backendUser = {
   last_name: 'Rivera',
   email: 'alex@example.com',
   plan: 'free',
-  is_active: true,
+  is_active: true, version: 1, email_verified_at: null, pending_email: null,
   created_at: '2026-09-03T10:00:00Z',
 }
 
@@ -31,7 +32,7 @@ function jsonResponse(body, status = 200) {
 }
 
 function authenticatedResponse() {
-  return jsonResponse({ data: { user: backendUser } })
+  return jsonResponse({ data: { user: backendUser, session: sessionFixture } })
 }
 
 function authenticationRequiredResponse() {

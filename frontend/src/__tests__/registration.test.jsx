@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -19,7 +20,7 @@ const backendUser = {
   last_name: 'Rivera',
   email: 'alex@example.com',
   plan: 'free',
-  is_active: true,
+  is_active: true, version: 1, email_verified_at: null, pending_email: null,
   created_at: '2026-09-03T10:00:00Z',
 }
 
@@ -124,8 +125,8 @@ describe('Registration form', () => {
       visited.push({ ...state.location, historyAction: state.historyAction })
     })
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ message: 'created' }, 201))
-      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser } }))
+      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }, 201))
+      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }))
 
     await userEvent.type(screen.getByLabelText('First name'), ' Alex ')
     await userEvent.type(screen.getByLabelText('Last name'), ' Rivera ')
@@ -196,8 +197,8 @@ it('preserves destinations across switching forms, Back and Forward', async () =
 
 it.each(['https://example.com', '//example.com', '/login', '/missing'])('falls back safely after registration for %s', async (destination) => {
   const router = await openRegistration(destination)
-  fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'created' }, 201))
-    .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser } }))
+  fetchMock.mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }, 201))
+    .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }))
   for (const [label, value] of Object.entries({ 'First name': 'Alex', 'Last name': 'Rivera', Username: 'alex', Email: 'alex@example.com', Password: 'password' })) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } })
   }

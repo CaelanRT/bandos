@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider, focusManager } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -11,8 +12,8 @@ import { createBandosQueryClient } from '../app/queryClient.js'
 import { bandKeys } from '../features/bands/queries.js'
 
 const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true, created_at: 'opaque' }
-const band = (bandId, name, currentUserRole = 'member') => ({ bandId, name, currentUserRole,
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null, created_at: 'opaque' }
+const band = (bandId, name, currentUserRole = 'member') => ({ bandId, name, currentUserRole, version: 1, instruments: [{ instrumentId: 1, name: 'Guitar' }], instrumentation: [{ slotId: 1, instrumentId: 1, label: 'Guitar', position: 0 }], defaultLineup: null,
   isActive: true, createdAt: 'opaque', members: [] })
 const json = (data) => new Response(JSON.stringify({ data }), { status: 200 })
 const failure = (code, status) => new Response(JSON.stringify({ error: { code, message: 'Failed' } }), { status })
@@ -34,9 +35,9 @@ beforeEach(() => {
   fetchMock.mockReset()
   fetchMock.mockImplementation(async (url) => {
     const path = new URL(url).pathname.replace('/api/v1', '')
-    if (path === '/users/me') return json({ user })
+    if (path === '/users/me') return json({ user, session: sessionFixture })
     if (path === '/bands') return json({ bands: list })
-    if (path === '/auth/logout' || path === '/auth/login') return json({ message: 'OK' })
+    if (path === '/auth/logout' || path === '/auth/login') return json({ user, session: sessionFixture, message: 'OK' })
     if (path.startsWith('/bands/') && path.endsWith('/events')) {
       const response = details[path.slice(0, -'/events'.length)]
       return response instanceof Response ? response.clone() : json({ events: [] })
@@ -50,7 +51,7 @@ afterEach(() => { cleanup(); clients.forEach((client) => client.clear()); focusM
 
 it('distinguishes loading from zero bands and keeps Logout available', async () => {
   const pending = deferred()
-  fetchMock.mockImplementationOnce(async () => json({ user })).mockImplementationOnce(() => pending.promise)
+  fetchMock.mockImplementationOnce(async () => json({ user, session: sessionFixture })).mockImplementationOnce(() => pending.promise)
   mount()
   await userEvent.click(await screen.findByRole('button', { name: 'Account menu' }))
   expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
@@ -189,7 +190,7 @@ it('refreshes list and active detail on tab return without repeating session boo
 })
 
 it.each(['VALIDATION_ERROR', 'TOO_MANY_ATTEMPTS'])('does not retry %s list failures and offers contextual Retry', async (code) => {
-  fetchMock.mockImplementationOnce(async () => json({ user })).mockImplementationOnce(async () => failure(code, 400))
+  fetchMock.mockImplementationOnce(async () => json({ user, session: sessionFixture })).mockImplementationOnce(async () => failure(code, 400))
   mount()
   await screen.findAllByText('We couldn’t load your bands.')
   expect(screen.queryByText(/Share your username/)).not.toBeInTheDocument()
@@ -295,7 +296,7 @@ it.each(['', '/members'])('expires during reads, discards late private results, 
 })
 
 const member = (userId, firstName, lastName, username, role = 'member') =>
-  ({ userId, firstName, lastName, username, role })
+  ({ userId, firstName, lastName, username, role, instrumentIds: [1] })
 
 it.each(['leader', 'member'])('shows the same sorted member structure for a %s without mutating cached membership', async (role) => {
   const members = [

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -11,10 +12,10 @@ import { createBandosQueryClient } from '../app/queryClient.js'
 import { bandKeys } from '../features/bands/queries.js'
 
 const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true, created_at: 'opaque' }
-const leader = { userId: 17, username: 'alex', firstName: 'Alex', lastName: 'Rivera', role: 'leader' }
-const zoe = { userId: 20, username: 'zoe', firstName: 'Zoe', lastName: 'Smith', role: 'member' }
-const ben = { userId: 21, username: 'ben', firstName: 'Ben', lastName: 'Smith', role: 'member' }
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null, created_at: 'opaque' }
+const leader = { userId: 17, username: 'alex', firstName: 'Alex', lastName: 'Rivera', role: 'leader', instrumentIds: [1] }
+const zoe = { userId: 20, username: 'zoe', firstName: 'Zoe', lastName: 'Smith', role: 'member', instrumentIds: [1] }
+const ben = { userId: 21, username: 'ben', firstName: 'Ben', lastName: 'Smith', role: 'member', instrumentIds: [1] }
 const json = (data, status = 200) => new Response(JSON.stringify({ data }), { status })
 const failure = (code, status = 400, details, headers) => new Response(JSON.stringify({ error: { code, message: 'Failed', details } }), { status, headers })
 const deferred = () => { let resolve; const promise = new Promise((done) => { resolve = done }); return { promise, resolve } }
@@ -35,20 +36,20 @@ async function enter(value = 'zoe') { fireEvent.change(await screen.findByLabelT
 async function submit() { await userEvent.click(screen.getByRole('button', { name: 'Add member', exact: true })) }
 beforeEach(() => {
   clients = []
-  band = { bandId: 2, name: 'The Band', currentUserRole: 'leader', isActive: true, createdAt: 'opaque', members: [leader] }
+  band = { bandId: 2, name: 'The Band', currentUserRole: 'leader', version: 1, instruments: [{ instrumentId: 1, name: 'Guitar' }], instrumentation: [{ slotId: 1, instrumentId: 1, label: 'Guitar', position: 0 }], defaultLineup: null, isActive: true, createdAt: 'opaque', members: [leader] }
   detailRead = () => json({ band }); listRead = () => json({ bands: [band] })
   post = (body) => {
     const member = body.username.toLowerCase() === 'zoe' ? zoe : ben
     band = { ...band, members: [...band.members, member] }
-    return json({ member }, 201)
+    return json({ member, band }, 201)
   }
   fetchMock.mockReset().mockImplementation(async (url, options) => {
     const path = new URL(url).pathname.replace('/api/v1', '')
-    if (path === '/users/me') return json({ user })
+    if (path === '/users/me') return json({ user, session: sessionFixture })
     if (path === '/bands') return listRead()
     if (path === '/bands/2') return detailRead()
     if (path === '/bands/2/members') return post(JSON.parse(options.body))
-    if (path.startsWith('/auth/')) return json({ message: 'OK' })
+    if (path.startsWith('/auth/')) return json({ user, session: sessionFixture, message: 'OK' })
     throw new Error(`Unexpected request ${path}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -121,7 +122,7 @@ it('validates trimmed 3–50 JS characters on blur/edit and submit without inven
   }
   expect(posts()).toHaveLength(0)
   const username = '😀'.repeat(25)
-  post = () => { const member = { ...zoe, username }; band.members.push(member); return json({ member }, 201) }
+  post = () => { const member = { ...zoe, username }; band.members.push(member); return json({ member, band }, 201) }
   await enter(' ' + username + ' '); await submit()
   await screen.findByText(`@${username} added to the band.`)
   expect(JSON.parse(posts()[0][1].body)).toEqual({ username })
@@ -215,7 +216,7 @@ it('blocks replay through failed checks until an explicit recheck and retry', as
   await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
   const retry = await screen.findByRole('button', { name: 'Try adding again' })
   expect(posts()).toHaveLength(1)
-  post = () => { band.members.push(zoe); return json({ member: zoe }, 201) }
+  post = () => { band.members.push(zoe); return json({ member: zoe, band }, 201) }
   await userEvent.click(retry)
   await screen.findByText('@zoe added to the band.')
   expect(posts()).toHaveLength(2)
@@ -278,7 +279,7 @@ it('does not repopulate private data after logout with a late successful additio
   await userEvent.click(screen.getByRole('button', { name: 'Account menu' }))
   await userEvent.click(screen.getByRole('button', { name: 'Log out' }))
   await screen.findByRole('heading', { name: 'Login' })
-  await act(async () => pending.resolve(json({ member: zoe }, 201)))
+  await act(async () => pending.resolve(json({ member: zoe, band }, 201)))
   expect(client.getQueryCache().findAll({ queryKey: ['private'] })).toHaveLength(0)
 })
 
@@ -291,13 +292,13 @@ it('cancels older detail reads so they cannot erase a confirmed addition, and de
   await submit(); await screen.findByText('@zoe added to the band.')
   await act(async () => { old.resolve(json({ band: { ...band, members: [leader] } })); await refresh })
   expect(client.getQueryData(bandKeys.detail(2)).members.map((member) => member.userId)).toEqual([17, 20])
-  post = () => json({ member: zoe }, 201)
+  post = () => json({ member: zoe, band }, 201)
   await enter(); await submit(); await screen.findByText('@zoe added to the band.')
   expect(within(screen.getByRole('list', { name: 'Band members' })).getAllByText('@zoe')).toHaveLength(1)
 })
 
 it('retains confirmed addition when revalidation fails', async () => {
-  post = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return json({ member: zoe }, 201) }
+  post = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return json({ member: zoe, band }, 201) }
   mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await screen.findByText('@zoe added to the band.')
   await screen.findByText('We couldn’t update this band.')
@@ -338,7 +339,7 @@ it('resumes requested navigation after a confirmed pending addition', async () =
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await screen.findByRole('dialog')
   band.members.push(zoe)
-  await act(async () => pending.resolve(json({ member: zoe }, 201)))
+  await act(async () => pending.resolve(json({ member: zoe, band }, 201)))
   await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })

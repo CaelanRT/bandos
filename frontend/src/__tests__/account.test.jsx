@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
@@ -12,9 +13,9 @@ import { bandKeys } from '../features/bands/queries.js'
 
 const fetchMock = vi.fn()
 const backendUser = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true, created_at: '2026-09-03T10:00:00Z' }
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null, created_at: '2026-09-03T10:00:00Z' }
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status })
-const userResponse = (user = backendUser) => response({ data: { user } })
+const userResponse = (user = backendUser) => response({ data: { user, session: sessionFixture } })
 const bandsResponse = () => response({ data: { bands: [] } })
 const errorResponse = (code, status, details) => response({ error: { code, message: code, details } }, status)
 

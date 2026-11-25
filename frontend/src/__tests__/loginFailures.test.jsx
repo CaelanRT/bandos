@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
@@ -13,7 +14,7 @@ import { SessionBoundary } from '../app/SessionBoundary.jsx'
 const fetchMock = vi.fn()
 const backendUser = {
   user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true,
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null,
   created_at: '2026-09-03T10:00:00Z',
 }
 
@@ -145,9 +146,9 @@ describe('Login failures', () => {
       visited.push({ ...state.location, historyAction: state.historyAction })
     })
     fetchMock
-      .mockResolvedValueOnce(response({ message: 'logged in' }))
+      .mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }))
       .mockResolvedValueOnce(errorResponse('INTERNAL_ERROR', 'Unavailable', 503))
-      .mockResolvedValueOnce(response({ data: { user: backendUser } }))
+      .mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }))
 
     await submit()
     expect(await screen.findByRole('heading', { name: 'We couldn’t connect to Bandos' })).toBeInTheDocument()
@@ -165,7 +166,7 @@ describe('Login failures', () => {
   it('shows contextual completion feedback when identity is still unauthenticated', async () => {
     await renderReadyLogin()
     fetchMock
-      .mockResolvedValueOnce(response({ message: 'logged in' }))
+      .mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }))
       .mockResolvedValueOnce(
         errorResponse('AUTHENTICATION_REQUIRED', 'Authentication required', 401),
       )

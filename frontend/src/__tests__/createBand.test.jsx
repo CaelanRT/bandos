@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -12,10 +13,10 @@ import { bandKeys } from '../features/bands/queries.js'
 import { resolveCreationOrigin, resolveDestination } from '../app/destination.js'
 
 const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera',
-  email: 'alex@example.com', plan: 'free', is_active: true, created_at: 'opaque' }
-const band = (bandId, name = 'New band') => ({ bandId, name, currentUserRole: 'leader',
+  email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null, created_at: 'opaque' }
+const band = (bandId, name = 'New band') => ({ bandId, name, currentUserRole: 'leader', version: 1, instruments: [{ instrumentId: 1, name: 'Guitar' }], instrumentation: [{ slotId: 1, instrumentId: 1, label: 'Guitar', position: 0 }], defaultLineup: null,
   isActive: true, createdAt: 'opaque', members: [
-    { userId: 17, username: 'alex', firstName: 'Alex', lastName: 'Rivera', role: 'leader' },
+    { userId: 17, username: 'alex', firstName: 'Alex', lastName: 'Rivera', role: 'leader', instrumentIds: [1] },
   ] })
 const json = (data, status = 200) => new Response(JSON.stringify({ data }), { status })
 const failure = (code, status = 400, details, headers) => new Response(JSON.stringify({ error: { code, message: 'Failed', details } }), { status, headers })
@@ -40,10 +41,10 @@ beforeEach(() => {
   post = () => { const created = band(9); list = [...list, created]; return json({ band: created }, 201) }
   fetchMock.mockReset().mockImplementation(async (url, options) => {
     const path = new URL(url).pathname.replace('/api/v1', '')
-    if (path === '/users/me') return json({ user })
+    if (path === '/users/me') return json({ user, session: sessionFixture })
     if (path === '/bands') return options.method === 'POST' ? post() : listRead()
     if (path.startsWith('/bands/')) return json({ band: list.find((item) => path === `/bands/${item.bandId}`) })
-    if (path.startsWith('/auth/')) return json({ message: 'OK' })
+    if (path.startsWith('/auth/')) return json({ user, session: sessionFixture, message: 'OK' })
     throw new Error(`Unexpected request ${path}`)
   })
   vi.stubGlobal('fetch', fetchMock)

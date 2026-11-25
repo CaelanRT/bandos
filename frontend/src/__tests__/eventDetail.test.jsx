@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider, focusManager } from '@tanstack/react-query'
 import { act, cleanup, render, screen, waitFor, within, fireEvent } from '@testing-library/react'
@@ -10,9 +11,9 @@ import { SessionBoundary } from '../app/SessionBoundary.jsx'
 import { createBandosQueryClient } from '../app/queryClient.js'
 import { bandKeys, eventKeys } from '../features/bands/queries.js'
 
-const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera', email: 'alex@example.com', plan: 'free', is_active: true, created_at: 'opaque' }
-const band = (role = 'member') => ({ bandId: 2, name: 'The Waves', currentUserRole: role, isActive: true, createdAt: 'opaque', members: [] })
-const event = (changes = {}) => ({ eventId: 8, bandId: 2, name: 'Long rehearsal', type: 'rehearsal', date: '2026-09-19', startTime: '09:05', endTime: '10:35', timezone: 'America/New_York', location: 'A very long rehearsal room location', description: 'Bring charts.', createdByUserId: 4, isActive: true, createdAt: 'opaque', updatedAt: 'opaque', ...changes })
+const user = { user_id: 17, username: 'alex', first_name: 'Alex', last_name: 'Rivera', email: 'alex@example.com', plan: 'free', is_active: true, version: 1, email_verified_at: null, pending_email: null, created_at: 'opaque' }
+const band = (role = 'member') => ({ bandId: 2, name: 'The Waves', currentUserRole: role, version: 1, instruments: [{ instrumentId: 1, name: 'Guitar' }], instrumentation: [{ slotId: 1, instrumentId: 1, label: 'Guitar', position: 0 }], defaultLineup: null, isActive: true, createdAt: 'opaque', members: [] })
+const event = (changes = {}) => ({ eventId: 8, bandId: 2, name: 'Long rehearsal', type: 'rehearsal', date: '2026-09-19', startTime: '09:05', endTime: '10:35', timezone: 'America/New_York', location: 'A very long rehearsal room location', description: 'Bring charts.', version: 1, hideFromUninvited: false, startsAt: '2030-09-16T15:05:00.000Z', endsAt: '2030-09-16T16:35:00.000Z', slots: [], myInvitationId: null, canManage: false, canRespond: false, createdByUserId: 4, isActive: true, createdAt: 'opaque', updatedAt: 'opaque', ...changes })
 const json = (data) => new Response(JSON.stringify({ data }), { status: 200 })
 const failure = (code, status) => new Response(JSON.stringify({ error: { code, message: 'Failed' } }), { status })
 const fetchMock = vi.fn()
@@ -30,7 +31,7 @@ beforeEach(() => {
   clients = []; role = 'member'; detail = event(); listedBands = [band(role)]; fetchMock.mockReset()
   fetchMock.mockImplementation(async (url) => {
     const path = new URL(url).pathname.replace('/api/v1', '')
-    if (path === '/users/me') return json({ user })
+    if (path === '/users/me') return json({ user, session: sessionFixture })
     if (path === '/bands') return json({ bands: listedBands })
     if (path === '/bands/2') return json({ band: band(role) })
     if (path === '/bands/2/events') return json({ events: detail instanceof Response ? [] : [detail] })

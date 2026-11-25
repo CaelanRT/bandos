@@ -81,7 +81,7 @@ describe('API client', () => {
     await expect(client.request('bands/7')).resolves.toEqual({ bandId: 7 })
   })
 
-  it('returns authentication success messages without inferring identity', async () => {
+  it('rejects legacy unwrapped authentication envelopes', async () => {
     const client = createApiClient({
       baseUrl: 'https://api.test/api/v1',
       fetchImpl: vi.fn().mockResolvedValue(
@@ -89,9 +89,7 @@ describe('API client', () => {
       ),
     })
 
-    await expect(client.request('auth/login')).resolves.toEqual({
-      message: 'user: 42 logged in',
-    })
+    await expect(client.request('auth/login')).rejects.toMatchObject({ code: INVALID_API_RESPONSE })
   })
 
   it.each([204, 205])('accepts an empty %i success response', async (status) => {

@@ -2,7 +2,7 @@ export const INVALID_API_RESPONSE = 'INVALID_API_RESPONSE'
 export const NETWORK_ERROR = 'NETWORK_ERROR'
 
 export class ApiError extends Error {
-  constructor(message, { status = null, code, details, retryAt, cause } = {}) {
+  constructor(message, { status = null, code, details, reason, retryAt, cause } = {}) {
     super(message, cause === undefined ? undefined : { cause })
     this.name = 'ApiError'
     this.status = status
@@ -11,6 +11,8 @@ export class ApiError extends Error {
     if (details !== undefined) {
       this.details = details
     }
+
+    if (reason !== undefined) this.reason = reason
 
     if (retryAt !== undefined) {
       this.retryAt = retryAt

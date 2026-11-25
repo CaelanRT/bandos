@@ -9,10 +9,10 @@ import { bandKeys, eventKeys } from '../features/bands/queries.js'
 import { upcomingAcrossBands, useUpcomingAcrossBands } from '../features/datebook/queries.js'
 
 const band = (bandId) => ({ bandId, name: `Band ${bandId}`, isActive: true,
-  createdAt: 'opaque', currentUserRole: 'member' })
+  createdAt: 'opaque', currentUserRole: 'member', version: 1 })
 const event = (bandId, eventId, changes = {}) => ({ eventId, bandId, name: `Event ${eventId}`,
   type: 'rehearsal', date: '2030-01-01', startTime: '12:00', endTime: '13:00', timezone: 'UTC',
-  location: 'Studio', description: null, createdByUserId: 1, isActive: true,
+  location: 'Studio', description: null, version: 1, hideFromUninvited: false, startsAt: '2030-09-16T15:05:00.000Z', endsAt: '2030-09-16T16:35:00.000Z', slots: [], myInvitationId: null, canManage: false, canRespond: false, createdByUserId: 1, isActive: true,
   createdAt: 'opaque', updatedAt: 'opaque', ...changes })
 const deferred = () => {
   let resolve, reject
