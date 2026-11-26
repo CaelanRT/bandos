@@ -689,6 +689,36 @@ dialog::backdrop { background: rgb(37 35 31 / 45%); }
   border-top: 1px solid currentColor;
 }
 .account-form > .form-actions { margin-block-start: 1.75rem; }
+.account-preference-master { margin-block-end: 1.25rem; }
+.account-preference-group {
+  margin: 0;
+  padding: 1rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+.account-preference-group:disabled { opacity: 0.65; }
+.account-preference-group legend { font-size: 0.875rem; font-weight: 600; padding: 0; }
+.account-preference-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  margin-block-start: 0.875rem;
+}
+.account-preference-option input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-height: 0;
+  padding: 0;
+  margin: 0.15rem 0 0;
+}
+.account-preference-text { display: grid; gap: 0.125rem; }
+.account-preference-label { font-weight: 600; font-size: 0.9375rem; cursor: pointer; }
+.account-preference-description, .account-preference-note {
+  color: var(--graphite);
+  font-size: 0.875rem;
+}
+.account-preference-note { margin: 0.625rem 0 0; }
 .account-details dl { margin: 0; border-top: 1px solid var(--rule); }
 .account-details dl > div {
   display: grid;
