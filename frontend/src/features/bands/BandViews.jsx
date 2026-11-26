@@ -201,13 +201,13 @@ export function BandWorkspace({ section = 'Schedule' }) {
           </nav>
           {section === 'Event' ? eventId === null ? <div className="event-recovery">
             <h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link>
-          </div> : <EventDetail bandId={band.bandId} eventId={eventId} canEdit={band.currentUserRole === 'leader' && !band.managementDenied} /> :
+          </div> : <EventDetail loadSource={detail.loadSource} bandId={band.bandId} eventId={eventId} canEdit={band.currentUserRole === 'leader' && !band.managementDenied} /> :
             section === 'Settings' ? band.currentUserRole === 'leader' && <BandSettings key={band.bandId} band={band} /> :
             section === 'Members' ? <BandMembers key={band.bandId} band={band} /> :
             section === 'Create event' ? band.currentUserRole === 'leader' && <CreateEvent key={band.bandId} band={band} /> :
             section === 'Edit event' ? eventId === null ? <div className="event-recovery"><h1>This event is no longer available.</h1><Link to={'/bands/' + band.bandId}>Back to Schedule</Link></div> :
-              band.currentUserRole === 'leader' && <EditEvent key={`${band.bandId}-${eventId}`} band={band} eventId={eventId} /> :
-              <BandSchedule key={band.bandId} bandId={band.bandId} canCreate={band.currentUserRole === 'leader' && !band.managementDenied} />}
+              band.currentUserRole === 'leader' && <EditEvent loadSource={detail.loadSource} key={`${band.bandId}-${eventId}`} band={band} eventId={eventId} /> :
+              <BandSchedule loadSource={detail.loadSource} key={band.bandId} bandId={band.bandId} canCreate={band.currentUserRole === 'leader' && !band.managementDenied} />}
         </>}
       </>}
   </BandShell>

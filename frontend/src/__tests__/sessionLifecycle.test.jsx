@@ -131,9 +131,7 @@ it('converges concurrent expiration signals and restores the deep URL without re
   const settled = Promise.allSettled(requests)
   await act(async () => { first.resolve(failure()); second.resolve(failure()); await settled })
   expect(await screen.findByRole('heading', { name: 'Login' })).toBeInTheDocument()
-  expect(screen.queryByRole('status')).not.toBeInTheDocument()
-  expect(screen.queryByText('Your session expired. Log in to continue.')).not.toBeInTheDocument()
-  expect(document.querySelector('.auth-notice')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Your session expired. Log in to continue.')
   expect(currentSession.user).toBeNull()
   expect(client.getQueryData(['private', 'probe'])).toBeUndefined()
   expect(client.getQueryData(['public', 'config'])).toEqual(['public data'])
@@ -145,7 +143,7 @@ it('converges concurrent expiration signals and restores the deep URL without re
   expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'PATCH')).toHaveLength(1)
 })
 
-it.each([['INVALID_CREDENTIALS', 401], ['AUTHENTICATION_REQUIRED', 403]])('does not expire on %s with status %s', async (code, status) => {
+it.each([['INVALID_CREDENTIALS', 401], ['CURRENT_PASSWORD_INCORRECT', 401], ['AUTHENTICATION_REQUIRED', 403]])('does not expire on %s with status %s', async (code, status) => {
   const { client } = await open()
   fetchMock.mockResolvedValueOnce(failure(code, status))
   await act(async () => { await expect(currentSession.authenticatedRequest('/probe')).rejects.toMatchObject({ code }) })
@@ -240,4 +238,35 @@ it('deduplicates shared Logout calls and ignores a late Logout success after rea
   await login()
   await act(async () => { pending.resolve(response({ data: { message: 'Logged out' } })); await first })
   expect(currentSession.status).toBe('authenticated')
+})
+
+it('retains authoritative deadlines and discards old-identity requests and drafts on direct session replacement', async () => {
+  const { client } = await open()
+  expect(currentSession.session).toEqual(sessionFixture)
+  const oldRequestFunction = currentSession.authenticatedRequest
+  const pending = deferred()
+  fetchMock.mockReturnValueOnce(pending.promise)
+  const oldRequest = oldRequestFunction('/old-identity').catch(error => error)
+  fireEvent.change(screen.getByLabelText('Unsaved note'), { target: { value: 'sensitive draft' } })
+  await act(() => currentSession.completeAuthentication('/account?token=secret', {
+    user: { ...currentSession.user, userId: 18 }, session: sessionFixture,
+  }))
+  expect(currentSession.user.userId).toBe(18)
+  expect(currentSession.destination).toBe('/account')
+  expect(screen.getByLabelText('Unsaved note')).toHaveValue('')
+  expect(client.getQueryData(['private', 'probe'])).toBeUndefined()
+  await act(async () => {
+    pending.resolve(response({ data: { secret: 'old account' } }))
+    expect(await oldRequest).toMatchObject({ name: 'AbortError' })
+    await expect(oldRequestFunction('/old-callback')).rejects.toMatchObject({ name: 'AbortError' })
+  })
+})
+
+it.each(['idle_expired', 'absolute_expired', 'revoked', undefined])('shows expiry feedback from server reason %s without waiting for a local deadline', async (reason) => {
+  await open()
+  fetchMock.mockResolvedValueOnce(response({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'Required', reason } }, 401))
+  await act(async () => { await currentSession.authenticatedRequest('/write', { method: 'POST' }).catch(() => {}) })
+  await screen.findByRole('heading', { name: 'Login' })
+  const messages = { idle_expired: 'after inactivity', absolute_expired: 'time limit', revoked: 'session ended' }
+  expect(screen.getByRole('status')).toHaveTextContent(reason ? messages[reason] : 'Your session expired.')
 })

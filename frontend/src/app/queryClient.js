@@ -47,6 +47,8 @@ export function createBandosQueryClient() {
 }
 
 export function clearPrivateQueries(client) {
+  void client.cancelQueries({ predicate: (query) => query.queryKey[0] === 'private' })
+  client.getMutationCache().clear()
   client.removeQueries({
     predicate: (query) => query.queryKey[0] === 'private',
   })

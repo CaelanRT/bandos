@@ -58,11 +58,11 @@ export function BandSettings({ band }) {
     setFocusRequest((value) => value + 1)
     if (currentBlocker.current.state === 'blocked') currentBlocker.current.proceed()
   }
-  async function refreshPermission(signal = lifetime.current.signal) {
+  async function refreshPermission(signal = lifetime.current.signal, activity = false) {
     setPermissionChecking(true)
     const results = await Promise.allSettled([
-      checkBand(client, authenticatedRequest, band.bandId, signal),
-      checkBands(client, authenticatedRequest, signal),
+      checkBand(client, authenticatedRequest, band.bandId, signal, activity),
+      checkBands(client, authenticatedRequest, signal, activity),
     ])
     if (signal.aborted) return
     if (results.every((result) => result.status === 'fulfilled')) {
@@ -70,10 +70,10 @@ export function BandSettings({ band }) {
     }
     setPermissionChecking(false)
   }
-  async function reconcile(signal = lifetime.current.signal) {
+  async function reconcile(signal = lifetime.current.signal, activity = false) {
     setReconciliation('checking')
     try {
-      const latest = await checkBand(client, authenticatedRequest, band.bandId, signal)
+      const latest = await checkBand(client, authenticatedRequest, band.bandId, signal, activity)
       if (signal.aborted || !latest) return
       if (latest.currentUserRole !== 'leader') return
       await cacheSavedBand(client, latest, signal)
@@ -137,7 +137,7 @@ export function BandSettings({ band }) {
     <h2 id="settings-heading">Settings</h2>
     {denied ? <div role="alert">
       <p>{permissionChecking ? 'Checking your permissions…' : 'We couldn’t confirm leader access. Check your permissions to continue.'}</p>
-      <button type="button" disabled={permissionChecking} onClick={() => refreshPermission()}>Retry permissions</button>
+      <button type="button" disabled={permissionChecking} onClick={() => refreshPermission(undefined, true)}>Retry permissions</button>
     </div> : <form className="band-form" aria-label="Rename band" onSubmit={submit} noValidate>
       {message && <p role="status">{message}</p>}
       {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
@@ -153,7 +153,7 @@ export function BandSettings({ band }) {
       {checking && <p role="status">Checking the band name…</p>}
       {reconciliation === 'failed' && <div role="alert">
         <p>We couldn’t check the band name. Check again before saving.</p>
-        <button type="button" onClick={() => reconcile()}>Check again</button>
+        <button type="button" onClick={() => reconcile(undefined, true)}>Check again</button>
       </div>}
       {reconciliation === 'conflict' && <p role="status">The current server name is “{band.name}”. Your draft is preserved; save again to retry.</p>}
       <div className="form-actions">

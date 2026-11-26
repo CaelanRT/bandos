@@ -3,7 +3,7 @@
 import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -197,4 +197,30 @@ describe('route access', () => {
     expect(router.state.location.pathname).toBe('/')
     expect(await screen.findByRole('heading', { name: 'Personal datebook' })).toBeInTheDocument()
   })
+})
+
+it('gates restricted bootstrap before protected shells or resource queries mount', async () => {
+  fetchMock.mockResolvedValueOnce(jsonResponse({ data: { user: backendUser,
+    session: { ...sessionFixture, access: 'verification_required' } } }))
+  const router = renderApplication('/bands/12/events/34?token=secret')
+  expect(await screen.findByRole('heading', { name: 'Verify your email' })).toBeInTheDocument()
+  expect(screen.getByText(/alex@example.com/)).toBeInTheDocument()
+  expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+  expect(fetchMock).toHaveBeenCalledOnce()
+  expect(router.state.location.state).toEqual({ destination: '/bands/12/events/34' })
+})
+
+it.each(['full', 'verification_required', 'signedOut'])('keeps recovery and all token routes reachable with %s access', async (access) => {
+  fetchMock.mockResolvedValueOnce(access === 'signedOut' ? authenticationRequiredResponse() :
+    jsonResponse({ data: { user: backendUser, session: { ...sessionFixture, access } } }))
+  const router = renderApplication('/verify-email?token=secret')
+  await screen.findByRole('heading', { name: 'Verify your email' })
+  for (const [path, title] of [['/forgot-password', 'Recover your account'],
+    ['/reset-password', 'Reset your password'], ['/verify-email-change', 'Confirm your email change']]) {
+    await act(() => router.navigate(`${path}?token=secret`))
+    expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
+    await waitFor(() => expect(router.state.location.search).toBe(''))
+    expect(JSON.stringify(router.state.location.state)).not.toContain('secret')
+  }
+  expect(fetchMock).toHaveBeenCalledOnce()
 })

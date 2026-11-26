@@ -1,5 +1,6 @@
+import { useActivityQuery, userActivityRequest } from '../../app/activityQueries.js'
 import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../../app/sessionContext.js'
 import { INVALID_API_RESPONSE } from '../../api/errors.js'
 import { eventKeys, removeBandAccess } from '../bands/queries.js'
@@ -7,14 +8,14 @@ import { getEvent, getEvents } from './api.js'
 
 const freshness = { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true }
 
-export function useEvent(bandId, eventId) {
+export function useEvent(bandId, eventId, loadSource) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
-  const query = useQuery({ ...freshness, queryKey: eventKeys.detail(bandId, eventId),
+  const query = useActivityQuery({ ...freshness, loadSource, queryKey: eventKeys.detail(bandId, eventId),
     enabled: bandId !== null && eventId !== null,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, activity }) => {
       try {
-        const event = await getEvent(authenticatedRequest, bandId, eventId, signal)
+        const event = await getEvent(activity === 'user' ? userActivityRequest(authenticatedRequest) : authenticatedRequest, bandId, eventId, signal)
         client.setQueryData(eventKeys.list(bandId), (events) => events?.map((item) =>
           item.eventId === event.eventId ? event : item))
         return event
@@ -39,10 +40,10 @@ export function useEvent(bandId, eventId) {
   return query
 }
 
-export function useEvents(bandId) {
+export function useEvents(bandId, loadSource) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
-  const query = useQuery(eventListOptions(authenticatedRequest, bandId))
+  const query = useActivityQuery({ ...eventListOptions(authenticatedRequest, bandId), loadSource })
 
   useEffect(() => {
     if (bandId === null || query.error?.code !== 'BAND_NOT_FOUND') return undefined
@@ -56,7 +57,7 @@ export function useEvents(bandId) {
 
 export function eventListOptions(request, bandId) {
   return { ...freshness, queryKey: eventKeys.list(bandId), enabled: bandId !== null,
-    queryFn: ({ signal }) => getEvents(request, bandId, signal) }
+    queryFn: ({ signal, activity }) => getEvents(activity === 'user' ? userActivityRequest(request) : request, bandId, signal) }
 }
 
 export async function cacheCreatedEvent(client, event, signal) {

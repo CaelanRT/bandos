@@ -64,11 +64,11 @@ export function CreateEvent({ band }) {
     const next = validateEventValues(values)
     setErrors((current) => ({ ...current, ...(next[field] ? { [field]: next[field] } : { [field]: undefined }) }))
   }
-  async function refreshPermission(signal = lifetime.current.signal) {
+  async function refreshPermission(signal = lifetime.current.signal, activity = false) {
     setPermissionChecking(true); setPermissionFailed(false)
     const results = await Promise.allSettled([
-      checkBand(client, authenticatedRequest, band.bandId, signal),
-      checkBands(client, authenticatedRequest, signal),
+      checkBand(client, authenticatedRequest, band.bandId, signal, activity),
+      checkBands(client, authenticatedRequest, signal, activity),
     ])
     if (signal.aborted) return
     setPermissionChecking(false)
@@ -142,7 +142,7 @@ export function CreateEvent({ band }) {
     <h2 id="create-event-heading">Create event</h2>
     {(permissionChecking || permissionFailed) ? <div className="event-notice" role="alert">
       <p>{permissionChecking ? 'Checking your permissions…' : 'We couldn’t confirm leader access. Check your permissions to continue.'}</p>
-      {permissionFailed && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
+      {permissionFailed && <button type="button" onClick={() => refreshPermission(undefined, true)}>Retry permissions</button>}
     </div> : <form className="band-form event-form" onSubmit={submit} noValidate>
       {formError && <p className="event-notice" ref={notice} role="alert" tabIndex="-1">{formError}</p>}
       {timezoneError && <div className="event-notice" ref={timezoneNotice} role="alert" tabIndex="-1">

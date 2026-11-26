@@ -2,12 +2,14 @@ const PROTECTED_PATHS = [
   /^\/$/,
   /^\/account\/?$/,
   /^\/bands\/new\/?$/,
-  /^\/bands\/[^/]+\/?$/,
-  /^\/bands\/[^/]+\/members\/?$/,
-  /^\/bands\/[^/]+\/settings\/?$/,
-  /^\/bands\/[^/]+\/events\/new\/?$/,
-  /^\/bands\/[^/]+\/events\/[^/]+\/?$/,
-  /^\/bands\/[^/]+\/events\/[^/]+\/edit\/?$/,
+  /^\/bands\/[1-9]\d*\/?$/,
+  /^\/bands\/[1-9]\d*\/members\/?$/,
+  /^\/bands\/[1-9]\d*\/settings\/?$/,
+  /^\/bands\/[1-9]\d*\/events\/new\/?$/,
+  /^\/bands\/[1-9]\d*\/events\/[1-9]\d*\/?$/,
+  /^\/bands\/[1-9]\d*\/events\/[1-9]\d*\/edit\/?$/,
+  /^\/bands\/[1-9]\d*\/polls\/new\/?$/,
+  /^\/bands\/[1-9]\d*\/polls\/[1-9]\d*(?:\/edit)?\/?$/,
 ]
 
 function hasControlCharacter(value) {
@@ -21,6 +23,7 @@ export function resolveDestination(candidate) {
   if (
     typeof candidate !== 'string' ||
     !candidate.startsWith('/') ||
+    candidate.includes('\\') ||
     candidate.startsWith('//') ||
     hasControlCharacter(candidate)
   ) {
@@ -33,18 +36,30 @@ export function resolveDestination(candidate) {
   try {
     url = new URL(candidate, 'https://bandos.local')
     decodedPathname = decodeURIComponent(url.pathname)
+    if (decodeURIComponent(candidate.split(/[?#]/)[0]).split('/').some(part => part === '.' || part === '..')) return '/'
   } catch {
     return '/'
   }
 
   if (
     url.origin !== 'https://bandos.local' ||
+    decodedPathname.split('/').some(part => /^\d+$/.test(part) && !Number.isSafeInteger(Number(part))) ||
+    hasControlCharacter(decodedPathname) ||
+    decodedPathname.includes('\\') ||
+    decodedPathname.split('/').some(part => part.includes('%')) ||
     !PROTECTED_PATHS.some((pattern) => pattern.test(decodedPathname))
   ) {
     return '/'
   }
 
-  return `${url.pathname}${url.search}${url.hash}`
+  // Return state contains only known display options, never arbitrary credentials.
+  const search = new URLSearchParams()
+  for (const key of ['view', 'tab', 'from']) {
+    const value = url.searchParams.get(key)
+    if (value && /^[a-z-]{1,32}$/i.test(value)) search.set(key, value)
+  }
+  const hash = /^#[a-z][a-z0-9-]{0,63}$/i.test(url.hash) ? url.hash : ''
+  return `${url.pathname}${search.size ? `?${search}` : ''}${hash}`
 }
 
 export function destinationFromLocation(location) {

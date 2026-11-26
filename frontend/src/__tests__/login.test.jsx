@@ -150,7 +150,7 @@ describe('Login form', () => {
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
-  it('submits the exact normalized credentials, retrieves identity, and replaces to the destination', async () => {
+  it('submits exact normalized credentials, consumes the auth session, and replaces to the destination', async () => {
     const router = await openLogin('/account?tab=profile#email')
     const visited = []
     router.subscribe((state) => {
@@ -168,13 +168,13 @@ describe('Login form', () => {
       location.pathname === '/account' && location.search === '?tab=profile' &&
       location.hash === '#email' && location.historyAction === 'REPLACE'
     ))).toBe(true))
-    expect(fetchMock.mock.calls.filter(([url]) => !new URL(url).pathname.startsWith('/api/v1/bands'))).toHaveLength(3)
+    expect(fetchMock.mock.calls.filter(([url]) => !new URL(url).pathname.startsWith('/api/v1/bands'))).toHaveLength(2)
     expect(fetchMock.mock.calls[1][0]).toMatch(/\/auth\/login$/)
     expect(fetchMock.mock.calls[1][1]).toMatchObject({
       method: 'POST',
       body: JSON.stringify({ email: 'alex@example.com', password: ' secret ' }),
     })
-    expect(fetchMock.mock.calls[2][0]).toMatch(/\/users\/me$/)
+    expect(fetchMock.mock.calls.filter(([url]) => url.endsWith('/users/me'))).toHaveLength(1)
   })
 
   it('disables every action and prevents duplicate requests while pending', async () => {

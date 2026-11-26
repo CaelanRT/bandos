@@ -131,8 +131,8 @@ it.each([
   await userEvent.click(screen.getByRole('button', { name: 'Create event', exact: true }))
   if (code === 'LEADER_REQUIRED') {
     expect(await screen.findByText(destination)).toBeInTheDocument()
-    expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/bands/2'))).toHaveLength(2)
-    expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/bands'))).toHaveLength(2)
+    expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/bands/2'))).toHaveLength(3)
+    expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/bands'))).toHaveLength(3)
   } else expect(await screen.findByRole('heading', { name: destination })).toBeInTheDocument()
 })
 

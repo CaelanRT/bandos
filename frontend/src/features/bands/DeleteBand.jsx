@@ -36,11 +36,11 @@ export function DeleteBand({ band, disabled, setPending, allowNavigation, onDeni
     }
   }, [open])
 
-  async function reconcile(signal = lifetime.current.signal) {
+  async function reconcile(signal = lifetime.current.signal, activity = false) {
     setReconciliation('checking')
     const results = await Promise.allSettled([
-      checkBand(client, authenticatedRequest, band.bandId, signal),
-      checkBands(client, authenticatedRequest, signal),
+      checkBand(client, authenticatedRequest, band.bandId, signal, activity),
+      checkBands(client, authenticatedRequest, signal, activity),
     ])
     if (signal.aborted) return
     setReconciliation(results.every((result) => result.status === 'fulfilled') ? 'checked' : 'failed')
@@ -92,7 +92,7 @@ export function DeleteBand({ band, disabled, setPending, allowNavigation, onDeni
     {reconciliation === 'checked' && <p role="status">This band is still available. You can open the confirmation to try again.</p>}
     {reconciliation === 'failed' && <div role="alert">
       <p>We couldn’t check the latest band information. Check again before deleting.</p>
-      <button type="button" onClick={() => reconcile()}>Check again</button>
+      <button type="button" onClick={() => reconcile(undefined, true)}>Check again</button>
     </div>}
     <button ref={trigger} className="band-delete-trigger" type="button" disabled={disabled || busy || ['checking', 'failed'].includes(reconciliation)}
       onClick={() => setOpen(true)}>Delete band</button>

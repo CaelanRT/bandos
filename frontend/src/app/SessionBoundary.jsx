@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { apiRequest } from '../api/client.js'
 import { clearPrivateQueries } from './queryClient.js'
+import { resolveDestination } from './destination.js'
 import { getCurrentUser } from '../api/session.js'
 import { SessionContext } from './sessionContext.js'
 
@@ -30,95 +31,85 @@ export function SessionBoundary({ children }) {
   const generation = useRef(0)
   const logoutPending = useRef(null)
   const started = useRef(false)
-  const destinationRef = useRef('/')
-  const [session, setSession] = useState({ status: 'checking', user: null })
+  const [session, setSession] = useState({ status: 'checking', user: null, generation: 0 })
   const [retryPending, setRetryPending] = useState(false)
 
-  const restore = useCallback(async ({ isRetry = false, destination, afterAuthentication = false } = {}) => {
-    if (isRetry) {
-      setRetryPending(true)
-    }
-
-    if (afterAuthentication && destination !== undefined) {
-      destinationRef.current = destination
-    }
-
-    try {
-      const { user, session: metadata } = await getCurrentUser()
-      statusRef.current = 'authenticated'
-      setSession({
-        status: 'authenticated',
-        user,
-        session: metadata,
-        destination: afterAuthentication ? destinationRef.current : null,
-        completionError: false,
-      })
-    } catch (error) {
-      if (error?.code === 'AUTHENTICATION_REQUIRED') {
-        statusRef.current = 'signedOut'
-        clearPrivateQueries(client)
-        setSession({
-          status: 'signedOut',
-          user: null,
-          destination: null,
-          completionError: afterAuthentication,
-        })
-      } else {
-        statusRef.current = 'failure'
-        setSession({
-          status: 'failure',
-          user: null,
-          destination: destinationRef.current,
-          completionError: false,
-          afterAuthentication,
-        })
-      }
-    } finally {
-      if (isRetry) {
-        setRetryPending(false)
-      }
-    }
-  }, [client])
-
-  const completeAuthentication = useCallback((destination) => (
-    restore({ destination, afterAuthentication: true })
-  ), [restore])
-
-  const endSession = useCallback((reason, requestGeneration) => {
-    if (statusRef.current !== 'authenticated' || generation.current !== requestGeneration) return
-    statusRef.current = 'signedOut'
+  const changeGeneration = useCallback(() => {
     generation.current += 1
+    logoutPending.current = null
     clearPrivateQueries(client)
-    setSession({ status: 'signedOut', user: null, destination: null, completionError: false, endReason: reason })
+    return generation.current
   }, [client])
+
+  const acceptSession = useCallback((result, destination = null) => {
+    const nextGeneration = changeGeneration()
+    const status = result.session.access === 'full' ? 'authenticated' : 'verification_required'
+    statusRef.current = status
+    setSession({ ...result, generation: nextGeneration, status, destination: destination === null ? null : resolveDestination(destination), completionError: false })
+  }, [changeGeneration])
+
+  const restore = useCallback(async ({ isRetry = false } = {}) => {
+    const requestGeneration = changeGeneration()
+    if (isRetry) setRetryPending(true)
+    try {
+      const result = await getCurrentUser()
+      if (requestGeneration !== generation.current) return
+      acceptSession(result)
+    } catch (error) {
+      if (requestGeneration !== generation.current) return
+      const status = error?.code === 'AUTHENTICATION_REQUIRED' ? 'signedOut' : 'failure'
+      statusRef.current = status
+      setSession({ status, user: null, generation: requestGeneration })
+    } finally {
+      if (isRetry) setRetryPending(false)
+    }
+  }, [changeGeneration, acceptSession])
+
+  const completeAuthentication = useCallback((destination, result) => {
+    // Auth responses already carry the authoritative access and deadlines.
+    acceptSession(result, destination)
+  }, [acceptSession])
+
+  const endSession = useCallback((reason, requestGeneration, expiryReason) => {
+    if (!['authenticated', 'verification_required'].includes(statusRef.current) || generation.current !== requestGeneration) return
+    statusRef.current = 'signedOut'
+    const nextGeneration = changeGeneration()
+    setSession({ generation: nextGeneration, status: 'signedOut', user: null, endReason: reason, expiryReason })
+  }, [changeGeneration])
 
   const acknowledgeEnd = useCallback(() => {
-    setSession((current) => ({ ...current, endReason: null }))
+    setSession((current) => ({ ...current, endReason: null, expiryReason: null }))
   }, [])
 
+  const activeGeneration = session.generation
   const authenticatedRequest = useCallback(async (path, options) => {
-    if (statusRef.current !== 'authenticated') throw new DOMException('Session is no longer active.', 'AbortError')
+    if (statusRef.current !== 'authenticated' || activeGeneration !== generation.current) throw new DOMException('Session is no longer active.', 'AbortError')
     const requestGeneration = generation.current
     try {
       const result = await apiRequest(path, options)
       if (generation.current !== requestGeneration) throw new DOMException('Session changed during request.', 'AbortError')
       return result
     } catch (error) {
+      if (generation.current !== requestGeneration) throw new DOMException('Session changed during request.', 'AbortError')
       if (error?.status === 401 && error.code === 'AUTHENTICATION_REQUIRED') {
-        endSession('expired', requestGeneration)
+        endSession('expired', requestGeneration, error.reason)
+      } else if (error?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        statusRef.current = 'verification_required'
+        const nextGeneration = changeGeneration()
+        setSession((current) => ({ ...current, generation: nextGeneration, status: 'verification_required',
+          session: { ...current.session, access: 'verification_required' } }))
       }
       throw error
     }
-  }, [endSession])
+  }, [endSession, changeGeneration, activeGeneration])
 
   const logOut = useCallback(() => {
     if (logoutPending.current) return logoutPending.current
-    if (statusRef.current !== 'authenticated') return Promise.resolve()
+    if (!['authenticated', 'verification_required'].includes(statusRef.current)) return Promise.resolve()
     const requestGeneration = generation.current
-    // A failed Logout must retain the session, including a rejected 401 response.
     logoutPending.current = apiRequest('/auth/logout', { method: 'POST' })
       .then(() => endSession('loggedOut', requestGeneration))
-      .finally(() => { logoutPending.current = null })
+      .finally(() => { if (generation.current === requestGeneration) logoutPending.current = null })
     return logoutPending.current
   }, [endSession])
 
@@ -135,37 +126,26 @@ export function SessionBoundary({ children }) {
   useEffect(() => {
     if (!started.current) {
       started.current = true
-      restore({})
+      restore()
     }
   }, [restore])
 
-  if (session.status === 'checking') {
-    return <FullPageStatus />
-  }
-
+  if (session.status === 'checking') return <FullPageStatus />
   if (session.status === 'failure') {
-    return (
-      <FullPageStatus
-        retry={() => restore({
-          isRetry: true,
-          afterAuthentication: Boolean(session.afterAuthentication),
-        })}
-        retryPending={retryPending}
-      />
-    )
+    return <FullPageStatus retry={() => restore({ isRetry: true })} retryPending={retryPending} />
   }
 
   return (
     <SessionContext.Provider value={{
-      ...session,
-      completeAuthentication,
-      authenticatedRequest,
-      updateCurrentUser,
-      finishDeactivation,
-      logOut,
-      acknowledgeEnd,
+      ...session, completeAuthentication, authenticatedRequest, updateCurrentUser,
+      finishDeactivation, logOut, acknowledgeEnd,
     }}>
-      {children}
+      <SessionGeneration key={session.generation}>{children}</SessionGeneration>
     </SessionContext.Provider>
   )
+}
+
+// Remount forms and token screens on every identity/access generation change.
+function SessionGeneration({ children }) {
+  return children
 }

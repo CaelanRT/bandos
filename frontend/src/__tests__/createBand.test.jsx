@@ -285,8 +285,8 @@ it('does not cache or navigate late creation after Logout', async () => {
 })
 
 it('recognizes static creation destinations and safely validates its separate origin', () => {
-  expect(resolveDestination('/bands/new?x=1#name')).toBe('/bands/new?x=1#name')
-  expect(resolveCreationOrigin('/bands/2/members?x=1#people')).toBe('/bands/2/members?x=1#people')
+  expect(resolveDestination('/bands/new?x=1#name')).toBe('/bands/new#name')
+  expect(resolveCreationOrigin('/bands/2/members?x=1#people')).toBe('/bands/2/members#people')
   for (const origin of ['https://evil.example', '/\\evil.example', '/bands/new', '/bands/%ZZ', '/bands/2/events/new']) {
     expect(resolveCreationOrigin(origin)).toBe('/')
   }
