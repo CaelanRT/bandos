@@ -1,6 +1,6 @@
 # FE-V2-05 — Add password recovery and authenticated password change
 
-> **Status:** In Progress
+> **Status:** For Review ([Draft PR #120](https://github.com/CaelanRT/bandos/pull/120))
 > **Dependencies:** [FE-V2-04](04-registration-and-verification.md)
 > **Created:** 25 November 2026
 
