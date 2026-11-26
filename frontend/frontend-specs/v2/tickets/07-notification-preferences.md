@@ -1,6 +1,6 @@
 # FE-V2-07 — Edit user-wide email notification preferences
 
-> **Status:** Planned
+> **Status:** For Review ([Draft PR #124](https://github.com/CaelanRT/bandos/pull/124))
 > **Dependencies:** [FE-V2-02](02-session-access-and-activity.md), [FE-V2-03](03-mutation-intents-and-conflicts.md)
 > **Created:** 25 November 2026
 
