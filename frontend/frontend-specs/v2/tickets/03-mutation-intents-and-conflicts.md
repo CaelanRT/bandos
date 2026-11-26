@@ -1,6 +1,6 @@
 # FE-V2-03 — Make versioned saves safe to retry
 
-> **Status:** In Progress
+> **Status:** For Review ([Draft PR #116](https://github.com/CaelanRT/bandos/pull/116))
 > **Dependencies:** [FE-V2-01](01-api-contract-boundary.md), [FE-V2-02](02-session-access-and-activity.md)
 > **Created:** 25 November 2026
 
