@@ -77,7 +77,7 @@ it('saves only a trimmed change and updates cached member identity', async () =>
   client.setQueryData(bandKeys.detail(8), { bandId: 8, members: [
     { userId: 17, firstName: 'Alex', lastName: 'Rivera', username: 'alex' },
   ] })
-  const next = { ...backendUser, username: 'new-name' }
+  const next = { ...backendUser, username: 'new-name', version: 2 }
   fetchMock.mockImplementation((url, options) => {
     if (options.method === 'PATCH') return Promise.resolve(userResponse(next))
     return Promise.resolve(url.endsWith('/bands') ? bandsResponse() : userResponse(next))
@@ -88,8 +88,22 @@ it('saves only a trimmed change and updates cached member identity', async () =>
   expect(await screen.findByRole('status', { name: '' })).toHaveTextContent('Profile saved.')
   const patch = fetchMock.mock.calls.find(([, options]) => options.method === 'PATCH')
   expect(JSON.parse(patch[1].body)).toEqual({ expectedVersion: 1, username: 'new-name' })
+  expect(patch[1].headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/)
   expect(screen.getByRole('textbox', { name: 'Username' })).toHaveValue('new-name')
   expect(client.getQueryData(bandKeys.detail(8)).members[0].username).toBe('new-name')
+
+  const third = { ...next, first_name: 'Jordan', version: 3 }
+  fetchMock.mockImplementation((url, options) => {
+    if (options.method === 'PATCH') return Promise.resolve(userResponse(third))
+    return Promise.resolve(url.endsWith('/bands') ? bandsResponse() : userResponse(third))
+  })
+  await userEvent.clear(screen.getByRole('textbox', { name: 'First name' }))
+  await userEvent.type(screen.getByRole('textbox', { name: 'First name' }), 'Jordan')
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+  expect(await screen.findByRole('status', { name: '' })).toHaveTextContent('Profile saved.')
+  const patches = fetchMock.mock.calls.filter(([, options]) => options.method === 'PATCH')
+  expect(JSON.parse(patches[1][1].body)).toEqual({ expectedVersion: 2, firstName: 'Jordan' })
+  expect(patches[1][1].headers.get('Idempotency-Key')).not.toBe(patches[0][1].headers.get('Idempotency-Key'))
 })
 
 it('blocks invalid input, restores on Cancel, and guards dirty navigation', async () => {

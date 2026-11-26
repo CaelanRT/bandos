@@ -31,3 +31,11 @@ export async function resendVerification(email) {
   check(text(data?.message), 202)
   return data.message
 }
+
+export async function confirmEmailChange(token, signal) {
+  const data = await apiRequest('/auth/email-change/confirm', {
+    method: 'POST', body: { token }, signal, expectedStatus: 200,
+  })
+  check(text(data?.message))
+  return data.message
+}

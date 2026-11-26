@@ -2,7 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { ForgotPassword } from '../features/auth/ForgotPassword.jsx'
 import { ResetPassword } from '../features/auth/ResetPassword.jsx'
 import { VerifyEmail } from '../features/auth/VerifyEmail.jsx'
-import { RecoveryRoute } from './RecoveryRoute.jsx'
+import { VerifyEmailChange } from '../features/auth/VerifyEmailChange.jsx'
 import { SessionRoutes } from './SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
 import { Login, NotFound, Register } from './RouteViews.jsx'
@@ -15,7 +15,7 @@ const pageRoutes = [
   { path: '/verify-email', element: <VerifyEmail /> },
   { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/reset-password', element: <ResetPassword /> },
-  { path: '/verify-email-change', element: <RecoveryRoute /> },
+  { path: '/verify-email-change', element: <VerifyEmailChange /> },
   {
     path: '/',
     element: (

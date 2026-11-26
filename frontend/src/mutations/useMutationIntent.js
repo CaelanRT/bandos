@@ -49,7 +49,7 @@ export function useMutationIntent(request) {
     if (error.code === 'STALE_VERSION') { setState('stale'); return true }
     if (error.code === 'IDEMPOTENCY_KEY_REUSED') { setState('mismatch'); return true }
     if (['REQUEST_IN_PROGRESS', 'INTENT_UNRESOLVED'].includes(error.code) ||
-        !error.status || error.status >= 500 || error.code === 'INVALID_API_RESPONSE') {
+        !error.status || (error.status >= 500 && error.code !== 'MAIL_UNAVAILABLE') || error.code === 'INVALID_API_RESPONSE') {
       setState('uncertain')
       return true
     }
