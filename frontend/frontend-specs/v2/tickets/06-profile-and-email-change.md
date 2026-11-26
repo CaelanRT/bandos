@@ -1,6 +1,6 @@
 # FE-V2-06 — Manage versioned profiles and pending email changes
 
-> **Status:** Planned
+> **Status:** For Review ([Draft PR #122](https://github.com/CaelanRT/bandos/pull/122))
 > **Dependencies:** [FE-V2-04](04-registration-and-verification.md), [FE-V2-05](05-password-recovery-and-change.md)
 > **Created:** 25 November 2026
 
