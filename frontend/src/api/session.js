@@ -9,6 +9,8 @@ export function parseUserSession(data, status = 200) {
   return { user: normalizeCurrentUser(data?.user),
     session: pick(session, ['access', 'authenticatedAt', 'idleExpiresAt', 'absoluteExpiresAt']) }
 }
-export async function getCurrentUser() {
-  return parseUserSession(await apiRequest('/users/me', { expectedStatus: 200 }))
+export async function getCurrentUser({ activity = false } = {}) {
+  return parseUserSession(await apiRequest('/users/me', { expectedStatus: 200,
+    ...(activity ? { headers: { 'X-bandos-activity': 'user' } } : {}),
+  }))
 }

@@ -1,5 +1,5 @@
 import { apiRequest } from './client.js'
-import { pick } from './boundary.js'
+import { check, text, pick } from './boundary.js'
 import { parseUserSession } from './session.js'
 
 export async function login(credentials) {
@@ -11,4 +11,23 @@ export async function register(account) {
   return parseUserSession(await apiRequest('/auth/register', {
     method: 'POST', body: pick(account, ['username', 'firstName', 'lastName', 'email', 'password']), expectedStatus: 201,
   }), 201)
+}
+
+export async function confirmVerification(token) {
+  const data = await apiRequest('/auth/verification/confirm', {
+    method: 'POST', body: { token }, expectedStatus: 200,
+  })
+  check(text(data?.message))
+  if (data.user === null && data.session === null) return { user: null, session: null }
+  const result = parseUserSession(data)
+  check(result.session.access === 'full')
+  return result
+}
+
+export async function resendVerification(email) {
+  const data = await apiRequest('/auth/verification/resend', {
+    method: 'POST', body: { email }, expectedStatus: 202,
+  })
+  check(text(data?.message), 202)
+  return data.message
 }

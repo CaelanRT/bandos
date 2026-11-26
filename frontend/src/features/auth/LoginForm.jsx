@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LoginNotice } from './LoginNotice.jsx'
 import { PasswordVisibility } from './PasswordVisibility.jsx'
 import { login } from '../../api/auth.js'
@@ -15,6 +15,7 @@ const FIELD_ORDER = ['email', 'password']
 
 export function LoginForm() {
   const location = useLocation()
+  const navigate = useNavigate()
   const session = useSession()
   const destination = resolveDestination(location.state?.destination)
   const [values, setValues] = useState(INITIAL_VALUES)
@@ -78,6 +79,9 @@ export function LoginForm() {
     try {
       const result = await login(normalizeLogin(values))
       await session.completeAuthentication(destination, result)
+      if (location.state?.requireLogin) {
+        navigate(result.session.access === 'full' ? destination : '/verify-email', { replace: true, state: { destination } })
+      }
     } catch (error) {
       if (error?.code === 'TOO_MANY_ATTEMPTS') {
         setRetryAt(error.retryAt ?? null)
@@ -167,6 +171,7 @@ export function LoginForm() {
       </button>
       {pending && <span role="status">Logging in…</span>}
 
+      <p><Link to="/forgot-password" state={{ destination }}>Forgot password?</Link></p>
       <p>
         Need an account?{' '}
         <Link

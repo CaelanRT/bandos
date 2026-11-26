@@ -118,15 +118,14 @@ describe('Registration form', () => {
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
-  it('submits exact normalized credentials, consumes the auth session, and replaces to the destination', async () => {
+  it('submits exact normalized credentials, consumes the auth session, and retains the destination through verification', async () => {
     const router = await openRegistration('/account?tab=profile#email')
     const visited = []
     router.subscribe((state) => {
       visited.push({ ...state.location, historyAction: state.historyAction })
     })
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }, 201))
-      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }))
+      .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: { ...sessionFixture, access: 'verification_required' } } }, 201))
 
     await userEvent.type(screen.getByLabelText('First name'), ' Alex ')
     await userEvent.type(screen.getByLabelText('Last name'), ' Rivera ')
@@ -136,8 +135,8 @@ describe('Registration form', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
 
     await waitFor(() => expect(visited.some((location) => (
-      location.pathname === '/account' && location.search === '?tab=profile' &&
-      location.hash === '#email' && location.historyAction === 'REPLACE'
+      location.pathname === '/verify-email' && location.state.destination === '/account?tab=profile#email' &&
+      location.historyAction === 'REPLACE'
     ))).toBe(true))
     expect(fetchMock.mock.calls.filter(([url]) => !new URL(url).pathname.startsWith('/api/v1/bands'))).toHaveLength(2)
     expect(fetchMock.mock.calls[1][0]).toMatch(/\/auth\/register$/)
@@ -197,12 +196,12 @@ it('preserves destinations across switching forms, Back and Forward', async () =
 
 it.each(['https://example.com', '//example.com', '/login', '/missing'])('falls back safely after registration for %s', async (destination) => {
   const router = await openRegistration(destination)
-  fetchMock.mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }, 201))
-    .mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: sessionFixture } }))
+  fetchMock.mockResolvedValueOnce(jsonResponse({ data: { user: backendUser, session: { ...sessionFixture, access: 'verification_required' } } }, 201))
   for (const [label, value] of Object.entries({ 'First name': 'Alex', 'Last name': 'Rivera', Username: 'alex', Email: 'alex@example.com', Password: 'password' })) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } })
   }
   await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
-  await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+  await waitFor(() => expect(router.state.location.pathname).toBe('/verify-email'))
+  expect(router.state.location.state.destination).toBe('/')
   expect(router.state.historyAction).toBe('REPLACE')
 })

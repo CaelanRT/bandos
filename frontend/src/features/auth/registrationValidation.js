@@ -1,4 +1,5 @@
 import { composeValidators, maxLength, required, validateFields } from '../../utils/validation.js'
+import { validateNewPassword } from './newPasswordValidation.js'
 import { validateLoginField } from './loginValidation.js'
 
 function minLength(limit) {
@@ -12,11 +13,7 @@ const validators = {
   lastName: composeValidators(required('Enter your last name.'), maxLength(50)),
   username: composeValidators(required('Enter a username.'), minLength(3), maxLength(50)),
   email: (value) => validateLoginField('email', { email: value }),
-  password: composeValidators(
-    (value) => typeof value !== 'string' || value.length === 0 ? 'Enter your password.' : undefined,
-    minLength(8),
-    maxLength(72),
-  ),
+  password: validateNewPassword,
 }
 
 export function normalizeRegistration(values) {

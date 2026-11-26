@@ -11,6 +11,7 @@ import { SessionBoundary } from '../app/SessionBoundary.jsx'
 import { SessionRoutes } from '../app/SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from '../app/RouteAccess.jsx'
 import { AppShell } from '../app/AppShell.jsx'
+import { VerifyEmail } from '../features/auth/VerifyEmail.jsx'
 import { Login, Register } from '../app/RouteViews.jsx'
 import { useSession } from '../app/sessionContext.js'
 import { createBandosQueryClient } from '../app/queryClient.js'
@@ -46,6 +47,7 @@ function mount(entry = '/bands/8/events/21?view=details#notes', client = createB
     element: <SessionRoutes />,
     children: [
       { path: '/login', element: <SignedOutOnlyRoute><Login /></SignedOutOnlyRoute> },
+      { path: '/verify-email', element: <VerifyEmail /> },
       { path: '/register', element: <SignedOutOnlyRoute><Register /></SignedOutOnlyRoute> },
       { path: '*', element: <ProtectedRoute><ProtectedPage /></ProtectedRoute> },
     ],
@@ -208,13 +210,14 @@ it('restores an expired destination through Registration and consumes the notice
   expect(screen.queryByText('Your session expired. Log in to continue.')).not.toBeInTheDocument()
   await act(() => router.navigate(1))
   expect(router.state.location.pathname).toBe('/register')
-  fetchMock.mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }, 201)).mockResolvedValueOnce(identity())
+  fetchMock.mockResolvedValueOnce(response({ data: { user: backendUser, session: { ...sessionFixture, access: 'verification_required' } } }, 201))
   for (const [label, value] of Object.entries({ 'First name': 'Alex', 'Last name': 'Rivera', Username: 'alex', Email: 'alex@example.com', Password: 'password' })) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } })
   }
   await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
-  await screen.findByRole('heading', { name: 'Private page' })
-  expect(router.state.location.pathname + router.state.location.search + router.state.location.hash).toBe('/bands/8/events/21?view=details#notes')
+  await screen.findByRole('heading', { name: 'Verify your email' })
+  expect(router.state.location.state.destination).toBe('/bands/8/events/21?view=details#notes')
+  expect(currentSession.status).toBe('verification_required')
 })
 
 it('falls back to root when expiration occurs on an unrecognized URL', async () => {
