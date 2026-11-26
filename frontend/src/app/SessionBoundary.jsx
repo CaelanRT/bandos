@@ -123,6 +123,12 @@ export function SessionBoundary({ children }) {
     endSession('deactivated', generation.current)
   }, [endSession])
 
+  const finishPasswordUpdate = useCallback((reason) => {
+    statusRef.current = 'signedOut'
+    const nextGeneration = changeGeneration()
+    setSession({ generation: nextGeneration, status: 'signedOut', user: null, endReason: reason })
+  }, [changeGeneration])
+
   useEffect(() => {
     if (!started.current) {
       started.current = true
@@ -138,7 +144,7 @@ export function SessionBoundary({ children }) {
   return (
     <SessionContext.Provider value={{
       ...session, completeAuthentication, authenticatedRequest, updateCurrentUser,
-      finishDeactivation, logOut, acknowledgeEnd,
+      finishDeactivation, finishPasswordUpdate, logOut, acknowledgeEnd,
     }}>
       <SessionGeneration key={session.generation}>{children}</SessionGeneration>
     </SessionContext.Provider>

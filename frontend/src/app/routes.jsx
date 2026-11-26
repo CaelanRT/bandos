@@ -1,4 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { ForgotPassword } from '../features/auth/ForgotPassword.jsx'
+import { ResetPassword } from '../features/auth/ResetPassword.jsx'
 import { VerifyEmail } from '../features/auth/VerifyEmail.jsx'
 import { RecoveryRoute } from './RecoveryRoute.jsx'
 import { SessionRoutes } from './SessionRoutes.jsx'
@@ -11,9 +13,9 @@ import { Account } from '../features/account/Account.jsx'
 
 const pageRoutes = [
   { path: '/verify-email', element: <VerifyEmail /> },
-  ...['verify-email-change', 'forgot-password', 'reset-password'].map(path => ({
-    path: `/${path}`, element: <RecoveryRoute />,
-  })),
+  { path: '/forgot-password', element: <ForgotPassword /> },
+  { path: '/reset-password', element: <ResetPassword /> },
+  { path: '/verify-email-change', element: <RecoveryRoute /> },
   {
     path: '/',
     element: (

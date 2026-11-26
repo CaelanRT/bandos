@@ -215,8 +215,8 @@ it.each(['full', 'verification_required', 'signedOut'])('keeps recovery and all 
     jsonResponse({ data: { user: backendUser, session: { ...sessionFixture, access } } }))
   const router = renderApplication('/verify-email?token=secret')
   await screen.findByRole('heading', { name: 'Verify your email' })
-  for (const [path, title] of [['/forgot-password', 'Recover your account'],
-    ['/reset-password', 'Reset your password'], ['/verify-email-change', 'Confirm your email change']]) {
+  for (const [path, title] of [['/forgot-password', 'Forgot password'],
+    ['/reset-password', 'Reset password'], ['/verify-email-change', 'Confirm your email change']]) {
     await act(() => router.navigate(`${path}?token=secret`))
     expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
     await waitFor(() => expect(router.state.location.search).toBe(''))

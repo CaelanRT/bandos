@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const MESSAGES = {
+  passwordReset: 'Password reset. Log in again.',
+  passwordChanged: 'Password changed. All devices were signed out. Log in again.',
   expired: 'Your session expired. Log in to continue.',
   idle_expired: 'Your session expired after inactivity. Log in to continue.',
   absolute_expired: 'Your session reached its time limit. Log in again.',
