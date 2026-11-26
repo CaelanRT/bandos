@@ -1,5 +1,9 @@
 import { check, pick, validId } from '../../api/boundary.js'
 
+export const preferenceKeys = {
+  current: ['private', 'notification-preferences'],
+}
+
 export const preferenceFields = ['enabled', 'invitations', 'eventUpdates', 'removalsAndCancellations',
   'invitationResponses', 'pollUpdates', 'pollResponses']
 export function parsePreferences(value) {

@@ -13,6 +13,7 @@ import { reconcileProfileMembers } from './queries.js'
 import { ChangePassword } from './ChangePassword.jsx'
 import { DeactivateAccount } from './DeactivateAccount.jsx'
 import { EmailChange } from './EmailChange.jsx'
+import { NotificationPreferences } from './NotificationPreferences.jsx'
 
 const fields = [
   { name: 'firstName', label: 'First name', autoComplete: 'given-name' },
@@ -39,6 +40,8 @@ export function Account() {
   const passwordBusy = passwordState.pending || passwordState.locked
   const [emailState, setEmailState] = useState({ pending: false, locked: false, unresolved: false })
   const emailBusy = emailState.pending || emailState.locked
+  const [preferencesState, setPreferencesState] = useState({ dirty: false, pending: false, locked: false })
+  const preferencesBusy = preferencesState.pending || preferencesState.locked
   const [retryAt, setRetryAt] = useState(null)
   const [focusField, setFocusField] = useState(null)
   const inputs = useRef({})
@@ -47,7 +50,7 @@ export function Account() {
   const lifetime = useRef(null)
   const currentBlocker = useRef(null)
   const dirty = profileFields.some((field) => values[field] !== baseline[field])
-  const { blocker } = useUnsavedNavigation(dirty || deactivationPending || deactivationUnresolved || mutation.unresolved || passwordBusy || emailBusy)
+  const { blocker } = useUnsavedNavigation(dirty || deactivationPending || deactivationUnresolved || mutation.unresolved || passwordBusy || emailBusy || preferencesState.dirty || preferencesBusy)
   useEffect(() => { currentBlocker.current = blocker }, [blocker])
   useEffect(() => {
     const controller = new AbortController()
@@ -81,7 +84,7 @@ export function Account() {
   async function submit(event) {
     event.preventDefault()
     if (mutation.locked && !mutation.isRetry()) return
-    if (submitting.current || deactivationUnresolved || passwordBusy || emailBusy) return
+    if (submitting.current || deactivationUnresolved || passwordBusy || emailBusy || preferencesBusy) return
     if (retryAt && Date.now() < retryAt) { notice.current?.focus(); return }
     const nextErrors = validateProfile(values)
     setTouched(Object.fromEntries(profileFields.map((field) => [field, true])))
@@ -151,7 +154,7 @@ export function Account() {
           {fields.map(({ name, label, autoComplete }) => <div className="account-field" key={name}>
             <label htmlFor={`account-${name}`}>{label}</label>
             <input ref={(node) => { inputs.current[name] = node }} id={`account-${name}`} name={name}
-              value={values[name]} autoComplete={autoComplete} disabled={pending || deactivationUnresolved || mutation.locked || passwordBusy || emailBusy}
+              value={values[name]} autoComplete={autoComplete} disabled={pending || deactivationUnresolved || mutation.locked || passwordBusy || emailBusy || preferencesBusy}
               autoCapitalize={name === 'username' ? 'none' : undefined}
               spellCheck={name === 'username' ? false : undefined}
               aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `account-${name}-error` : undefined}
@@ -167,7 +170,7 @@ export function Account() {
             {errors[name] && <p id={`account-${name}-error`} className="account-field-error">{errors[name]}</p>}
           </div>)}
           <div className="form-actions">
-            <button type="submit" disabled={mutation.locked || deactivationUnresolved || !dirty || pending || passwordBusy || emailBusy}>{pending ? 'Saving…' : 'Save'}</button>
+            <button type="submit" disabled={mutation.locked || deactivationUnresolved || !dirty || pending || passwordBusy || emailBusy || preferencesBusy}>{pending ? 'Saving…' : 'Save'}</button>
             <button type="button" disabled={pending} onClick={cancel}>Cancel</button>
           </div>
           {pending && <p role="status">Saving profile…</p>}
@@ -181,10 +184,11 @@ export function Account() {
           <div><dt>Plan</dt><dd>{user.plan}</dd></div>
         </dl>
       </section>
-      <EmailChange onStateChange={setEmailState} disabled={pending || mutation.locked || deactivationPending || deactivationUnresolved || passwordBusy} />
-      <ChangePassword onStateChange={setPasswordState} disabled={pending || mutation.locked || deactivationPending || deactivationUnresolved || emailBusy} />
-      <DeactivateAccount user={user} disabled={pending || mutation.locked || passwordBusy || emailBusy} setPending={setDeactivationPending} onUnresolvedChange={setDeactivationUnresolved} />
-      <UnsavedNavigationDialog unresolved={mutation.unresolved || deactivationUnresolved || passwordState.unresolved || emailState.unresolved} blocker={blocker} pending={pending || deactivationPending || passwordState.pending || emailState.pending} className="account-unsaved-dialog" />
+      <EmailChange onStateChange={setEmailState} disabled={pending || mutation.locked || deactivationPending || deactivationUnresolved || passwordBusy || preferencesBusy} />
+      <ChangePassword onStateChange={setPasswordState} disabled={pending || mutation.locked || deactivationPending || deactivationUnresolved || emailBusy || preferencesBusy} />
+      <NotificationPreferences onStateChange={setPreferencesState} disabled={pending || mutation.locked || deactivationPending || deactivationUnresolved || passwordBusy || emailBusy} />
+      <DeactivateAccount user={user} disabled={pending || mutation.locked || passwordBusy || emailBusy || preferencesBusy} setPending={setDeactivationPending} onUnresolvedChange={setDeactivationUnresolved} />
+      <UnsavedNavigationDialog unresolved={mutation.unresolved || deactivationUnresolved || passwordState.unresolved || emailState.unresolved} blocker={blocker} pending={pending || deactivationPending || passwordState.pending || emailState.pending || preferencesState.pending} className="account-unsaved-dialog" />
     </div>
   </BandShell>
 }
