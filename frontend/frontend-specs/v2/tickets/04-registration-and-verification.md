@@ -1,6 +1,6 @@
 # FE-V2-04 — Complete restricted registration and email verification
 
-> **Status:** For Review ([Draft PR #118](https://github.com/CaelanRT/bandos/pull/118))
+> **Status:** Completed ([Merged PR #118](https://github.com/CaelanRT/bandos/pull/118))
 > **Dependencies:** [FE-V2-02](02-session-access-and-activity.md), [FE-V2-03](03-mutation-intents-and-conflicts.md)
 > **Created:** 25 November 2026
 
