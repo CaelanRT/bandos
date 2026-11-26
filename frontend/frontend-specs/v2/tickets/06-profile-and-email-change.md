@@ -1,6 +1,6 @@
 # FE-V2-06 — Manage versioned profiles and pending email changes
 
-> **Status:** For Review ([Draft PR #122](https://github.com/CaelanRT/bandos/pull/122))
+> **Status:** Completed ([Merged PR #122](https://github.com/CaelanRT/bandos/pull/122))
 > **Dependencies:** [FE-V2-04](04-registration-and-verification.md), [FE-V2-05](05-password-recovery-and-change.md)
 > **Created:** 25 November 2026
 
@@ -43,3 +43,7 @@ Run relevant existing frontend tests, `npm run lint`, `npm run build` and `git d
 ## Out of scope
 
 Backend feature reimplementation, infrastructure/deployment, v1 data migration, framework replacement and unrelated UI redesign. See the sequence for global exclusions; report any demonstrated contract defect with evidence before expanding this ticket.
+
+## Completion — 26 November 2026
+
+PR #122 was confirmed merged into remote `main` at `a19e568`. Automated verification passed (`npm test` on 9 relevant suites / 98 tests, `npm run lint`, `npm run build`, `git diff --check`, and independent `review-ticket` subagent PASS). Interactive browser smoke of protected Account and direct confirmation links remains documented as unavailable in the headless CLI environment.
