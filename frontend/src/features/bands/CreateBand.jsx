@@ -44,10 +44,10 @@ export function CreateBand() {
     if (focusRequest && !pending) field.current?.focus()
   }, [focusRequest, pending])
 
-  async function reconcile(signal = lifetime.current.signal) {
+  async function reconcile(signal = lifetime.current.signal, activity = false) {
     setReconciliation('checking')
     try {
-      await checkBands(client, authenticatedRequest, signal)
+      await checkBands(client, authenticatedRequest, signal, activity)
       if (!signal.aborted) setReconciliation('checked')
     } catch {
       if (!signal.aborted) setReconciliation('failed')
@@ -117,7 +117,7 @@ export function CreateBand() {
         {reconciliation === 'checking' && <p role="status">Checking your bands…</p>}
         {reconciliation === 'failed' && <div role="alert">
           <p>We couldn’t check your bands. Check again before creating another band.</p>
-          <button type="button" onClick={() => reconcile()}>Check again</button>
+          <button type="button" onClick={() => reconcile(undefined, true)}>Check again</button>
         </div>}
         {reconciliation === 'checked' && <section aria-label="Check existing bands">
           <p role="status">Your bands are up to date. Check them before trying again.</p>

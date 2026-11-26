@@ -33,3 +33,15 @@ describe('authentication destination restoration', () => {
     expect(resolveDestination(destination)).toBe('/')
   })
 })
+
+it('keeps safe poll links and removes credential query data', () => {
+  for (const path of ['/bands/12/polls/new', '/bands/12/polls/34', '/bands/12/polls/34/edit']) {
+    expect(resolveDestination(`${path}?token=secret&password=hidden&view=grid#answers`)).toBe(`${path}?view=grid#answers`)
+  }
+  expect(resolveDestination('/account?view=secret123&returnTo=secret#token=secret')).toBe('/account')
+})
+
+it.each(['/\\evil.example/account', '/bands/12/polls/%2e%2e', '/bands/12/polls/0',
+  '/bands/12/polls/9007199254740992', '/bands/12/polls/34%0a', '/bands/12/polls/%252f'])('rejects unsafe poll or encoded destination %s', path => {
+  expect(resolveDestination(path)).toBe('/')
+})

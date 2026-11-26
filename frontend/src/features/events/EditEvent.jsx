@@ -12,11 +12,11 @@ import { isEventEditable } from './schedule.js'
 
 const timezoneOptions = eventTimezoneOptions()
 
-export function EditEvent({ band, eventId }) {
+export function EditEvent({ band, eventId, loadSource }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
-  const detail = useEvent(band.bandId, eventId)
+  const detail = useEvent(band.bandId, eventId, loadSource)
   const event = detail.data
   const [values, setValues] = useState(null)
   const [original, setOriginal] = useState(null)
@@ -66,11 +66,11 @@ export function EditEvent({ band, eventId }) {
     const next = validateEventValues(values)
     setErrors((current) => ({ ...current, ...(next[field] ? { [field]: next[field] } : { [field]: undefined }) }))
   }
-  async function refreshPermission(signal = lifetime.current.signal) {
+  async function refreshPermission(signal = lifetime.current.signal, activity = false) {
     setPermissionChecking(true); setPermissionFailed(false)
     const results = await Promise.allSettled([
-      checkBand(client, authenticatedRequest, band.bandId, signal),
-      checkBands(client, authenticatedRequest, signal),
+      checkBand(client, authenticatedRequest, band.bandId, signal, activity),
+      checkBands(client, authenticatedRequest, signal, activity),
     ])
     if (signal.aborted) return
     setPermissionChecking(false)
@@ -147,7 +147,7 @@ export function EditEvent({ band, eventId }) {
     <h2 id="edit-event-heading">Edit event</h2>
     {(permissionChecking || permissionFailed) ? <div className="event-notice" role="alert">
       <p>{permissionChecking ? 'Checking your permissions…' : 'We couldn’t confirm leader access. Check your permissions to continue.'}</p>
-      {permissionFailed && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
+      {permissionFailed && <button type="button" onClick={() => refreshPermission(undefined, true)}>Retry permissions</button>}
     </div> : <form className="band-form event-form" onSubmit={submit} noValidate>
       {formError && <p className="event-notice" ref={notice} role="alert" tabIndex="-1">{formError}</p>}
       <label htmlFor="event-name">Name</label><input id="event-name" {...fieldProps('name')} />{errors.name && <p id="name-error">{errors.name}</p>}

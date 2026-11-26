@@ -74,18 +74,18 @@ export function AddBandMember({ band }) {
     setUsername(''); setTouched(false); setFieldError(null); setFormError(null)
     setReconciliation(null); setFocusRequest((value) => value + 1)
   }
-  async function refreshPermission(signal = lifetime.current.signal) {
+  async function refreshPermission(signal = lifetime.current.signal, activity = false) {
     setPermission('checking')
     const results = await Promise.allSettled([
-      checkBand(client, authenticatedRequest, band.bandId, signal),
-      checkBands(client, authenticatedRequest, signal),
+      checkBand(client, authenticatedRequest, band.bandId, signal, activity),
+      checkBands(client, authenticatedRequest, signal, activity),
     ])
     if (!signal.aborted) setPermission(results.every((result) => result.status === 'fulfilled') ? null : 'failed')
   }
-  async function reconcile(attemptedUsername, signal = lifetime.current.signal) {
+  async function reconcile(attemptedUsername, signal = lifetime.current.signal, activity = false) {
     setReconciliation('checking')
     try {
-      const latest = await checkBand(client, authenticatedRequest, band.bandId, signal)
+      const latest = await checkBand(client, authenticatedRequest, band.bandId, signal, activity)
       if (signal.aborted || !latest) return
       const found = latest.members.some((member) => member.username.toLowerCase() === attemptedUsername.toLowerCase())
       setReconciliation(found ? 'found' : 'absent')
@@ -149,7 +149,7 @@ export function AddBandMember({ band }) {
     {permission === 'checking' && <p role="status">Checking your permissions…</p>}
     {permission === 'failed' && <div role="alert">
       <p>We couldn’t check your permissions.</p>
-      <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>
+      <button type="button" onClick={() => refreshPermission(undefined, true)}>Retry permissions</button>
     </div>}
     {permitted && <form className="band-form member-add-form" aria-label="Add member" onSubmit={submit} noValidate>
       {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
@@ -171,7 +171,7 @@ export function AddBandMember({ band }) {
       {checking && <p role="status">Checking band membership…</p>}
       {reconciliation === 'failed' && <div role="alert">
         <p>We couldn’t check membership. Check again before trying another addition.</p>
-        <button type="button" onClick={() => reconcile(username.trim())}>Check again</button>
+        <button type="button" onClick={() => reconcile(username.trim(), undefined, true)}>Check again</button>
       </div>}
       {reconciliation === 'found' && <>
         <p role="status">That person is now in the band.</p>

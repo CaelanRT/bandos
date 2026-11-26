@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { SessionContext } from '../app/sessionContext.js'
 import { createBandosQueryClient } from '../app/queryClient.js'
 import { bandKeys, eventKeys } from '../features/bands/queries.js'
@@ -40,7 +41,7 @@ function mount(request, seed) {
   seed?.(client)
   client.setDefaultOptions({ queries: { ...client.getDefaultOptions().queries, retry: false } })
   render(<QueryClientProvider client={client}>
-    <SessionContext.Provider value={{ authenticatedRequest: request }}><Probe /></SessionContext.Provider>
+    <MemoryRouter><SessionContext.Provider value={{ status: 'authenticated', authenticatedRequest: request }}><Probe /></SessionContext.Provider></MemoryRouter>
   </QueryClientProvider>)
 }
 

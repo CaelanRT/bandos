@@ -1,5 +1,6 @@
+import { useActivityQueries } from '../../app/activityQueries.js'
 import { useEffect } from 'react'
-import { useQueries, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../../app/sessionContext.js'
 import { useBands, removeBandAccess } from '../bands/queries.js'
 import { eventListOptions } from '../events/queries.js'
@@ -19,7 +20,7 @@ export function useUpcomingAcrossBands(now = new Date()) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
   const activeBands = bands.data ?? []
-  const reads = useQueries({ queries: activeBands.map((band) => eventListOptions(authenticatedRequest, band.bandId)) })
+  const reads = useActivityQueries(activeBands.map((band) => ({ ...eventListOptions(authenticatedRequest, band.bandId), loadSource: bands.loadSource })))
   const inaccessibleKey = activeBands.filter((_, index) => reads[index].error?.code === 'BAND_NOT_FOUND')
     .map((band) => band.bandId).join(',')
 

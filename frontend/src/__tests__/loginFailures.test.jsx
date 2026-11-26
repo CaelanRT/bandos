@@ -3,7 +3,7 @@
 import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -139,45 +139,27 @@ describe('Login failures', () => {
     expect(screen.getByRole('textbox', { name: 'Email' })).toBeEnabled()
   })
 
-  it('retries only identity retrieval after a transient post-Login failure', async () => {
-    const router = await renderReadyLogin('/bands/8?view=calendar#today')
-    const visited = []
-    router.subscribe((state) => {
-      visited.push({ ...state.location, historyAction: state.historyAction })
-    })
-    fetchMock
-      .mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }))
-      .mockResolvedValueOnce(errorResponse('INTERNAL_ERROR', 'Unavailable', 503))
-      .mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }))
-
+  it('uses the returned restricted session without a second identity request', async () => {
+    const router = await renderReadyLogin('/bands/8/polls/2?token=secret#grid')
+    fetchMock.mockResolvedValueOnce(response({ data: { user: backendUser,
+      session: { ...sessionFixture, access: 'verification_required' } } }, 200))
     await submit()
-    expect(await screen.findByRole('heading', { name: 'We couldn’t connect to Bandos' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
-
-    await waitFor(() => expect(visited.some((location) => (
-      location.pathname === '/bands/8' && location.search === '?view=calendar' &&
-      location.hash === '#today' && location.historyAction === 'REPLACE'
-    ))).toBe(true))
-    expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname).filter((path) => !path.startsWith('/api/v1/bands'))).toEqual([
-      '/api/v1/users/me', '/api/v1/auth/login', '/api/v1/users/me', '/api/v1/users/me',
+    expect(await screen.findByRole('heading', { name: 'Verify your email' })).toBeInTheDocument()
+    expect(screen.getByText(/alex@example.com/)).toBeInTheDocument()
+    expect(router.state.location.state).toEqual({ destination: '/bands/8/polls/2#grid' })
+    expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname)).toEqual([
+      '/api/v1/users/me', '/api/v1/auth/login',
     ])
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
   })
 
-  it('shows contextual completion feedback when identity is still unauthenticated', async () => {
+  it('keeps malformed successful authentication recoverable on the form', async () => {
     await renderReadyLogin()
-    fetchMock
-      .mockResolvedValueOnce(response({ data: { user: backendUser, session: sessionFixture } }))
-      .mockResolvedValueOnce(
-        errorResponse('AUTHENTICATION_REQUIRED', 'Authentication required', 401),
-      )
-
+    fetchMock.mockResolvedValueOnce(response({ data: { user: backendUser } }, 200))
     await submit()
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'We couldn’t complete sign-in. Please try again.',
-    )
-    await userEvent.type(screen.getByLabelText('Password'), 'x')
-    expect(screen.getByRole('alert')).toHaveTextContent('We couldn’t complete sign-in. Please try again.')
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t log you in.')
+    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(screen.getByLabelText('Password')).toBeEnabled()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

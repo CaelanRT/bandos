@@ -38,8 +38,8 @@ function EventSection({ title, groups, bandId }) {
   </section>
 }
 
-export function BandSchedule({ bandId, canCreate = false }) {
-  const events = useEvents(bandId)
+export function BandSchedule({ bandId, loadSource, canCreate = false }) {
+  const events = useEvents(bandId, loadSource)
   const location = useLocation()
   const navigate = useNavigate()
   const [deletedNotice, setDeletedNotice] = useState(() => location.state?.eventDeleted === true)

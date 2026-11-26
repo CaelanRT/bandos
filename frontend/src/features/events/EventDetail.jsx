@@ -14,8 +14,8 @@ function EventReadFailure({ query }) {
   </div>
 }
 
-export function EventDetail({ bandId, eventId, canEdit = false }) {
-  const detail = useEvent(bandId, eventId)
+export function EventDetail({ bandId, eventId, loadSource, canEdit = false }) {
+  const detail = useEvent(bandId, eventId, loadSource)
   const event = detail.data
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {

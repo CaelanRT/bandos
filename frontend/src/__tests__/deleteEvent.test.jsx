@@ -130,7 +130,7 @@ it('refreshes permissions after leader access is denied by the server', async ()
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete event' }))
   expect(await screen.findByRole('status')).toHaveTextContent('Only band leaders can manage events.')
   expect(screen.queryByRole('button', { name: 'Delete event' })).not.toBeInTheDocument()
-  expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.replace('/api/v1', '') === '/bands/2')).toHaveLength(2)
+  expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.replace('/api/v1', '') === '/bands/2')).toHaveLength(3)
 })
 
 it('uses the protected session recovery after authentication expires', async () => {

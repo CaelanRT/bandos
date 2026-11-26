@@ -1,4 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useActivityQuery, userActivityRequest, fetchActivityQuery } from '../../app/activityQueries.js'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../../app/sessionContext.js'
 import { getBand, getBands } from './api.js'
 
@@ -18,21 +19,21 @@ const freshness = { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: tr
 
 export function useBands() {
   const { authenticatedRequest } = useSession()
-  return useQuery({ ...freshness, queryKey: bandKeys.list,
-    queryFn: ({ signal }) => getBands(authenticatedRequest, signal) })
+  return useActivityQuery({ ...freshness, queryKey: bandKeys.list,
+    queryFn: ({ signal, activity }) => getBands(activity === 'user' ? userActivityRequest(authenticatedRequest) : authenticatedRequest, signal) })
 }
 
 export function useBand(bandId) {
   const { authenticatedRequest } = useSession()
   const client = useQueryClient()
-  return useQuery(bandOptions(client, authenticatedRequest, bandId))
+  return useActivityQuery(bandOptions(client, authenticatedRequest, bandId))
 }
 
 function bandOptions(client, authenticatedRequest, bandId) {
   return { ...freshness, queryKey: bandKeys.detail(bandId), enabled: bandId !== null,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, activity }) => {
       try {
-        const band = await getBand(authenticatedRequest, bandId, signal)
+        const band = await getBand(activity === 'user' ? userActivityRequest(authenticatedRequest) : authenticatedRequest, bandId, signal)
         // A denied mutation stays denied until the explicit permission check succeeds.
         return client.getQueryData(bandKeys.detail(bandId))?.managementDenied
           ? { ...band, managementDenied: true } : band
@@ -70,11 +71,12 @@ export async function cacheSavedBand(client, band, signal) {
   return true
 }
 
-export async function checkBands(client, request, signal) {
+export async function checkBands(client, request, signal, activity = false) {
   await client.cancelQueries({ queryKey: bandKeys.list })
   if (signal.aborted) throw new DOMException('Form closed.', 'AbortError')
-  return client.fetchQuery({ queryKey: bandKeys.list, staleTime: 0,
-    queryFn: ({ signal: querySignal }) => getBands(request, querySignal) })
+  const options = { queryKey: bandKeys.list, staleTime: 0,
+    queryFn: ({ signal: querySignal, activity }) => getBands(activity === 'user' ? userActivityRequest(request) : request, querySignal) }
+  return activity ? fetchActivityQuery(client, options) : client.fetchQuery(options)
 }
 
 export async function cacheAddedMember(client, bandId, member, signal) {
@@ -87,10 +89,11 @@ export async function cacheAddedMember(client, bandId, member, signal) {
   return true
 }
 
-export async function checkBand(client, request, bandId, signal) {
+export async function checkBand(client, request, bandId, signal, activity = false) {
   await client.cancelQueries({ queryKey: bandKeys.detail(bandId) })
   if (signal.aborted) throw new DOMException('Form closed.', 'AbortError')
-  return client.fetchQuery(bandOptions(client, request, bandId))
+  const options = bandOptions(client, request, bandId)
+  return activity ? fetchActivityQuery(client, options) : client.fetchQuery(options)
 }
 
 export async function removeBandAccess(client, bandId, signal) {

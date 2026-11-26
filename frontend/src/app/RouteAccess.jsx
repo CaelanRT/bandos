@@ -1,10 +1,14 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { destinationFromLocation } from './destination.js'
+import { destinationFromLocation, resolveDestination } from './destination.js'
 import { useSession } from './sessionContext.js'
 
 export function ProtectedRoute({ children }) {
   const session = useSession()
   const location = useLocation()
+
+  if (session.status === 'verification_required') {
+    return <Navigate to="/verify-email" replace state={{ destination: destinationFromLocation(location) }} />
+  }
 
   if (session.status === 'signedOut') {
     return (
@@ -21,6 +25,11 @@ export function ProtectedRoute({ children }) {
 
 export function SignedOutOnlyRoute({ children }) {
   const session = useSession()
+  const location = useLocation()
+
+  if (session.status === 'verification_required') {
+    return <Navigate to="/verify-email" replace state={{ destination: resolveDestination(session.destination || location.state?.destination) }} />
+  }
 
   if (session.status === 'authenticated') {
     return <Navigate to={session.destination || '/'} replace />

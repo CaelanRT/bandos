@@ -97,8 +97,8 @@ export function RegistrationForm() {
     submitting.current = true
     setPending(true)
     try {
-      await register(normalizeRegistration(values))
-      await session.completeAuthentication(destination)
+      const result = await register(normalizeRegistration(values))
+      await session.completeAuthentication(destination, result)
     } catch (error) {
       if (error?.code === 'TOO_MANY_ATTEMPTS') {
         setRetryAt(error.retryAt ?? null)

@@ -61,11 +61,11 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false, editHref
     }
   }, [menuOpen])
 
-  async function refreshPermission(signal = lifetime.current.signal) {
+  async function refreshPermission(signal = lifetime.current.signal, activity = false) {
     setPermissionState('checking')
     const results = await Promise.allSettled([
-      checkBand(client, authenticatedRequest, bandId, signal),
-      checkBands(client, authenticatedRequest, signal),
+      checkBand(client, authenticatedRequest, bandId, signal, activity),
+      checkBands(client, authenticatedRequest, signal, activity),
     ])
     if (signal.aborted) return
     if (!results.every((result) => result.status === 'fulfilled')) {
@@ -119,7 +119,7 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false, editHref
     {error && !open && <p className="event-notice" role="alert">{error}</p>}
     {permissionState && <div className="event-notice" role="alert">
       <p>{permissionState === 'checking' ? 'Checking your permissions…' : 'We couldn’t confirm leader access.'}</p>
-      {permissionState === 'failed' && <button type="button" onClick={() => refreshPermission()}>Retry permissions</button>}
+      {permissionState === 'failed' && <button type="button" onClick={() => refreshPermission(undefined, true)}>Retry permissions</button>}
     </div>}
     <div ref={menu} className="event-menu" onBlur={(event) => {
       if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false)
