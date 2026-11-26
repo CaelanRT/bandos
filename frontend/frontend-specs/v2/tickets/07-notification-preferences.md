@@ -1,6 +1,6 @@
 # FE-V2-07 — Edit user-wide email notification preferences
 
-> **Status:** For Review ([Draft PR #124](https://github.com/CaelanRT/bandos/pull/124))
+> **Status:** Completed ([Merged PR #124](https://github.com/CaelanRT/bandos/pull/124))
 > **Dependencies:** [FE-V2-02](02-session-access-and-activity.md), [FE-V2-03](03-mutation-intents-and-conflicts.md)
 > **Created:** 25 November 2026
 
@@ -39,3 +39,7 @@ Run relevant existing frontend tests, `npm run lint`, `npm run build` and `git d
 ## Out of scope
 
 Backend feature reimplementation, infrastructure/deployment, v1 data migration, framework replacement and unrelated UI redesign. See the sequence for global exclusions; report any demonstrated contract defect with evidence before expanding this ticket.
+
+## Completion — 26 November 2026
+
+PR #124 was confirmed merged into remote `main` at `f4f7ec3`. Automated verification passed (`npm test` on 8 relevant suites / 86 tests, `npm run lint`, `npm run build`, `git diff --check`, and independent `review-ticket` subagent PASS). Interactive browser smoke of desktop/narrow layout, keyboard navigation, and screen-reader announcements remains documented as unavailable in the headless CLI environment.
