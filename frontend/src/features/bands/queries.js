@@ -34,6 +34,10 @@ function bandOptions(client, authenticatedRequest, bandId) {
     queryFn: async ({ signal, activity }) => {
       try {
         const band = await getBand(activity === 'user' ? userActivityRequest(authenticatedRequest) : authenticatedRequest, bandId, signal)
+        if (client.getQueryData(bandKeys.detail(bandId))?.currentUserRole === 'leader' && band.currentUserRole !== 'leader') {
+          await clearBandResources(client, bandId, signal)
+          if (signal.aborted) throw new DOMException('Access changed.', 'AbortError')
+        }
         // A denied mutation stays denied until the explicit permission check succeeds.
         return client.getQueryData(bandKeys.detail(bandId))?.managementDenied
           ? { ...band, managementDenied: true } : band
@@ -106,4 +110,36 @@ export async function removeBandAccess(client, bandId, signal) {
   client.setQueryData(bandKeys.detail(bandId), null)
   client.setQueryData(bandKeys.list, (bands) => bands?.filter((band) => band.bandId !== bandId))
   void client.invalidateQueries({ queryKey: bandKeys.list })
+}
+
+// Drop hidden resources and private invitation reasons before permission reloads.
+// Keep visible detail identity so an active permission check can finish normally.
+export async function clearBandResources(client, bandId, signal) {
+  const predicate = query => isBandQuery(query, bandId) && query.queryKey.length > 3
+  await client.cancelQueries({ predicate })
+  if (signal.aborted) return
+  for (const query of client.getQueryCache().findAll({ predicate })) {
+    const data = query.state.data
+    if (Array.isArray(data)) {
+      client.setQueryData(query.queryKey, [])
+      continue
+    }
+    if (data?.hideFromUninvited === true) {
+      client.setQueryData(query.queryKey, null)
+      continue
+    }
+    if (!data || data.hideFromUninvited !== false) {
+      client.removeQueries({ queryKey: query.queryKey, exact: true })
+      continue
+    }
+    client.setQueryData(query.queryKey, {
+      ...data, canManage: false,
+      ...(data.slots ? { slots: data.slots.map(slot => {
+        if (!slot.invitation) return slot
+        const { declineReason: _private, ...invitation } = slot.invitation
+        return { ...slot, invitation }
+      }) } : {}),
+    })
+  }
+  void client.invalidateQueries({ predicate })
 }

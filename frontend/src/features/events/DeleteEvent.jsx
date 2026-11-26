@@ -1,21 +1,27 @@
+import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
+import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
+import { useMutationIntent } from '../../mutations/useMutationIntent.js'
+import { MutationRecovery } from '../../mutations/MutationRecovery.jsx'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSession } from '../../app/sessionContext.js'
-import { bandKeys, checkBand, checkBands, removeBandAccess } from '../bands/queries.js'
+import { bandKeys, checkBand, checkBands, clearBandResources, removeBandAccess } from '../bands/queries.js'
 import { deleteEvent } from './api.js'
-import { cacheDeletedEvent } from './queries.js'
+import { cacheDeletedEvent, reloadEvent } from './queries.js'
 
 export function DeleteEvent({ bandId, eventId, event, disabled = false, editHref = null }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
+  const mutation = useMutationIntent(authenticatedRequest)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuId = useId()
   const menu = useRef(null)
   const firstItem = useRef(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const { blocker, allowNavigation } = useUnsavedNavigation(busy || mutation.unresolved)
   const [error, setError] = useState(null)
   const [permissionState, setPermissionState] = useState(null)
   const dialog = useRef(null)
@@ -78,30 +84,43 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false, editHref
       setError('Your leader access is confirmed. You can try deleting the event again.')
     } else {
       client.setQueryData(bandKeys.detail(bandId), (current) => current ? { ...current, managementDenied: true } : current)
+      allowNavigation()
       navigate(`/bands/${bandId}`, { replace: true, state: { eventManagementPermissionNotice: true } })
     }
   }
 
+  async function reloadLatest() {
+    await reloadEvent(client, authenticatedRequest, bandId, eventId, lifetime.current.signal)
+    if (lifetime.current.signal.aborted) throw new Error('Closed')
+    setOpen(false)
+  }
+
   async function confirm() {
+    if (mutation.locked && !mutation.isRetry()) return
     if (submitting.current || disabled || permissionState || busy) return
     submitting.current = true
     setBusy(true)
     setError(null)
     const signal = lifetime.current.signal
     try {
-      await deleteEvent(authenticatedRequest, bandId, eventId, signal)
+      await deleteEvent(mutation.request, bandId, eventId, signal, { expectedVersion: event.version })
       if (signal.aborted) return
+      mutation.complete()
       if (await cacheDeletedEvent(client, bandId, eventId, signal)) {
+        allowNavigation()
         navigate(`/bands/${bandId}`, { replace: true, state: { eventDeleted: true } })
       }
     } catch (failure) {
       if (signal.aborted || failure.name === 'AbortError' || failure.code === 'AUTHENTICATION_REQUIRED') return
+      if (mutation.handleError(failure)) return
       if (failure.code === 'BAND_NOT_FOUND') {
         await removeBandAccess(client, bandId, signal)
       } else if (failure.code === 'EVENT_NOT_FOUND' || failure.code === 'NOT_FOUND') {
         await cacheDeletedEvent(client, bandId, eventId, signal)
         setOpen(false)
       } else if (failure.code === 'LEADER_REQUIRED') {
+        await clearBandResources(client, bandId, signal)
+        if (signal.aborted) return
         client.setQueryData(bandKeys.detail(bandId), (current) => current ? { ...current, managementDenied: true } : current)
         await refreshPermission(signal)
       } else {
@@ -151,10 +170,12 @@ export function DeleteEvent({ bandId, eventId, event, disabled = false, editHref
       <p id="delete-event-description">This event will no longer be available to the band.</p>
       {busy && <p className="event-notice" role="status">Deleting event…</p>}
       {error && <p className="event-notice" role="alert">{error}</p>}
+      <MutationRecovery mutation={mutation} pending={busy} onRetry={() => confirm()} onReload={reloadLatest} />
       <div className="form-actions">
         <button ref={cancel} type="button" disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
-        <button className="event-delete-confirm" type="button" disabled={busy} onClick={confirm}>Delete event</button>
+        <button className="event-delete-confirm" type="button" disabled={busy || mutation.locked} onClick={confirm}>Delete event</button>
       </div>
     </dialog>}
+    <UnsavedNavigationDialog blocker={blocker} pending={busy} unresolved={mutation.unresolved} />
   </section>
 }

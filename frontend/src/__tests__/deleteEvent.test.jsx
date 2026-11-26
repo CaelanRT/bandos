@@ -41,7 +41,8 @@ beforeEach(() => {
     if (path === '/bands/2') return json({ band: band(role) })
     if (path === '/bands/2/events/8') {
       if (options.method === 'DELETE') {
-        expect(options.body).toBeUndefined()
+        expect(JSON.parse(options.body)).toEqual({ expectedVersion: 1 })
+        expect(options.headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/i)
         const response = await deleteResponse()
         if (response.ok) deleted = true
         return response
@@ -110,7 +111,7 @@ it('hides Delete from members and keeps failed deletion unconfirmed without retr
   mount(); await screen.findByRole('heading', { name: 'Old rehearsal' })
   await openDelete()
   await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete event' }))
-  expect(await screen.findByText(/couldn’t confirm that the event was deleted/)).toBeInTheDocument()
+  expect(await screen.findByText(/couldn’t confirm the save/)).toBeInTheDocument()
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'DELETE')).toHaveLength(1)
 })

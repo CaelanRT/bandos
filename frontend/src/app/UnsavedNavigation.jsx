@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export function UnsavedNavigationDialog({ blocker, pending = false, className }) {
+export function UnsavedNavigationDialog({ blocker, pending = false, unresolved = false, className }) {
   const dialog = useRef(null)
   const keep = useRef(null)
   const blocked = blocker.state === 'blocked'
@@ -19,12 +19,12 @@ export function UnsavedNavigationDialog({ blocker, pending = false, className })
   return <dialog className={className} ref={dialog} aria-labelledby="unsaved-title" aria-describedby="unsaved-description"
     onKeyDown={(event) => { if (event.key === 'Escape') event.stopPropagation() }}
     onCancel={(event) => { event.preventDefault(); blocker.reset() }}>
-    <h2 id="unsaved-title">Discard your unsaved changes?</h2>
-    <p id="unsaved-description">Your changes haven’t been saved.</p>
-    {pending && <p role="status">A change is being saved. Please wait for the result before leaving.</p>}
+    <h2 id="unsaved-title">{unresolved ? 'Recover your previous save' : 'Discard your unsaved changes?'}</h2>
+    <p id="unsaved-description">{unresolved ? 'The previous save may have completed. Stay here and recover its outcome before leaving to avoid duplicate changes.' : 'Your changes haven’t been saved.'}</p>
+    {pending && !unresolved && <p role="status">A change is being saved. Please wait for the result before leaving.</p>}
     <div className="form-actions">
       <button ref={keep} type="button" onClick={() => blocker.reset()}>Keep editing</button>
-      <button type="button" disabled={pending} onClick={() => blocker.proceed()}>Discard changes</button>
+      <button type="button" disabled={pending || unresolved} onClick={() => blocker.proceed()}>Discard changes</button>
     </div>
   </dialog>
 }

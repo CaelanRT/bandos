@@ -78,7 +78,7 @@ it.each(['America/New_York', 'UTC'])('submits one normalized local event with de
   const posts = fetchMock.mock.calls.filter(([, options]) => options.method === 'POST')
   expect(posts).toHaveLength(1)
   expect(JSON.parse(posts[0][1].body)).toEqual({
-    name: 'Practice', type: 'rehearsal', date: '2030-09-16', startTime: '15:05', endTime: '16:35', timezone, location: 'Studio', description: null,
+    templateVersion: 1, name: 'Practice', type: 'rehearsal', date: '2030-09-16', startTime: '15:05', endTime: '16:35', timezone, location: 'Studio', description: null,
   })
   await act(async () => waiting.resolve(json({ event }, 201)))
   await screen.findByRole('heading', { name: 'Practice' })
@@ -98,16 +98,19 @@ it('rejects member direct access and does not submit invalid schedule values', a
   expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'POST')).toHaveLength(0)
 })
 
-it('retains a draft and warns before a deliberate retry after an uncertain outcome', async () => {
+it('retains a draft and retries exactly the original create intent after response loss', async () => {
   post = () => failure('INTERNAL_ERROR', 500)
   mount(); await fill()
   await userEvent.click(screen.getByRole('button', { name: 'Create event', exact: true }))
-  expect(await screen.findByText(/couldn’t confirm whether this event was created/)).toBeInTheDocument()
+  await screen.findByRole('button', { name: 'Retry same request' })
   expect(screen.getByLabelText('Name')).toHaveValue('  Practice  ')
-  expect(screen.getByText(/may create a duplicate event/)).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Create again' })).toBeEnabled()
-  await userEvent.click(screen.getByRole('button', { name: 'Create again' }))
-  expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'POST')).toHaveLength(2)
+  expect(screen.getByLabelText('Name')).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Create event', exact: true })).toBeDisabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  const posts = fetchMock.mock.calls.filter(([, options]) => options.method === 'POST')
+  expect(posts).toHaveLength(2)
+  expect(posts[1][1].body).toBe(posts[0][1].body)
+  expect(posts[1][1].headers.get('Idempotency-Key')).toBe(posts[0][1].headers.get('Idempotency-Key'))
 })
 
 it('maps backend field validation and protects a dirty Cancel navigation', async () => {
@@ -241,4 +244,31 @@ it.each([
   expect(screen.getByLabelText(label)).toHaveAccessibleDescription(message)
   expect(screen.getByLabelText(label)).toHaveFocus()
   expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'POST')).toHaveLength(0)
+})
+
+it('retains a committed create intent through attempted Cancel and SPA navigation after response loss', async () => {
+  let committed = false, creations = 0
+  post = () => {
+    if (!committed) { committed = true; creations++; throw new TypeError('Committed response lost') }
+    return json({ event }, 201)
+  }
+  const { router } = mount(); await fill()
+  await userEvent.click(screen.getByRole('button', { name: 'Create event', exact: true }))
+  await screen.findByRole('button', { name: 'Retry same request' })
+  for (const action of [() => userEvent.click(screen.getByRole('button', { name: 'Cancel' })),
+    () => userEvent.click(screen.getByRole('link', { name: 'Datebook' }))]) {
+    await action()
+    const dialog = await screen.findByRole('dialog', { name: 'Recover your previous save' })
+    expect(dialog).toHaveTextContent('The previous save may have completed.')
+    expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
+    expect(router.state.location.pathname).toBe('/bands/2/events/new')
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+  }
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  await screen.findByRole('heading', { name: 'Practice' })
+  expect(creations).toBe(1)
+  const writes = fetchMock.mock.calls.filter(([, options]) => options.method === 'POST')
+  expect(writes).toHaveLength(2)
+  expect(writes[1][1].body).toBe(writes[0][1].body)
+  expect(writes[1][1].headers.get('Idempotency-Key')).toBe(writes[0][1].headers.get('Idempotency-Key'))
 })

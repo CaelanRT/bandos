@@ -91,7 +91,7 @@ export async function addBandMember(request, bandId, input, signal, options) {
   const band = fullBand(data?.band)
   check(band.bandId === bandId)
   if (member.username.toLowerCase() !== username.toLowerCase()) throw invalidApiResponse(201)
-  return member
+  return { member, band }
 }
 
 export async function renameBand(request, bandId, input, signal, options) {

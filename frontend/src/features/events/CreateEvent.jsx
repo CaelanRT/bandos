@@ -1,10 +1,12 @@
+import { useMutationIntent } from '../../mutations/useMutationIntent.js'
+import { MutationRecovery } from '../../mutations/MutationRecovery.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../../app/sessionContext.js'
 import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
 import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
-import { bandKeys, checkBand, checkBands, removeBandAccess } from '../bands/queries.js'
+import { bandKeys, checkBand, checkBands, clearBandResources, removeBandAccess } from '../bands/queries.js'
 import { createEvent } from './api.js'
 import { cacheCreatedEvent } from './queries.js'
 import { detectBrowserTimezone, emptyEventValues, eventFieldNames, normalizeEventValues, validateEventValues } from './eventForm.js'
@@ -16,13 +18,14 @@ export function CreateEvent({ band }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
+  const mutation = useMutationIntent(authenticatedRequest)
+  const [version, setVersion] = useState(band.version)
   const [values, setValues] = useState(() => ({ ...emptyEventValues, timezone: detectBrowserTimezone() }))
   const [timezoneError, setTimezoneError] = useState(() => values.timezone ? null : detectionError)
   const [touched, setTouched] = useState({})
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
   const [pending, setPending] = useState(false)
-  const [uncertain, setUncertain] = useState(false)
   const [permissionChecking, setPermissionChecking] = useState(false)
   const [permissionFailed, setPermissionFailed] = useState(() => Boolean(band.managementDenied))
   const fields = useRef({})
@@ -31,7 +34,7 @@ export function CreateEvent({ band }) {
   const submitting = useRef(false)
   const lifetime = useRef(null)
   const dirty = JSON.stringify(normalizeEventValues({ ...values, timezone: '' })) !== JSON.stringify(normalizeEventValues(emptyEventValues))
-  const { blocker, allowNavigation } = useUnsavedNavigation(dirty)
+  const { blocker, allowNavigation } = useUnsavedNavigation(dirty || mutation.unresolved)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -56,7 +59,7 @@ export function CreateEvent({ band }) {
   }
   function change(field, value) {
     const next = { ...values, [field]: value }
-    setValues(next); setFormError(null); setUncertain(false)
+    setValues(next); setFormError(null)
     if (touched[field]) validate(next, field)
   }
   function blur(field) {
@@ -84,11 +87,24 @@ export function CreateEvent({ band }) {
     allowNavigation()
     navigate(`/bands/${band.bandId}`, { replace: true, state: { eventPermissionNotice: true } })
   }
+  async function reloadLatest() {
+    const latest = await checkBand(client, authenticatedRequest, band.bandId, lifetime.current.signal, true)
+    if (lifetime.current.signal.aborted) throw new Error('Closed')
+    if (latest) {
+      const timezone = detectBrowserTimezone()
+      setVersion(latest.version)
+      setValues({ ...emptyEventValues, timezone })
+      setTimezoneError(timezone ? null : detectionError)
+      setErrors({}); setTouched({})
+    }
+  }
+
   async function submit(event) {
     event.preventDefault()
+    if (mutation.locked && !mutation.isRetry()) return
     if (submitting.current || permissionChecking || permissionFailed) return
-    if (timezoneError) { timezoneNotice.current?.focus(); return }
-    const nextErrors = validateEventValues(values)
+    if (timezoneError && !mutation.isRetry()) { timezoneNotice.current?.focus(); return }
+    const nextErrors = mutation.isRetry() ? {} : validateEventValues(values)
     setTouched(Object.fromEntries(eventFieldNames.map((field) => [field, true])))
     setErrors(nextErrors); setFormError(null)
     if (nextErrors.timezone) {
@@ -98,20 +114,24 @@ export function CreateEvent({ band }) {
     }
     const invalid = visibleFieldNames.find((field) => nextErrors[field])
     if (invalid) { fields.current[invalid]?.focus(); return }
-    submitting.current = true; setPending(true); setUncertain(false)
+    submitting.current = true; setPending(true)
     const signal = lifetime.current.signal
     try {
-      const created = await createEvent(authenticatedRequest, band.bandId, normalizeEventValues(values), signal)
+      const created = await createEvent(mutation.request, band.bandId, { ...normalizeEventValues(values), templateVersion: version }, signal)
       if (signal.aborted) return
+      mutation.complete()
       if (await cacheCreatedEvent(client, created, signal)) {
         allowNavigation()
         navigate(`/bands/${band.bandId}/events/${created.eventId}`, { replace: true, state: { eventCreated: true } })
       }
     } catch (error) {
       if (signal.aborted || error.name === 'AbortError' || error.code === 'AUTHENTICATION_REQUIRED') return
+      if (mutation.handleError(error)) return
       if (error.code === 'BAND_NOT_FOUND') {
         await removeBandAccess(client, band.bandId, signal)
       } else if (error.code === 'LEADER_REQUIRED') {
+        await clearBandResources(client, band.bandId, signal)
+        if (signal.aborted) return
         client.setQueryData(bandKeys.detail(band.bandId), (latest) => latest ? { ...latest, managementDenied: true } : latest)
         await refreshPermission(signal)
       } else if (error.code === 'VALIDATION_ERROR') {
@@ -124,7 +144,6 @@ export function CreateEvent({ band }) {
           (details.length ? null : 'Check the event details and try again.'))
         if (!rejectedTimezone) fields.current[visibleFieldNames.find((field) => mapped[field])]?.focus()
       } else {
-        setUncertain(true)
         setFormError('We couldn’t confirm whether this event was created. Your details are still here.')
       }
     } finally {
@@ -134,7 +153,7 @@ export function CreateEvent({ band }) {
   }
   const locked = pending || permissionChecking || permissionFailed
   const fieldProps = (field) => ({
-    ref: (element) => { fields.current[field] = element }, name: field, value: values[field], disabled: locked,
+    ref: (element) => { fields.current[field] = element }, name: field, value: values[field], disabled: locked || mutation.locked,
     'aria-invalid': Boolean(errors[field]), 'aria-describedby': errors[field] ? `${field}-error` : undefined,
     onChange: (event) => change(field, event.target.value), onBlur: () => blur(field),
   })
@@ -149,6 +168,7 @@ export function CreateEvent({ band }) {
         <p>{timezoneError}</p>
         <button type="button" disabled={locked} onClick={retryTimezone}>Retry timezone detection</button>
       </div>}
+      <MutationRecovery mutation={mutation} pending={pending} onRetry={() => submit({ preventDefault() {} })} onReload={reloadLatest} />
       <label htmlFor="event-name">Name</label>
       <input id="event-name" {...fieldProps('name')} />{errors.name && <p id="name-error">{errors.name}</p>}
       <label htmlFor="event-type">Type</label>
@@ -163,13 +183,12 @@ export function CreateEvent({ band }) {
       <input id="event-location" {...fieldProps('location')} />{errors.location && <p id="location-error">{errors.location}</p>}
       <label htmlFor="event-description">Description (optional)</label>
       <textarea id="event-description" {...fieldProps('description')} />{errors.description && <p id="description-error">{errors.description}</p>}
-      {uncertain && <p className="event-notice" role="status">Creating again may create a duplicate event.</p>}
       <div className="form-actions">
-        <button type="submit" disabled={locked || Boolean(timezoneError)}>{pending ? 'Creating event…' : uncertain ? 'Create again' : 'Create event'}</button>
+        <button type="submit" disabled={mutation.locked || locked || Boolean(timezoneError)}>{pending ? 'Creating event…' : 'Create event'}</button>
         <button type="button" disabled={locked} onClick={() => navigate(`/bands/${band.bandId}`)}>Cancel</button>
       </div>
       {pending && <p className="event-notice" role="status">Creating event…</p>}
     </form>}
-    <UnsavedNavigationDialog blocker={blocker} pending={pending} />
+    <UnsavedNavigationDialog unresolved={mutation.unresolved} blocker={blocker} pending={pending} />
   </section>
 }
