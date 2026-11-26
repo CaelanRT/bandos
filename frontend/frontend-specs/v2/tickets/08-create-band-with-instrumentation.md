@@ -1,6 +1,6 @@
 # FE-V2-08 — Create bands with starter or custom instrumentation
 
-> **Status:** Planned
+> **Status:** For Review ([Draft PR #126](https://github.com/CaelanRT/bandos/pull/126))
 > **Dependencies:** [FE-V2-03](03-mutation-intents-and-conflicts.md), [FE-V2-04](04-registration-and-verification.md)
 > **Created:** 25 November 2026
 
