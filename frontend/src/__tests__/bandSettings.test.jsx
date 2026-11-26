@@ -67,7 +67,7 @@ it('prefills, saves one exact normalized request, reorders names, and resets the
   await enter('  Zebra  '); await save()
   await screen.findByText('Band name saved.')
   expect(writes()).toHaveLength(1)
-  expect(JSON.parse(writes()[0][1].body)).toEqual({ name: 'Zebra' })
+  expect(JSON.parse(writes()[0][1].body)).toEqual({ expectedVersion: 1, name: 'Zebra' })
   expect(client.getQueryData(bandKeys.detail(2)).name).toBe('Zebra')
   expect(screen.getByRole('heading', { name: 'Zebra' })).toBeInTheDocument()
   expect(within(screen.getByRole('navigation', { name: 'Primary' })).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Middle', 'Zebra'])
@@ -113,7 +113,7 @@ it('validates trimmed 1–50 JS characters on blur/edit and submit', async () =>
   expect(writes()).toHaveLength(0)
   await enter(' ' + '😀'.repeat(25) + ' '); await save()
   await screen.findByText('Band name saved.')
-  expect(JSON.parse(writes()[0][1].body)).toEqual({ name: '😀'.repeat(25) })
+  expect(JSON.parse(writes()[0][1].body)).toEqual({ expectedVersion: 1, name: '😀'.repeat(25) })
 })
 
 it.each(['Cancel', 'member band', 'leader band', 'Back'])('protects dirty %s navigation with Keep/Discard and Schedule destinations', async (action) => {
@@ -192,41 +192,58 @@ it('maps backend name and form validation without losing input', async () => {
   expect(writes()).toHaveLength(1)
 })
 
-it.each(['network', 'malformed', 'server'])('reconciles an uncertain %s save without replay and acknowledges a matching server name', async (mode) => {
+it.each(['network', 'malformed', 'server'])('retries an uncertain %s rename with the original version, body and key', async (mode) => {
   patch = (body) => {
-    band = { ...band, name: body.name }
+    band = { ...band, name: body.name, version: 2 }
     if (mode === 'network') throw new TypeError('Offline')
     return mode === 'malformed' ? json({ band: { ...band, bandId: 99 } }) : failure('INTERNAL_ERROR', 500)
   }
   mount(); await enter(' Zebra '); await save()
-  expect(await screen.findByText('The current band name matches your change.')).toBeInTheDocument()
-  expect(screen.queryByText('Band name saved.')).not.toBeInTheDocument()
+  await screen.findByRole('button', { name: 'Retry same request' })
+  expect(screen.getByLabelText('Band name')).toHaveValue(' Zebra ')
+  expect(screen.getByLabelText('Band name')).toBeDisabled()
+  expect(writes()).toHaveLength(1)
+  patch = () => json({ band })
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  await screen.findByText('Band name saved.')
+  expect(writes()).toHaveLength(2)
+  expect(writes()[1][1].body).toBe(writes()[0][1].body)
+  expect(writes()[1][1].headers.get('Idempotency-Key')).toBe(writes()[0][1].headers.get('Idempotency-Key'))
   expect(screen.getByLabelText('Band name')).toHaveValue('Zebra')
   expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  expect(writes()).toHaveLength(1)
 })
 
-it('locks failed reconciliation until Check again and preserves a conflicting draft for deliberate retry', async () => {
-  patch = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return failure('INTERNAL_ERROR', 500) }
-  mount(); await enter(); await save()
-  await screen.findByRole('button', { name: 'Check again' })
-  expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  expect(screen.getByLabelText('Band name')).toHaveValue('Zebra')
-  band = { ...band, name: 'Changed elsewhere' }; detailRead = () => json({ band })
-  await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
-  expect(await screen.findByText(/current server name is “Changed elsewhere”/)).toBeInTheDocument()
-  expect(screen.getByLabelText('Band name')).toHaveValue('Zebra')
-  expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
+it('preserves the draft and loaded version through refetch, with explicit stale discard and reload', async () => {
+  const { client } = mount(); await enter('Draft')
+  band = { ...band, name: 'Changed elsewhere', version: 2 }
+  await act(() => client.invalidateQueries({ queryKey: bandKeys.detail(2) }))
+  patch = () => failure('STALE_VERSION', 409)
+  await save()
+  expect(JSON.parse(writes()[0][1].body)).toEqual({ name: 'Draft', expectedVersion: 1 })
+  await userEvent.click(await screen.findByRole('button', { name: 'Reload latest' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Keep draft' }))
+  expect(screen.getByLabelText('Band name')).toHaveValue('Draft')
   expect(writes()).toHaveLength(1)
-  patch = (body) => { band = { ...band, name: body.name }; return json({ band }) }
+  await userEvent.click(screen.getByRole('button', { name: 'Reload latest' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Discard changes and reload' }))
+  await waitFor(() => expect(screen.getByLabelText('Band name')).toHaveValue('Changed elsewhere'))
+  expect(writes()).toHaveLength(1)
+  await enter('Next')
+  patch = body => { band = { ...band, name: body.name, version: 3 }; return json({ band }) }
   await save(); await screen.findByText('Band name saved.')
-  expect(writes()).toHaveLength(2)
+  expect(JSON.parse(writes()[1][1].body)).toEqual({ name: 'Next', expectedVersion: 2 })
+  expect(writes()[1][1].headers.get('Idempotency-Key')).not.toBe(writes()[0][1].headers.get('Idempotency-Key'))
 })
 
 it('suppresses denied controls across failed checks, background refresh, and revisits until permission Retry succeeds', async () => {
   patch = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return failure('LEADER_REQUIRED', 403) }
-  const { client, router } = mount(); await enter(); await save()
+  const { client, router } = mount(); await enter()
+  client.setQueryData([...bandKeys.detail(2), 'event', 8], { declineReason: 'private' })
+  client.setQueryData([...bandKeys.detail(3), 'event', 9], { name: 'Keep other band' })
+  await save()
   await waitFor(() => expect(screen.getByRole('button', { name: 'Retry permissions' })).toBeEnabled())
+  expect(client.getQueryData([...bandKeys.detail(2), 'event', 8])).toBeUndefined()
+  expect(client.getQueryData([...bandKeys.detail(3), 'event', 9])).toEqual({ name: 'Keep other band' })
   expect(screen.queryByLabelText('Band name')).not.toBeInTheDocument()
   expect(screen.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument()
   detailRead = () => json({ band })

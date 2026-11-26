@@ -1,12 +1,14 @@
+import { useMutationIntent } from '../../mutations/useMutationIntent.js'
+import { MutationRecovery } from '../../mutations/MutationRecovery.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../../app/sessionContext.js'
 import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
 import { useUnsavedNavigation } from '../../app/useUnsavedNavigation.js'
-import { bandKeys, checkBand, checkBands, removeBandAccess } from '../bands/queries.js'
+import { bandKeys, checkBand, checkBands, clearBandResources, removeBandAccess } from '../bands/queries.js'
 import { updateEvent } from './api.js'
-import { cacheUpdatedEvent, useEvent } from './queries.js'
+import { cacheDeletedEvent, cacheUpdatedEvent, reloadEvent, useEvent } from './queries.js'
 import { changedEventValues, eventFieldNames, eventTimezoneOptions, eventValues, timezoneLabel, validateEventValues } from './eventForm.js'
 import { isEventEditable } from './schedule.js'
 
@@ -16,8 +18,10 @@ export function EditEvent({ band, eventId, loadSource }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
+  const mutation = useMutationIntent(authenticatedRequest)
   const detail = useEvent(band.bandId, eventId, loadSource)
   const event = detail.data
+  const [version, setVersion] = useState(null)
   const [values, setValues] = useState(null)
   const [original, setOriginal] = useState(null)
   const [touched, setTouched] = useState({})
@@ -31,14 +35,17 @@ export function EditEvent({ band, eventId, loadSource }) {
   const submitting = useRef(false)
   const lifetime = useRef(null)
   const dirty = values !== null && original !== null && Object.keys(changedEventValues(values, original)).length > 0
-  const { blocker, allowNavigation } = useUnsavedNavigation(dirty)
+  const { blocker, allowNavigation } = useUnsavedNavigation(dirty || mutation.unresolved)
 
   useEffect(() => {
     const controller = new AbortController()
     lifetime.current = controller
     return () => controller.abort()
   }, [])
-  useEffect(() => { if (event && values === null) { const initial = eventValues(event); setValues(initial); setOriginal(initial) } }, [event, values])
+  if (event && values === null) {
+    const initial = eventValues(event)
+    setValues(initial); setOriginal(initial); setVersion(event.version)
+  }
   useEffect(() => { if (formError) notice.current?.focus() }, [formError])
   useEffect(() => {
     if (event === null) {
@@ -82,10 +89,20 @@ export function EditEvent({ band, eventId, loadSource }) {
     allowNavigation()
     navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true, state: { eventPermissionNotice: true } })
   }
+  async function reloadLatest() {
+    const latest = await reloadEvent(client, authenticatedRequest, band.bandId, eventId, lifetime.current.signal)
+    if (latest) {
+      const initial = eventValues(latest)
+      setValues(initial); setOriginal(initial); setVersion(latest.version)
+      setErrors({}); setTouched({})
+    }
+  }
+
   async function submit(formEvent) {
     formEvent.preventDefault()
+    if (mutation.locked && !mutation.isRetry()) return
     if (submitting.current || permissionChecking || permissionFailed || !dirty) return
-    const nextErrors = validateEventValues(values)
+    const nextErrors = mutation.isRetry() ? {} : validateEventValues(values)
     setTouched(Object.fromEntries(eventFieldNames.map((field) => [field, true])))
     setErrors(nextErrors); setFormError(null)
     const invalid = eventFieldNames.find((field) => nextErrors[field])
@@ -93,24 +110,28 @@ export function EditEvent({ band, eventId, loadSource }) {
     submitting.current = true; setPending(true)
     const signal = lifetime.current.signal
     try {
-      const updated = await updateEvent(authenticatedRequest, band.bandId, eventId, changedEventValues(values, original), signal)
+      const updated = await updateEvent(mutation.request, band.bandId, eventId, { ...changedEventValues(values, original), expectedVersion: version }, signal)
       if (signal.aborted) return
+      mutation.complete()
       if (await cacheUpdatedEvent(client, updated, signal)) {
         allowNavigation()
         navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true, state: { eventSaved: true } })
       }
     } catch (error) {
       if (signal.aborted || error.name === 'AbortError' || error.code === 'AUTHENTICATION_REQUIRED') return
+      if (mutation.handleError(error)) return
       if (error.code === 'BAND_NOT_FOUND') {
         await removeBandAccess(client, band.bandId, signal)
-      } else if (error.code === 'EVENT_ALREADY_STARTED') {
+      } else if (['EVENT_STARTED', 'EVENT_ALREADY_STARTED'].includes(error.code)) {
         allowNavigation()
         navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true, state: { eventEditingClosed: true } })
       } else if (error.code === 'EVENT_NOT_FOUND' || error.code === 'NOT_FOUND') {
-        client.setQueryData(['private', 'band', band.bandId, 'event', eventId], null)
+        await cacheDeletedEvent(client, band.bandId, eventId, signal)
         allowNavigation()
         navigate(`/bands/${band.bandId}/events/${eventId}`, { replace: true })
       } else if (error.code === 'LEADER_REQUIRED') {
+        await clearBandResources(client, band.bandId, signal)
+        if (signal.aborted) return
         client.setQueryData(bandKeys.detail(band.bandId), (latest) => latest ? { ...latest, managementDenied: true } : latest)
         await refreshPermission(signal)
       } else if (error.code === 'VALIDATION_ERROR') {
@@ -139,7 +160,7 @@ export function EditEvent({ band, eventId, loadSource }) {
   if (detail.isPending || values === null) return <p className="event-notice" role="status">Loading event…</p>
   const locked = pending || permissionChecking || permissionFailed
   const fieldProps = (field) => ({
-    ref: (element) => { fields.current[field] = element }, name: field, value: values[field], disabled: locked,
+    ref: (element) => { fields.current[field] = element }, name: field, value: values[field], disabled: locked || mutation.locked,
     'aria-invalid': Boolean(errors[field]), 'aria-describedby': errors[field] ? `${field}-error` : undefined,
     onChange: (input) => change(field, input.target.value), onBlur: () => blur(field),
   })
@@ -150,6 +171,7 @@ export function EditEvent({ band, eventId, loadSource }) {
       {permissionFailed && <button type="button" onClick={() => refreshPermission(undefined, true)}>Retry permissions</button>}
     </div> : <form className="band-form event-form" onSubmit={submit} noValidate>
       {formError && <p className="event-notice" ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+      <MutationRecovery mutation={mutation} pending={pending} onRetry={() => submit({ preventDefault() {} })} onReload={reloadLatest} />
       <label htmlFor="event-name">Name</label><input id="event-name" {...fieldProps('name')} />{errors.name && <p id="name-error">{errors.name}</p>}
       <label htmlFor="event-type">Type</label><select id="event-type" {...fieldProps('type')}><option value="">Choose a type</option><option value="rehearsal">Rehearsal</option><option value="performance">Performance</option></select>{errors.type && <p id="type-error">{errors.type}</p>}
       <label htmlFor="event-date">Date</label><input id="event-date" type="date" {...fieldProps('date')} />{errors.date && <p id="date-error">{errors.date}</p>}
@@ -161,11 +183,11 @@ export function EditEvent({ band, eventId, loadSource }) {
       <label htmlFor="event-location">Location</label><input id="event-location" {...fieldProps('location')} />{errors.location && <p id="location-error">{errors.location}</p>}
       <label htmlFor="event-description">Description (optional)</label><textarea id="event-description" {...fieldProps('description')} />{errors.description && <p id="description-error">{errors.description}</p>}
       <div className="form-actions">
-        <button type="submit" disabled={locked || !dirty}>{pending ? 'Saving event…' : 'Save'}</button>
+        <button type="submit" disabled={mutation.locked || locked || !dirty}>{pending ? 'Saving event…' : 'Save'}</button>
         <button type="button" disabled={locked} onClick={() => navigate(`/bands/${band.bandId}/events/${eventId}`)}>Cancel</button>
       </div>
       {pending && <p className="event-notice" role="status">Saving event…</p>}
     </form>}
-    <UnsavedNavigationDialog blocker={blocker} pending={pending} />
+    <UnsavedNavigationDialog unresolved={mutation.unresolved} blocker={blocker} pending={pending} />
   </section>
 }

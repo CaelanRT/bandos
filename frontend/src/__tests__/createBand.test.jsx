@@ -199,7 +199,7 @@ it('honors rate-limit deadlines without automatic retry', async () => {
   expect(screen.getByLabelText('Band name')).toHaveValue('New band')
 })
 
-it.each(['network', 'server', 'malformed', 'wrong-status', 'not-leader'])('checks uncertain %s creation without guessing among duplicate names', async (kind) => {
+it.each(['network', 'server', 'malformed', 'wrong-status', 'not-leader'])('recovers uncertain %s creation with the same intent, without guessing by name', async (kind) => {
   list = [band(2)]
   post = () => {
     list = [band(2), band(9)]
@@ -210,34 +210,19 @@ it.each(['network', 'server', 'malformed', 'wrong-status', 'not-leader'])('check
     return json({ band: {} }, 201)
   }
   const { router } = mount(); await enter(); await submit()
-  const again = await screen.findByRole('button', { name: 'Create again' })
+  const again = await screen.findByRole('button', { name: 'Retry same request' })
   expect(router.state.location.pathname).toBe('/bands/new')
   expect(posts()).toHaveLength(1)
-  const links = within(screen.getByRole('region', { name: 'Check existing bands' })).getAllByRole('link')
-  expect(links.map((link) => link.getAttribute('href'))).toEqual(['/bands/2', '/bands/9'])
-  expect(screen.getByText(/could create another band/)).toBeInTheDocument()
   expect(screen.getByLabelText('Band name')).toHaveValue('New band')
+  expect(screen.getByLabelText('Band name')).toBeDisabled()
+  fireEvent.submit(screen.getByLabelText('Band name').closest('form'))
+  expect(posts()).toHaveLength(1)
   post = () => json({ band: band(9) }, 201)
   await userEvent.click(again)
   await screen.findByRole('heading', { name: 'Members' })
   expect(posts()).toHaveLength(2)
-})
-
-it('blocks resubmission through failed checks until an explicit fresh check succeeds', async () => {
-  const check = deferred()
-  post = () => { listRead = () => check.promise; return failure('INTERNAL_ERROR', 500) }
-  mount(); await enter(); await submit()
-  await screen.findByText('Checking your bands…')
-  fireEvent.submit(screen.getByLabelText('Band name').closest('form'))
-  await act(async () => check.resolve(failure('INTERNAL_ERROR', 503)))
-  const retry = await screen.findByRole('button', { name: 'Check again' })
-  expect(screen.getByRole('button', { name: 'Create band', exact: true })).toBeDisabled()
-  fireEvent.submit(screen.getByLabelText('Band name').closest('form'))
-  expect(posts()).toHaveLength(1)
-  listRead = () => json({ bands: [] })
-  await userEvent.click(retry)
-  expect(await screen.findByRole('button', { name: 'Create again' })).toBeEnabled()
-  expect(posts()).toHaveLength(1)
+  expect(posts()[1][1].body).toBe(posts()[0][1].body)
+  expect(posts()[1][1].headers.get('Idempotency-Key')).toBe(posts()[0][1].headers.get('Idempotency-Key'))
 })
 
 it('cancels an older list read so it cannot erase confirmed creation', async () => {

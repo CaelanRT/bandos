@@ -64,7 +64,7 @@ it('lets a leader save one changed normalized field and opens updated detail', a
   fireEvent.submit(screen.getByRole('button', { name: 'Saving event…' }).closest('form'))
   const patches = fetchMock.mock.calls.filter(([, options]) => options.method === 'PATCH')
   expect(patches).toHaveLength(1)
-  expect(JSON.parse(patches[0][1].body)).toEqual({ name: 'Updated practice' })
+  expect(JSON.parse(patches[0][1].body)).toEqual({ expectedVersion: 1, name: 'Updated practice' })
   detail = event({ name: 'Updated practice' })
   await act(async () => waiting.resolve(json({ event: detail })))
   await screen.findByRole('heading', { name: 'Updated practice' })

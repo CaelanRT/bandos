@@ -1,15 +1,19 @@
+import { userActivityRequest } from '../../app/activityQueries.js'
+import { useMutationIntent } from '../../mutations/useMutationIntent.js'
+import { MutationRecovery } from '../../mutations/MutationRecovery.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from '../../app/sessionContext.js'
 import { readProfile } from './profile.js'
 
-export function DeactivateAccount({ user, disabled, setPending }) {
-  const { authenticatedRequest, finishDeactivation } = useSession()
+export function DeactivateAccount({ user, disabled, setPending, onUnresolvedChange }) {
+  const { authenticatedRequest, finishDeactivation, updateCurrentUser } = useSession()
+  const mutation = useMutationIntent(authenticatedRequest)
+  useEffect(() => { onUnresolvedChange(mutation.unresolved) }, [mutation.unresolved, onUnresolvedChange])
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [reconciliation, setReconciliation] = useState(null)
   const dialog = useRef(null)
   const trigger = useRef(null)
   const passwordInput = useRef(null)
@@ -38,34 +42,25 @@ export function DeactivateAccount({ user, disabled, setPending }) {
   }, [passwordError])
 
   function close() {
-    if (submitting.current || busy || reconciliation === 'checking') return
+    if (submitting.current || busy) return
     setOpen(false)
-    setPassword('')
+    if (!mutation.locked) setPassword('')
     setPasswordError(null)
     setError(null)
   }
 
-  async function checkAccount(signal = lifetime.current.signal) {
-    setReconciliation('checking')
-    setPending(true)
-    try {
-      const latest = await readProfile(authenticatedRequest, signal)
-      if (signal.aborted) return
-      if (latest.userId !== user.userId) throw new Error('Current user changed')
-      setReconciliation('active')
-      setError('Your account is still active. You can choose to try deactivation again.')
-    } catch (failure) {
-      if (signal.aborted || failure.name === 'AbortError' || failure.code === 'AUTHENTICATION_REQUIRED') return
-      setReconciliation('failed')
-      setError('We couldn’t check your account status. Check again before another attempt.')
-    } finally {
-      if (!signal.aborted) setPending(false)
-    }
+  async function reloadLatest() {
+    const latest = await readProfile(userActivityRequest(authenticatedRequest), lifetime.current.signal)
+    if (lifetime.current.signal.aborted) throw new Error('Closed')
+    updateCurrentUser(latest)
+    setPassword('')
+    setOpen(false)
   }
 
   async function confirm(event) {
     event.preventDefault()
-    if (submitting.current || disabled || busy || ['checking', 'failed'].includes(reconciliation)) return
+    if (mutation.locked && !mutation.isRetry()) return
+    if (submitting.current || disabled || busy) return
     if (typeof password !== 'string' || password.length === 0) {
       setPasswordError('Enter your current password.')
       passwordInput.current?.focus()
@@ -78,23 +73,24 @@ export function DeactivateAccount({ user, disabled, setPending }) {
     setError(null)
     const signal = lifetime.current.signal
     try {
-      const result = await authenticatedRequest('/users/me', {
-        method: 'DELETE', body: { password }, signal, expectedStatus: 200,
+      const result = await mutation.request('/users/me', {
+        method: 'DELETE', body: { password, expectedVersion: user.version }, signal, expectedStatus: 200,
       })
       if (signal.aborted) return
       if (result?.message !== 'Account deactivated') throw new Error('Unexpected deactivation response')
+      mutation.complete()
       finishDeactivation()
     } catch (failure) {
       if (signal.aborted || failure.name === 'AbortError' || failure.code === 'AUTHENTICATION_REQUIRED') return
-      if (failure.code === 'INVALID_CREDENTIALS') {
+      if (mutation.handleError(failure)) return
+      if (['INVALID_CREDENTIALS', 'CURRENT_PASSWORD_INCORRECT'].includes(failure.code)) {
         setPasswordError('That password is incorrect. Try again.')
       } else if (failure.code === 'TOO_MANY_ATTEMPTS') {
         setError('Too many attempts. Please wait before trying again.')
       } else if (failure.code === 'VALIDATION_ERROR') {
         setError('Check your password and try again.')
       } else {
-        setError('We couldn’t confirm your account status. Checking before another attempt.')
-        await checkAccount(signal)
+        setError('The request was rejected. Please review it and try again.')
       }
     } finally {
       submitting.current = false
@@ -116,17 +112,16 @@ export function DeactivateAccount({ user, disabled, setPending }) {
       <form className="band-form account-deactivation-form" onSubmit={confirm} noValidate>
         <label htmlFor="deactivate-password">Current password</label>
         <input ref={passwordInput} id="deactivate-password" type="password" autoComplete="current-password"
-          value={password} disabled={busy || reconciliation === 'checking'}
+          value={password} disabled={busy || mutation.locked}
           aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? 'deactivate-password-error' : undefined}
           onChange={(event) => { setPassword(event.target.value); setPasswordError(null) }} />
         {passwordError && <p id="deactivate-password-error" className="account-field-error" ref={passwordErrorMessage} role="alert" tabIndex="-1">{passwordError}</p>}
         {error && <p role="alert">{error}</p>}
-        {reconciliation === 'checking' && <p role="status">Checking your account status…</p>}
-        {reconciliation === 'failed' && <button type="button" onClick={() => checkAccount()}>Check again</button>}
-        {busy && reconciliation !== 'checking' && <p role="status">Deactivating account…</p>}
+        {busy && <p role="status">Deactivating account…</p>}
+        <MutationRecovery mutation={mutation} pending={busy} onRetry={() => confirm({ preventDefault() {} })} onReload={reloadLatest} />
         <div className="form-actions">
-          <button type="button" disabled={busy || reconciliation === 'checking'} onClick={close}>Cancel</button>
-          <button className="account-deactivation-confirm" type="submit" disabled={busy || reconciliation === 'checking' || reconciliation === 'failed'}>Deactivate account</button>
+          <button type="button" disabled={busy} onClick={close}>Cancel</button>
+          <button className="account-deactivation-confirm" type="submit" disabled={mutation.locked || busy}>Deactivate account</button>
         </div>
       </form>
     </dialog>}

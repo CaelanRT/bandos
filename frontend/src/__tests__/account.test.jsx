@@ -2,7 +2,7 @@
 import { sessionFixture } from './fixtures/session.js'
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -87,7 +87,7 @@ it('saves only a trimmed change and updates cached member identity', async () =>
   await userEvent.click(screen.getByRole('button', { name: 'Save' }))
   expect(await screen.findByRole('status', { name: '' })).toHaveTextContent('Profile saved.')
   const patch = fetchMock.mock.calls.find(([, options]) => options.method === 'PATCH')
-  expect(JSON.parse(patch[1].body)).toEqual({ username: 'new-name' })
+  expect(JSON.parse(patch[1].body)).toEqual({ expectedVersion: 1, username: 'new-name' })
   expect(screen.getByRole('textbox', { name: 'Username' })).toHaveValue('new-name')
   expect(client.getQueryData(bandKeys.detail(8)).members[0].username).toBe('new-name')
 })
@@ -137,41 +137,30 @@ it('associates backend field validation with the correct control', async () => {
   expect(screen.getByRole('textbox', { name: 'Last name' })).toHaveFocus()
 })
 
-it('checks an ambiguous save before allowing another attempt', async () => {
-  renderAccount()
+it('retries an ambiguous profile save using the same request and applies only the authoritative result', async () => {
+  const { client } = renderAccount()
   await screen.findByRole('heading', { name: 'Account' })
+  const next = { ...backendUser, username: 'saved', version: 2 }
+  let loseResponse = true
   fetchMock.mockImplementation((url, options) => {
-    if (options.method === 'PATCH') return Promise.reject(new Error('connection lost'))
-    if (url.endsWith('/users/me')) return Promise.resolve(userResponse({ ...backendUser, username: 'saved' }))
-    return Promise.resolve(bandsResponse())
+    if (options.method === 'PATCH') return loseResponse ? Promise.reject(new Error('connection lost')) : Promise.resolve(userResponse(next))
+    return Promise.resolve(url.endsWith('/bands') ? bandsResponse() : userResponse(next))
   })
   await userEvent.clear(screen.getByRole('textbox', { name: 'Username' }))
   await userEvent.type(screen.getByRole('textbox', { name: 'Username' }), 'saved')
   await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-  await waitFor(() => expect(screen.getByRole('textbox', { name: 'Username' })).toHaveValue('saved'))
-  expect(await screen.findByText('Your profile changes are saved.')).toBeInTheDocument()
-  expect(fetchMock.mock.calls.filter(([, options]) => options.method === 'PATCH')).toHaveLength(1)
-})
-
-it('keeps Save unavailable until a failed ambiguous read is checked again', async () => {
-  renderAccount()
-  await screen.findByRole('heading', { name: 'Account' })
-  let readFails = true
-  fetchMock.mockImplementation((url, options) => {
-    if (options.method === 'PATCH') return Promise.reject(new Error('connection lost'))
-    if (url.endsWith('/users/me')) return readFails ? Promise.reject(new Error('offline')) : Promise.resolve(userResponse())
-    return Promise.resolve(bandsResponse())
-  })
-  await userEvent.clear(screen.getByRole('textbox', { name: 'Username' }))
-  await userEvent.type(screen.getByRole('textbox', { name: 'Username' }), 'retry-name')
-  await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-  expect(await screen.findByRole('button', { name: 'Check again' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  readFails = false
-  await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
-  expect(await screen.findByText(/current profile differs/)).toBeInTheDocument()
+  await screen.findByRole('button', { name: 'Retry same request' })
+  expect(screen.getByRole('textbox', { name: 'Username' })).toHaveValue('saved')
+  expect(screen.getByRole('textbox', { name: 'Username' })).toBeDisabled()
+  expect(screen.queryByText('Profile saved.')).not.toBeInTheDocument()
+  loseResponse = false
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  await screen.findByText('Profile saved.')
+  const writes = fetchMock.mock.calls.filter(([, options]) => options.method === 'PATCH')
+  expect(writes).toHaveLength(2)
+  expect(writes[1][1].body).toBe(writes[0][1].body)
+  expect(writes[1][1].headers.get('Idempotency-Key')).toBe(writes[0][1].headers.get('Idempotency-Key'))
+  client.clear()
 })
 
 it('clears the protected page when authentication expires during Save', async () => {

@@ -1,3 +1,5 @@
+import { useMutationIntent } from '../../mutations/useMutationIntent.js'
+import { MutationRecovery } from '../../mutations/MutationRecovery.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -7,7 +9,7 @@ import { UnsavedNavigationDialog } from '../../app/UnsavedNavigation.jsx'
 import { composeValidators, maxLength, required } from '../../utils/validation.js'
 import { DeleteBand } from './DeleteBand.jsx'
 import { renameBand } from './api.js'
-import { bandKeys, cacheSavedBand, checkBand, checkBands, removeBandAccess } from './queries.js'
+import { bandKeys, cacheSavedBand, checkBand, checkBands, clearBandResources, removeBandAccess } from './queries.js'
 
 const validateName = composeValidators(required('Enter a band name.'), maxLength(50))
 
@@ -15,27 +17,28 @@ export function BandSettings({ band }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const { authenticatedRequest } = useSession()
+  const mutation = useMutationIntent(authenticatedRequest)
   const [name, setName] = useState(band.name)
+  const [version, setVersion] = useState(band.version)
   const [baseline, setBaseline] = useState(band.name)
   const [touched, setTouched] = useState(false)
   const [fieldError, setFieldError] = useState(null)
   const [formError, setFormError] = useState(null)
   const [message, setMessage] = useState(null)
   const [pending, setPending] = useState(false)
+  const [deletionUnresolved, setDeletionUnresolved] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [reconciliation, setReconciliation] = useState(null)
   const [permissionChecking, setPermissionChecking] = useState(false)
   const [retryAt, setRetryAt] = useState(null)
   const [focusRequest, setFocusRequest] = useState(0)
   const input = useRef(null)
   const notice = useRef(null)
   const submitting = useRef(false)
-  const attemptedName = useRef(null)
   const lifetime = useRef(null)
   const currentBlocker = useRef(null)
   const denied = Boolean(band.managementDenied)
   const dirty = name !== baseline
-  const { blocker, allowNavigation } = useUnsavedNavigation(!denied && (dirty || deleting))
+  const { blocker, allowNavigation } = useUnsavedNavigation(!denied && (dirty || deleting || deletionUnresolved || mutation.unresolved))
   useEffect(() => { currentBlocker.current = blocker }, [blocker])
   useEffect(() => {
     const controller = new AbortController()
@@ -43,8 +46,8 @@ export function BandSettings({ band }) {
     return () => controller.abort()
   }, [])
   // Only untouched input follows background data. An edited draft keeps its baseline.
-  if (!dirty && baseline !== band.name) {
-    setName(band.name); setBaseline(band.name)
+  if (!dirty && !mutation.locked && (baseline !== band.name || version !== band.version)) {
+    setName(band.name); setBaseline(band.name); setVersion(band.version)
   }
   useEffect(() => {
     if (denied && blocker.state === 'blocked') blocker.reset()
@@ -54,7 +57,7 @@ export function BandSettings({ band }) {
 
   function acceptName(value, text) {
     setName(value); setBaseline(value); setTouched(false); setFieldError(null)
-    setFormError(null); setReconciliation(null); setMessage(text)
+    setFormError(null); setMessage(text)
     setFocusRequest((value) => value + 1)
     if (currentBlocker.current.state === 'blocked') currentBlocker.current.proceed()
   }
@@ -70,44 +73,39 @@ export function BandSettings({ band }) {
     }
     setPermissionChecking(false)
   }
-  async function reconcile(signal = lifetime.current.signal, activity = false) {
-    setReconciliation('checking')
-    try {
-      const latest = await checkBand(client, authenticatedRequest, band.bandId, signal, activity)
-      if (signal.aborted || !latest) return
-      if (latest.currentUserRole !== 'leader') return
-      await cacheSavedBand(client, latest, signal)
-      if (signal.aborted) return
-      if (latest.name === attemptedName.current) {
-        acceptName(latest.name, 'The current band name matches your change.')
-      } else {
-        setReconciliation('conflict')
-        setFormError(null)
-      }
-    } catch {
-      if (!signal.aborted) setReconciliation('failed')
+  async function reloadLatest() {
+    const latest = await checkBand(client, authenticatedRequest, band.bandId, lifetime.current.signal, true)
+    if (lifetime.current.signal.aborted) throw new Error('Closed')
+    if (latest) {
+      setVersion(latest.version)
+      acceptName(latest.name, 'Latest band loaded.')
     }
   }
+
   async function submit(event) {
     event.preventDefault()
-    if (denied || deleting || submitting.current || !dirty || ['checking', 'failed'].includes(reconciliation)) return
+    if (mutation.locked && !mutation.isRetry()) return
+    if (denied || deleting || deletionUnresolved || submitting.current || !dirty) return
     if (retryAt && Date.now() < retryAt) { notice.current?.focus(); return }
     const normalized = name.trim()
     const error = validateName(normalized)
     setTouched(true); setFieldError(error); setFormError(null); setMessage(null)
     if (error) { input.current?.focus(); return }
-    submitting.current = true; setPending(true); setReconciliation(null)
-    attemptedName.current = normalized
+    submitting.current = true; setPending(true)
     const signal = lifetime.current.signal
     try {
-      const saved = await renameBand(authenticatedRequest, band.bandId, normalized, signal)
+      const saved = await renameBand(mutation.request, band.bandId, { name: normalized, expectedVersion: version }, signal)
       if (signal.aborted) return
-      if (await cacheSavedBand(client, saved, signal)) acceptName(saved.name, 'Band name saved.')
+      mutation.complete()
+      if (await cacheSavedBand(client, saved, signal)) { setVersion(saved.version); acceptName(saved.name, 'Band name saved.') }
     } catch (error) {
       if (signal.aborted || error.name === 'AbortError' || error.code === 'AUTHENTICATION_REQUIRED') return
+      if (mutation.handleError(error)) return
       if (error.code === 'BAND_NOT_FOUND') {
         await removeBandAccess(client, band.bandId, signal)
       } else if (error.code === 'LEADER_REQUIRED') {
+        await clearBandResources(client, band.bandId, signal)
+        if (signal.aborted) return
         client.setQueryData(bandKeys.detail(band.bandId), (latest) => latest ? { ...latest, managementDenied: true } : latest)
         setName(band.name); setBaseline(band.name); setFieldError(null); setFormError(null)
         await refreshPermission(signal)
@@ -122,17 +120,14 @@ export function BandSettings({ band }) {
         setFormError(error.retryAt ? `Too many attempts. Try again after ${new Date(error.retryAt).toLocaleTimeString()}.` :
           'Too many attempts. Please wait before trying again.')
       } else {
-        setFormError('We couldn’t confirm whether that change was saved. We’ll check the latest information before you try again.')
-        setPending(false)
-        await reconcile(signal)
+        setFormError('The request was rejected. Review your details and try again.')
       }
     } finally {
       submitting.current = false
       if (!signal.aborted) setPending(false)
     }
   }
-  const checking = reconciliation === 'checking'
-  const locked = pending || deleting || checking || reconciliation === 'failed'
+  const locked = pending || deleting || deletionUnresolved
   return <section className="band-settings" aria-labelledby="settings-heading">
     <h2 id="settings-heading">Settings</h2>
     {denied ? <div role="alert">
@@ -141,8 +136,9 @@ export function BandSettings({ band }) {
     </div> : <form className="band-form" aria-label="Rename band" onSubmit={submit} noValidate>
       {message && <p role="status">{message}</p>}
       {formError && <p ref={notice} role="alert" tabIndex="-1">{formError}</p>}
+      <MutationRecovery mutation={mutation} pending={pending} onRetry={() => submit({ preventDefault() {} })} onReload={reloadLatest} />
       <label htmlFor="band-name">Band name</label>
-      <input ref={input} id="band-name" name="name" value={name} disabled={locked}
+      <input ref={input} id="band-name" name="name" value={name} disabled={locked || mutation.locked}
         aria-invalid={Boolean(fieldError)} aria-describedby={fieldError ? 'band-name-error' : undefined}
         onBlur={() => { setTouched(true); setFieldError(validateName(name.trim())) }}
         onChange={(event) => {
@@ -150,24 +146,19 @@ export function BandSettings({ band }) {
           if (touched) setFieldError(validateName(event.target.value.trim()))
         }} />
       {fieldError && <p id="band-name-error">{fieldError}</p>}
-      {checking && <p role="status">Checking the band name…</p>}
-      {reconciliation === 'failed' && <div role="alert">
-        <p>We couldn’t check the band name. Check again before saving.</p>
-        <button type="button" onClick={() => reconcile(undefined, true)}>Check again</button>
-      </div>}
-      {reconciliation === 'conflict' && <p role="status">The current server name is “{band.name}”. Your draft is preserved; save again to retry.</p>}
       <div className="form-actions">
-        <button type="submit" disabled={!dirty || locked}>{pending ? 'Saving…' : 'Save'}</button>
+        <button type="submit" disabled={mutation.locked || !dirty || locked}>{pending ? 'Saving…' : 'Save'}</button>
         <button type="button" disabled={pending || deleting} onClick={() => navigate(`/bands/${band.bandId}`)}>Cancel</button>
       </div>
       {pending && <p role="status">Saving band name…</p>}
     </form>}
-    {!denied && <DeleteBand band={band} disabled={pending || checking || reconciliation === 'failed'}
-      setPending={setDeleting} allowNavigation={allowNavigation} onDenied={async () => {
+    {!denied && <DeleteBand band={band} disabled={pending || mutation.locked}
+      setPending={setDeleting} onUnresolvedChange={setDeletionUnresolved} allowNavigation={allowNavigation} onDenied={async () => {
         client.setQueryData(bandKeys.detail(band.bandId), (latest) => latest ? { ...latest, managementDenied: true } : latest)
         setName(band.name); setBaseline(band.name); setFieldError(null); setFormError(null)
+        await clearBandResources(client, band.bandId, lifetime.current.signal)
         await refreshPermission()
       }} />}
-    <UnsavedNavigationDialog blocker={blocker} pending={pending || deleting} />
+    <UnsavedNavigationDialog unresolved={mutation.unresolved || deletionUnresolved} blocker={blocker} pending={pending || deleting} />
   </section>
 }

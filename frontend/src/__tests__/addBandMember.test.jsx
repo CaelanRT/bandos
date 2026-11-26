@@ -40,7 +40,7 @@ beforeEach(() => {
   detailRead = () => json({ band }); listRead = () => json({ bands: [band] })
   post = (body) => {
     const member = body.username.toLowerCase() === 'zoe' ? zoe : ben
-    band = { ...band, members: [...band.members, member] }
+    band = { ...band, version: band.version + 1, members: [...band.members, member] }
     return json({ member, band }, 201)
   }
   fetchMock.mockReset().mockImplementation(async (url, options) => {
@@ -74,7 +74,7 @@ it('adds two users consecutively with exact trimmed bodies, ordered unique rows,
     expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
     expect(screen.getByLabelText('Add band member or user')).toHaveAttribute('aria-invalid', 'false')
   }
-  expect(posts().map(([, options]) => JSON.parse(options.body))).toEqual([{ username: 'zoe' }, { username: 'ben' }])
+  expect(posts().map(([, options]) => JSON.parse(options.body))).toEqual([{ username: 'zoe', expectedVersion: 1 }, { username: 'ben', expectedVersion: 2 }])
   expect(within(screen.getByRole('list', { name: 'Band members' })).getAllByRole('listitem').map((row) => row.textContent))
     .toEqual(['Alex Rivera@alexLeader', 'Ben Smith@benMember', 'Zoe Smith@zoeMember'])
   expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument()
@@ -125,7 +125,7 @@ it('validates trimmed 3–50 JS characters on blur/edit and submit without inven
   post = () => { const member = { ...zoe, username }; band.members.push(member); return json({ member, band }, 201) }
   await enter(' ' + username + ' '); await submit()
   await screen.findByText(`@${username} added to the band.`)
-  expect(JSON.parse(posts()[0][1].body)).toEqual({ username })
+  expect(JSON.parse(posts()[0][1].body)).toEqual({ username, expectedVersion: 1 })
 })
 
 it.each([['USER_NOT_FOUND', 404, 'No active account found with that username.', 'unknown'],
@@ -182,44 +182,28 @@ it('prevents overlapping submissions and leaving during a pending write', async 
   expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
 })
 
-it.each(['network', 'server', 'malformed', 'wrong-status', 'wrong-user'])('reconciles uncertain %s outcomes without attributing a case-insensitive match to the write', async (kind) => {
+it.each(['network', 'server', 'malformed', 'wrong-status', 'wrong-user'])('recovers uncertain %s additions through same-intent replay', async (kind) => {
   post = () => {
     band.members.push(zoe)
     if (kind === 'network') throw new TypeError('Connection lost')
     if (kind === 'server') return failure('INTERNAL_ERROR', 500)
     if (kind === 'wrong-status') return json({ member: zoe })
-    if (kind === 'wrong-user') return json({ member: ben }, 201)
-    return json({ member: {} }, 201)
+    if (kind === 'wrong-user') return json({ member: ben, band }, 201)
+    return json({ member: {}, band }, 201)
   }
   mount(); await screen.findByLabelText('Add band member or user'); await enter(' ZOE '); await submit()
-  expect(await screen.findByText('That person is now in the band.')).toBeInTheDocument()
+  await screen.findByRole('button', { name: 'Retry same request' })
   expect(screen.queryByText(/added to the band/)).not.toBeInTheDocument()
   expect(screen.getByLabelText('Add band member or user')).toHaveValue(' ZOE ')
+  expect(screen.getByLabelText('Add band member or user')).toBeDisabled()
   expect(posts()).toHaveLength(1)
-  await userEvent.click(screen.getByRole('button', { name: 'Clear and add another' }))
-  await waitFor(() => expect(screen.getByLabelText('Add band member or user')).toHaveFocus())
-  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
-})
-
-it('blocks replay through failed checks until an explicit recheck and retry', async () => {
-  const check = deferred()
-  post = () => { detailRead = () => check.promise; return failure('INTERNAL_ERROR', 500) }
-  mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
-  await screen.findByText('Checking band membership…')
-  fireEvent.submit(screen.getByRole('form', { name: 'Add member' }))
-  await act(async () => check.resolve(failure('INTERNAL_ERROR', 503)))
-  await screen.findByRole('button', { name: 'Check again' })
-  expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled()
-  fireEvent.submit(screen.getByRole('form', { name: 'Add member' }))
-  expect(posts()).toHaveLength(1)
-  detailRead = () => json({ band })
-  await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
-  const retry = await screen.findByRole('button', { name: 'Try adding again' })
-  expect(posts()).toHaveLength(1)
-  post = () => { band.members.push(zoe); return json({ member: zoe, band }, 201) }
-  await userEvent.click(retry)
+  post = () => json({ member: zoe, band }, 201)
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
   await screen.findByText('@zoe added to the band.')
   expect(posts()).toHaveLength(2)
+  expect(posts()[1][1].body).toBe(posts()[0][1].body)
+  expect(posts()[1][1].headers.get('Idempotency-Key')).toBe(posts()[0][1].headers.get('Idempotency-Key'))
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
 })
 
 it.each([false, true])('suppresses denied controls while refreshing permissions, with refresh failure=%s', async (fails) => {
@@ -298,30 +282,31 @@ it('cancels older detail reads so they cannot erase a confirmed addition, and de
 })
 
 it('retains confirmed addition when revalidation fails', async () => {
-  post = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return json({ member: zoe, band }, 201) }
+  post = () => { band = { ...band, version: 2, members: [leader, zoe] }; listRead = () => failure('INTERNAL_ERROR', 503); return json({ member: zoe, band }, 201) }
   mount(); await screen.findByLabelText('Add band member or user'); await enter(); await submit()
   await screen.findByText('@zoe added to the band.')
-  await screen.findByText('We couldn’t update this band.')
+  await screen.findByText('We couldn’t update your bands.')
   expect(screen.getByText('@zoe')).toBeInTheDocument()
   expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
   expect(screen.queryByText(/couldn’t confirm/)).not.toBeInTheDocument()
 })
 
-it('can discard navigation during reconciliation without applying late results to a later visit', async () => {
-  const check = deferred()
-  post = () => { detailRead = () => check.promise; return failure('INTERNAL_ERROR', 500) }
+it('retains the original intent when attempted navigation follows response loss', async () => {
+  post = () => failure('INTERNAL_ERROR', 500)
   const { router } = mount(); await enter(); await submit()
-  await screen.findByText('Checking band membership…')
+  await screen.findByRole('button', { name: 'Retry same request' })
   expect(screen.getByLabelText('Add band member or user')).toBeDisabled()
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
-  await userEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
-  detailRead = () => json({ band })
-  await act(() => router.navigate('/bands/2/members'))
-  await screen.findByLabelText('Add band member or user')
-  await act(async () => check.resolve(json({ band: { ...band, members: [leader, zoe] } })))
-  expect(screen.queryByText('That person is now in the band.')).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Add band member or user')).toHaveValue('')
-  expect(screen.getByRole('button', { name: 'Add member' })).toBeEnabled()
+  expect(await screen.findByRole('dialog', { name: 'Recover your previous save' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
+  expect(router.state.location.pathname).toBe('/bands/2/members')
+  await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+  expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
+  post = () => { band.members.push(zoe); return json({ member: zoe, band }, 201) }
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  await screen.findByText('@zoe added to the band.')
+  expect(posts()[1][1].body).toBe(posts()[0][1].body)
+  expect(posts()[1][1].headers.get('Idempotency-Key')).toBe(posts()[0][1].headers.get('Idempotency-Key'))
 })
 
 it('preserves current Members context when its active navigation link is clicked', async () => {
@@ -345,16 +330,15 @@ it('resumes requested navigation after a confirmed pending addition', async () =
 })
 
 
-it('keeps a failed reconciliation locked after cancelling navigation', async () => {
+it('keeps same-intent recovery after cancelling navigation', async () => {
   post = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return failure('INTERNAL_ERROR', 500) }
   mount(); await enter(); await submit()
-  await screen.findByRole('button', { name: 'Check again' })
+  await screen.findByRole('button', { name: 'Retry same request' })
   await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
   await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
   expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled()
   expect(screen.getByLabelText('Add band member or user')).toHaveValue('zoe')
   detailRead = () => json({ band })
-  await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
-  expect(await screen.findByRole('button', { name: 'Try adding again' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Retry same request' })).toBeEnabled()
   expect(posts()).toHaveLength(1)
 })

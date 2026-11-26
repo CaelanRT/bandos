@@ -79,7 +79,7 @@ it('focuses Cancel and restores the trigger after Cancel or Escape without delet
   expect(writes()).toHaveLength(0)
 })
 
-it('holds pending navigation, sends one bodyless delete and discards a dirty rename without a second prompt', async () => {
+it('holds pending navigation, sends one versioned delete and discards a dirty rename without a second prompt', async () => {
   const pending = deferred(); remove = () => pending.promise
   const { client, router } = mount(['/bands/2/members', '/bands/2/settings'])
   await enter('Draft'); await openDelete(); await confirm()
@@ -88,7 +88,8 @@ it('holds pending navigation, sends one bodyless delete and discards a dirty ren
   fireEvent(dialog, new Event('cancel', { cancelable: true }))
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete band' }))
   expect(writes()).toHaveLength(1)
-  expect(writes()[0][1].body).toBeUndefined()
+  expect(JSON.parse(writes()[0][1].body)).toEqual({ expectedVersion: 1 })
+  expect(writes()[0][1].headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/i)
   await act(() => router.navigate(-1))
   expect(await screen.findByRole('button', { name: 'Discard changes' })).toBeDisabled()
   client.setQueryData([...bandKeys.detail(2), 'events'], ['private'])
@@ -129,31 +130,28 @@ it('cancels late detail, list, and associated resource reads without affecting o
   expect(client.getQueryData([...bandKeys.detail(3), 'events'])).toEqual(['keep'])
 })
 
-it.each(['network', 'server', 'malformed'])('rechecks an uncertain %s response and requires a new confirmation', async (mode) => {
+it.each(['network', 'server', 'malformed'])('retries an uncertain %s deletion with the original key and version', async (mode) => {
   remove = () => { if (mode === 'network') throw new TypeError('Offline'); return mode === 'server' ? failure('INTERNAL_ERROR', 500) : json({}) }
-  mount(); await openDelete(); await confirm()
-  await screen.findByText('This band is still available. You can open the confirmation to try again.')
-  expect(screen.queryByText('Band deleted.')).not.toBeInTheDocument()
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(writes()).toHaveLength(1)
-  await openDelete()
-  expect(writes()).toHaveLength(1)
-  await confirm()
-  await waitFor(() => expect(writes()).toHaveLength(2))
-})
-
-it('keeps deletion locked after a failed recheck and preserves the draft for safe navigation', async () => {
-  remove = () => { detailRead = () => failure('INTERNAL_ERROR', 503); return failure('INTERNAL_ERROR', 500) }
   mount(); await enter('Draft'); await openDelete(); await confirm()
-  await screen.findByRole('button', { name: 'Check again' })
-  expect(screen.getByRole('button', { name: 'Delete band' })).toBeDisabled()
+  await screen.findByRole('button', { name: 'Retry same request' })
+  expect(screen.queryByText('Band deleted.')).not.toBeInTheDocument()
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
   expect(screen.getByLabelText('Band name')).toHaveValue('Draft')
-  await userEvent.click(screen.getByRole('link', { name: 'Middle' }))
-  await userEvent.click(await screen.findByRole('button', { name: 'Keep editing' }))
-  detailRead = () => json({ band })
-  await userEvent.click(screen.getByRole('button', { name: 'Check again' }))
-  await screen.findByText('This band is still available. You can open the confirmation to try again.')
   expect(writes()).toHaveLength(1)
+  if (mode === 'network') {
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Middle' }))
+    await screen.findByRole('dialog', { name: 'Recover your previous save' })
+    expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    await openDelete()
+  }
+  remove = () => json({ message: 'Band deleted' })
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  await screen.findByText('Band deleted.')
+  expect(writes()).toHaveLength(2)
+  expect(writes()[1][1].body).toBe(writes()[0][1].body)
+  expect(writes()[1][1].headers.get('Idempotency-Key')).toBe(writes()[0][1].headers.get('Idempotency-Key'))
 })
 
 it.each(['direct', 'uncertain'])('recovers %s unavailability without claiming this request deleted the band', async (mode) => {
@@ -163,7 +161,13 @@ it.each(['direct', 'uncertain'])('recovers %s unavailability without claiming th
   }
   const { client } = mount(); await enter('Draft')
   client.setQueryData([...bandKeys.detail(2), 'events'], ['private'])
-  await openDelete(); await confirm(); await screen.findByText('This band is no longer available')
+  await openDelete(); await confirm()
+  if (mode === 'uncertain') {
+    await screen.findByRole('button', { name: 'Retry same request' })
+    remove = () => failure('BAND_NOT_FOUND', 404)
+    await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
+  }
+  await screen.findByText('This band is no longer available')
   expect(client.getQueryData([...bandKeys.detail(2), 'events'])).toBeUndefined()
   await userEvent.click(screen.getByRole('link', { name: 'Go home' }))
   expect(screen.queryByText('Band deleted.')).not.toBeInTheDocument()

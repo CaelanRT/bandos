@@ -84,7 +84,7 @@ it('blocks an empty password, keeps a wrong password correctable, and sends the 
   expect(password).toHaveValue(' wrong ')
   const deletes = fetchMock.mock.calls.filter(([, options]) => options.method === 'DELETE')
   expect(deletes).toHaveLength(1)
-  expect(JSON.parse(deletes[0][1].body)).toEqual({ password: ' wrong ' })
+  expect(JSON.parse(deletes[0][1].body)).toEqual({ expectedVersion: 1, password: ' wrong ' })
 })
 
 it('prevents duplicate submission and navigation while pending', async () => {
@@ -129,46 +129,46 @@ it('clears private state and replaces Account with Login after confirmed deactiv
   expect(screen.queryByRole('heading', { name: 'Account' })).not.toBeInTheDocument()
 })
 
-it('checks an ambiguous result and requires a deliberate retry', async () => {
+it('keeps an uncertain deactivation password in memory and retries the original body and key', async () => {
   renderAccount()
-  const { dialog } = await openDialog()
-  let deletes = 0
+  let { dialog } = await openDialog()
+  let loseResponse = true
   fetchMock.mockImplementation((url, options) => {
-    if (options.method === 'DELETE') { deletes++; return Promise.reject(new Error('connection lost')) }
+    if (options.method === 'DELETE') return loseResponse ? Promise.reject(new Error('connection lost')) : Promise.resolve(response({ data: { message: 'Account deactivated' } }))
     return Promise.resolve(url.endsWith('/bands') ? bands() : currentUser())
   })
-  await userEvent.type(within(dialog).getByLabelText('Current password'), 'secret')
+  await userEvent.type(within(dialog).getByLabelText('Current password'), ' secret ')
   await userEvent.click(within(dialog).getByRole('button', { name: 'Deactivate account' }))
-  expect(await within(dialog).findByText('Your account is still active. You can choose to try deactivation again.')).toBeInTheDocument()
-  expect(deletes).toBe(1)
-  expect(within(dialog).getByRole('button', { name: 'Deactivate account' })).toBeEnabled()
-})
-
-it('keeps deletion unavailable until an ambiguous result can be checked', async () => {
-  renderAccount()
-  const { dialog } = await openDialog()
-  let readFails = true
-  fetchMock.mockImplementation((url, options) => {
-    if (options.method === 'DELETE') return Promise.reject(new Error('connection lost'))
-    if (url.endsWith('/users/me')) return readFails ? Promise.reject(new Error('offline')) : Promise.resolve(currentUser())
-    return Promise.resolve(bands())
-  })
-  await userEvent.type(within(dialog).getByLabelText('Current password'), 'secret')
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Deactivate account' }))
-  expect(await within(dialog).findByRole('button', { name: 'Check again' })).toBeInTheDocument()
+  await within(dialog).findByRole('button', { name: 'Retry same request' })
+  expect(within(dialog).getByLabelText('Current password')).toBeDisabled()
   expect(within(dialog).getByRole('button', { name: 'Deactivate account' })).toBeDisabled()
-  readFails = false
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Check again' }))
-  expect(await within(dialog).findByText('Your account is still active. You can choose to try deactivation again.')).toBeInTheDocument()
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+  await userEvent.click(screen.getByRole('link', { name: 'Datebook' }))
+  await screen.findByRole('dialog', { name: 'Recover your previous save' })
+  expect(screen.getByRole('button', { name: 'Discard changes' })).toBeDisabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+  ;({ dialog } = await openDialog())
+  expect(within(dialog).getByLabelText('Current password')).toHaveValue(' secret ')
+  loseResponse = false
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Retry same request' }))
+  await screen.findByRole('heading', { name: 'Login' })
+  const writes = fetchMock.mock.calls.filter(([, options]) => options.method === 'DELETE')
+  expect(writes).toHaveLength(2)
+  expect(JSON.parse(writes[0][1].body)).toEqual({ password: ' secret ', expectedVersion: 1 })
+  expect(writes[1][1].body).toBe(writes[0][1].body)
+  expect(writes[1][1].headers.get('Idempotency-Key')).toBe(writes[0][1].headers.get('Idempotency-Key'))
 })
 
-it('signs out without claiming deactivation if the status check finds no session', async () => {
+it('signs out without claiming deactivation if same-intent recovery finds no session', async () => {
   renderAccount()
   const { dialog } = await openDialog()
   fetchMock.mockImplementation((url, options) => Promise.resolve(options.method === 'DELETE'
     ? failure('INTERNAL_ERROR', 500) : url.endsWith('/bands') ? bands() : failure('AUTHENTICATION_REQUIRED')))
   await userEvent.type(within(dialog).getByLabelText('Current password'), 'secret')
   await userEvent.click(within(dialog).getByRole('button', { name: 'Deactivate account' }))
+  await screen.findByRole('button', { name: 'Retry same request' })
+  fetchMock.mockImplementation((url) => Promise.resolve(url.endsWith('/bands') ? bands() : failure('AUTHENTICATION_REQUIRED')))
+  await userEvent.click(screen.getByRole('button', { name: 'Retry same request' }))
   expect(await screen.findByRole('heading', { name: 'Login' })).toBeInTheDocument()
   expect(screen.queryByText('Your account has been deactivated.')).not.toBeInTheDocument()
 })

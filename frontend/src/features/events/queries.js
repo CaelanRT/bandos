@@ -95,3 +95,21 @@ export async function cacheDeletedEvent(client, bandId, eventId, signal) {
   void client.invalidateQueries({ queryKey: eventKeys.list(bandId) })
   return true
 }
+
+export async function reloadEvent(client, request, bandId, eventId, signal) {
+  await client.cancelQueries({ queryKey: eventKeys.detail(bandId, eventId) })
+  if (signal.aborted) throw new DOMException('Form closed.', 'AbortError')
+  try {
+    const event = await getEvent(userActivityRequest(request), bandId, eventId, signal)
+    if (!await cacheUpdatedEvent(client, event, signal)) throw new DOMException('Form closed.', 'AbortError')
+    return event
+  } catch (error) {
+    if (signal.aborted) throw error
+    if (error.code === 'BAND_NOT_FOUND') await removeBandAccess(client, bandId, signal)
+    else if (['EVENT_NOT_FOUND', 'NOT_FOUND'].includes(error.code)) {
+      await cacheDeletedEvent(client, bandId, eventId, signal)
+      return null
+    }
+    throw error
+  }
+}
