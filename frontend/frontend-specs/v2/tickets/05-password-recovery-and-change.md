@@ -1,6 +1,6 @@
 # FE-V2-05 — Add password recovery and authenticated password change
 
-> **Status:** For Review ([Draft PR #120](https://github.com/CaelanRT/bandos/pull/120))
+> **Status:** Completed ([Merged PR #120](https://github.com/CaelanRT/bandos/pull/120))
 > **Dependencies:** [FE-V2-04](04-registration-and-verification.md)
 > **Created:** 25 November 2026
 
@@ -56,3 +56,7 @@ From `frontend/`:
 - Independent `review-ticket` subagent review — PASS after addressing the pending/uncertain password-change navigation guard finding. No remaining blocking or non-blocking findings.
 
 Outstanding manual verification: browser smoke of signed-out and signed-in reset links. No browser tooling is available in this environment; automated route integration covers both states. No live backend or real mail-delivery checks are claimed.
+
+## Completion — 26 November 2026
+
+PR #120 was confirmed merged into remote `main` at `1336e0c`. Ticket completion is recorded after the implementation merge; the browser smoke limitation above remains documented.
