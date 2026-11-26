@@ -1,8 +1,11 @@
 import { useActivityQuery, userActivityRequest, fetchActivityQuery } from '../../app/activityQueries.js'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../../app/sessionContext.js'
-import { getBand, getBands } from './api.js'
+import { getBand, getBands, getInstruments } from './api.js'
 
+export const instrumentKeys = {
+  starter: ['private', 'instruments'],
+}
 export const bandKeys = {
   list: ['private', 'bands'],
   detail: (bandId) => ['private', 'band', bandId],
@@ -16,6 +19,12 @@ export const isBandQuery = (query, bandId) => query.queryKey[0] === 'private' &&
   query.queryKey[1] === 'band' && query.queryKey[2] === bandId
 
 const freshness = { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true }
+
+export function useStarterInstruments() {
+  const { authenticatedRequest } = useSession()
+  return useActivityQuery({ ...freshness, queryKey: instrumentKeys.starter,
+    queryFn: ({ signal, activity }) => getInstruments(activity === 'user' ? userActivityRequest(authenticatedRequest) : authenticatedRequest, signal) })
+}
 
 export function useBands() {
   const { authenticatedRequest } = useSession()
@@ -65,7 +74,8 @@ export async function cacheSavedBand(client, band, signal) {
     client.cancelQueries({ queryKey: bandKeys.detail(band.bandId) }),
   ])
   if (signal.aborted) return false
-  const { members: _members, managementDenied: _denied, ...summary } = band
+  const { members: _members, instruments: _instruments, instrumentation: _instrumentation,
+    defaultLineup: _defaultLineup, managementDenied: _denied, ...summary } = band
   client.setQueryData(bandKeys.detail(band.bandId), band)
   client.setQueryData(bandKeys.list, (bands = []) => [
     ...bands.filter((item) => item.bandId !== band.bandId), summary,

@@ -425,6 +425,109 @@ main {
   font: inherit;
 }
 
+.band-instrumentation,
+.band-leader-instruments {
+  margin: 2rem 0 0;
+  padding: 1.25rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+.band-instrumentation legend,
+.band-leader-instruments legend {
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.band-form .field-hint {
+  margin: 0.375rem 0 0;
+  color: var(--graphite);
+  font-size: 0.8125rem;
+}
+.band-form .field-error {
+  margin: 0.375rem 0 0;
+  color: var(--error-ink);
+  font-size: 0.875rem;
+}
+.band-form [aria-invalid='true'] {
+  border-color: var(--error-ink);
+}
+.instrumentation-catalog-error {
+  margin-block-start: 0.75rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid currentColor;
+}
+.instrumentation-catalog-error p {
+  margin-block-end: 0.5rem;
+}
+.band-shell main .instrumentation-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+.instrumentation-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+  padding-block: 0.875rem;
+  border-bottom: 1px solid var(--rule);
+}
+.instrumentation-field {
+  min-width: 0;
+}
+.instrumentation-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.instrumentation-field input,
+.instrumentation-field select {
+  margin-block-start: 0.375rem;
+}
+.instrumentation-row-actions {
+  display: flex;
+  align-items: flex-end;
+  padding-block-start: 1.625rem;
+}
+.instrumentation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+}
+.leader-instrument-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin-block-start: 0.875rem;
+}
+.band-form .leader-instrument-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+.band-form .leader-instrument-option input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  flex: none;
+}
+
+@media (max-width: 36rem) {
+  .instrumentation-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .instrumentation-row-actions {
+    padding-block-start: 0;
+  }
+}
+
 .member-add-row {
   display: flex;
   flex-wrap: wrap;
