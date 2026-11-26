@@ -85,7 +85,7 @@ it('downgrades EMAIL_VERIFICATION_REQUIRED, clears protected data, and rejects l
 
 it.each([
   ['/verify-email', 'Verify your email'], ['/verify-email-change', 'Confirm your email change'],
-  ['/forgot-password', 'Recover your account'], ['/reset-password', 'Reset your password'],
+  ['/forgot-password', 'Forgot password'], ['/reset-password', 'Reset password'],
 ])('does not intercept recovery route %s when an earlier protected request expires', async (path, title) => {
   let resolveOld
   fetch.mockImplementation(url => {
