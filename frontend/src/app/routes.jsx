@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { VerifyEmail } from '../features/auth/VerifyEmail.jsx'
 import { RecoveryRoute } from './RecoveryRoute.jsx'
 import { SessionRoutes } from './SessionRoutes.jsx'
 import { ProtectedRoute, SignedOutOnlyRoute } from './RouteAccess.jsx'
@@ -9,7 +10,8 @@ import { BandsHome, BandWorkspace } from '../features/bands/BandViews.jsx'
 import { Account } from '../features/account/Account.jsx'
 
 const pageRoutes = [
-  ...['verify-email', 'verify-email-change', 'forgot-password', 'reset-password'].map(path => ({
+  { path: '/verify-email', element: <VerifyEmail /> },
+  ...['verify-email-change', 'forgot-password', 'reset-password'].map(path => ({
     path: `/${path}`, element: <RecoveryRoute />,
   })),
   {

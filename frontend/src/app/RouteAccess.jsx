@@ -27,6 +27,9 @@ export function SignedOutOnlyRoute({ children }) {
   const session = useSession()
   const location = useLocation()
 
+  // A completed token flow can require an explicit fresh login, even with another account open.
+  if (location.pathname === '/login' && location.state?.requireLogin === true) return children
+
   if (session.status === 'verification_required') {
     return <Navigate to="/verify-email" replace state={{ destination: resolveDestination(session.destination || location.state?.destination) }} />
   }

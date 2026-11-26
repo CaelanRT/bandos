@@ -13,7 +13,8 @@ describe('registration validation', () => {
     ['email', 'a'.repeat(242) + '@example.com', true], ['email', 'a'.repeat(243) + '@example.com', false],
     ['password', '', false], ['password', 'a'.repeat(7), false], ['password', '        ', true],
     ['password', 'a'.repeat(72), true], ['password', 'a'.repeat(73), false],
-    ['password', '😀'.repeat(36), true], ['password', '😀'.repeat(37), false],
+    ['password', '😀'.repeat(18), true], ['password', '😀'.repeat(18) + 'a', false],
+    ['password', 'é'.repeat(36), true], ['password', 'é'.repeat(36) + 'a', false],
   ])('%s validates length and format for %j', (field, value, accepted) => {
     expect(validateRegistration({ ...valid, [field]: value })[field] === undefined).toBe(accepted)
   })
