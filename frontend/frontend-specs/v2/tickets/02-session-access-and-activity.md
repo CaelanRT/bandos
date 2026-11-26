@@ -1,6 +1,6 @@
 # FE-V2-02 — Gate verified access and classify session activity
 
-> **Status:** For Review ([Draft PR #114](https://github.com/CaelanRT/bandos/pull/114))
+> **Status:** Completed ([Merged PR #114](https://github.com/CaelanRT/bandos/pull/114))
 > **Dependencies:** [FE-V2-01](01-api-contract-boundary.md)
 > **Created:** 25 November 2026
 
