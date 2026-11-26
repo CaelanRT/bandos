@@ -1,4 +1,4 @@
-import { mutationOptions, pick } from '../../api/boundary.js'
+import { check, mutationOptions, pick, text } from '../../api/boundary.js'
 import { composeValidators, maxLength, required, validateFields } from '../../utils/validation.js'
 import { normalizeCurrentUser } from '../../api/currentUser.js'
 import { invalidApiResponse } from '../../api/errors.js'
@@ -40,6 +40,29 @@ export async function saveProfile(request, changes, userId, signal, options) {
   const user = normalizeCurrentUser(data?.user)
   if (user.userId !== userId) throw invalidApiResponse(200)
   return user
+}
+
+export async function requestEmailChange(request, input, userId, signal, options) {
+  const data = await request('/users/me/email-change', {
+    method: 'POST',
+    body: pick(input, ['expectedVersion', 'currentPassword', 'newEmail']),
+    ...mutationOptions(signal, options),
+    expectedStatus: 202,
+  })
+  const user = normalizeCurrentUser(data?.user)
+  if (user.userId !== userId) throw invalidApiResponse(202)
+  return user
+}
+
+export async function resendEmailChange(request, signal, options) {
+  const data = await request('/users/me/email-change/resend', {
+    method: 'POST',
+    body: {},
+    ...mutationOptions(signal, options),
+    expectedStatus: 202,
+  })
+  check(text(data?.message), 202)
+  return data.message
 }
 
 export async function deactivateAccount(request, input, signal, options) {
